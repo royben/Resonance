@@ -4,6 +4,7 @@ using Resonance.Reactive;
 using Resonance.Threading;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Resonance
     {
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonanceRequestHandler> _pendingRequests;
+        private ProducerConsumerQueue<byte[]> _arrivedMessages;
         private Thread _pushThread;
         private Thread _pullThread;
 
@@ -24,7 +26,18 @@ namespace Resonance
         public event EventHandler<ResonanceResponse> ResponseReceived;
         public event EventHandler<ResonanceRequestFailedEventArgs> RequestFailed;
 
-        public IResonanceAdapter Adapter { get; set; }
+        private IResonanceAdapter _adapter;
+        public IResonanceAdapter Adapter
+        {
+            get { return _adapter; }
+            set
+            {
+                var previous = _adapter;
+                _adapter = value;
+                OnAdapterChanged(previous, value);
+            }
+        }
+
         public IResonanceEncoder Encoder { get; set; }
         public IResonanceDecoder Decoder { get; set; }
         public ResonanceComponentState State { get; private set; }
@@ -46,6 +59,7 @@ namespace Resonance
             LogManager = LogManager.Default;
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingRequests = new ConcurrentList<IResonanceRequestHandler>();
+            _arrivedMessages = new ProducerConsumerQueue<byte[]>();
         }
 
         #endregion
@@ -274,6 +288,7 @@ namespace Resonance
             ResonanceTranscodingInformation info = new ResonanceTranscodingInformation();
             info.Token = requestHandler.Request.Token;
             info.Message = requestHandler.Request.Message;
+            info.IsRequest = true;
 
             byte[] data = Encoder.Encode(info);
             Adapter.Write(data);
@@ -302,6 +317,7 @@ namespace Resonance
             ResonanceTranscodingInformation info = new ResonanceTranscodingInformation();
             info.Token = requestHandler.Request.Token;
             info.Message = requestHandler.Request.Message;
+            info.IsRequest = true;
 
             byte[] data = Encoder.Encode(info);
             Adapter.Write(data);
@@ -369,7 +385,83 @@ namespace Resonance
 
         private void PullThreadMethod()
         {
-            throw new NotImplementedException();
+            try
+            {
+                while (State == ResonanceComponentState.Connected)
+                {
+                    byte[] data = _arrivedMessages.BlockDequeue();
+
+                    ResonanceTranscodingInformation info = Decoder.Decode(data);
+
+                    if (info.IsRequest)
+                    {
+                        ResonanceRequest request = new ResonanceRequest();
+                        request.Token = info.Token;
+                        request.Message = info.Message;
+                        OnRequestReceived(request);
+                    }
+                    else
+                    {
+                        IResonanceRequestHandler handler = _pendingRequests.ToList().FirstOrDefault(x => x.Request.Token == info.Token);
+
+                        if (handler != null)
+                        {
+                            if (handler is ResonanceRequestHandler requestHandler)
+                            {
+                                HandleIncomingResponse(requestHandler, info);
+                            }
+                            else if (handler is ResonanceContinuousRequestHandler continuousHandler)
+                            {
+                                HandleIncomingContinuousResponse(continuousHandler, info);
+                            }
+                        }
+                        else
+                        {
+                            LogManager.Log($"{GetExtendedComponentName()}: A response message with no awaiting request was identified. Token: {info.Token}. Message ignored.", LogLevel.Warning);
+                        }
+                    }
+                }
+            }
+            catch (ThreadAbortException)
+            {
+                LogManager.Log($"{GetExtendedComponentName()}: Pull thread has been aborted.");
+            }
+            catch (Exception ex)
+            {
+                OnFailed(ex);
+            }
+        }
+
+        private void HandleIncomingResponse(ResonanceRequestHandler handler, ResonanceTranscodingInformation info)
+        {
+            _pendingRequests.Remove(handler);
+
+            if (!info.HasError)
+            {
+                handler.CompletionSource.SetResult(info.Message);
+            }
+            else
+            {
+                handler.CompletionSource.SetException(new ResonanceResponseException(info.ErrorMessage));
+            }
+        }
+
+        private void HandleIncomingContinuousResponse(ResonanceContinuousRequestHandler handler, ResonanceTranscodingInformation info)
+        {
+            if (!info.HasError)
+            {
+                handler.ContinuousObservable.OnNext(info.Message);
+
+                if (info.Completed)
+                {
+                    _pendingRequests.Remove(handler);
+                    handler.ContinuousObservable.OnCompleted();
+                }
+            }
+            else
+            {
+                handler.ContinuousObservable.OnError(new ResonanceResponseException(info.ErrorMessage));
+            }
         }
 
         #endregion
@@ -424,6 +516,54 @@ namespace Resonance
         private void OnResponseSent(ResonanceResponse response)
         {
             ResponseSent?.Invoke(this, response);
+        }
+
+        private void OnRequestReceived(ResonanceRequest request)
+        {
+            RequestReceived?.Invoke(this, new ResonanceRequestReceivedEventArgs()
+            {
+                Request = request,
+            });
+        }
+
+        private void OnAdapterChanged(IResonanceAdapter oldAdapter, IResonanceAdapter newAdapter)
+        {
+            if (oldAdapter != newAdapter)
+            {
+                _pendingRequests.Clear();
+                _arrivedMessages = new ProducerConsumerQueue<byte[]>();
+                _sendingQueue = new PriorityProducerConsumerQueue<object>();
+            }
+
+            if (oldAdapter != null)
+            {
+                oldAdapter.StateChanged -= OnAdapterStateChanged;
+                oldAdapter.DataAvailable -= OnAdapterDataAvailable;
+            }
+
+            if (newAdapter != null)
+            {
+                LogManager.Log($"{GetExtendedComponentName()}: Adapter Changed: Type = {newAdapter.GetType().Name}, Address = {newAdapter.Address}, State = {newAdapter.State}");
+
+                newAdapter.StateChanged -= OnAdapterStateChanged;
+                newAdapter.DataAvailable -= OnAdapterDataAvailable;
+                newAdapter.StateChanged += OnAdapterStateChanged;
+                newAdapter.DataAvailable += OnAdapterDataAvailable;
+            }
+            else
+            {
+                LogManager.Log($"{GetExtendedComponentName()}: Adapter Changed: null");
+            }
+        }
+
+        private void OnAdapterDataAvailable(object sender, byte[] data)
+        {
+            _arrivedMessages.BlockEnqueue(data);
+        }
+
+        private void OnAdapterStateChanged(object sender, ResonanceComponentState e)
+        {
+            throw new NotImplementedException();
         }
     }
 }

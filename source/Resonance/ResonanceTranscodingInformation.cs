@@ -6,6 +6,7 @@ namespace Resonance
 {
     public class ResonanceTranscodingInformation
     {
+        public bool IsRequest { get; set; }
         public String Token { get; set; }
         public bool Completed { get; set; }
         public bool HasError { get; set; }

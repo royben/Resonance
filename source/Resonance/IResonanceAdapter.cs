@@ -13,6 +13,10 @@ namespace Resonance
     /// <seealso cref="Tango.Transport.ITransportComponent" />
     public interface IResonanceAdapter : IResonanceComponent, INotifyPropertyChanged
     {
+        ResonanceComponentState State { get; }
+
+        event EventHandler<ResonanceComponentState> StateChanged;
+
         /// <summary>
         /// Gets the last failed state exception/reason.
         /// </summary>
