@@ -395,10 +395,7 @@ namespace Resonance
 
                     if (info.IsRequest)
                     {
-                        ResonanceRequest request = new ResonanceRequest();
-                        request.Token = info.Token;
-                        request.Message = info.Message;
-                        OnRequestReceived(request);
+                        HandleIncomingRequest(info);
                     }
                     else
                     {
@@ -432,6 +429,14 @@ namespace Resonance
             }
         }
 
+        private void HandleIncomingRequest(ResonanceTranscodingInformation info)
+        {
+            ResonanceRequest request = new ResonanceRequest();
+            request.Token = info.Token;
+            request.Message = info.Message;
+            OnRequestReceived(request);
+        }
+
         private void HandleIncomingResponse(ResonanceRequestHandler handler, ResonanceTranscodingInformation info)
         {
             _pendingRequests.Remove(handler);
@@ -450,17 +455,30 @@ namespace Resonance
         {
             if (!info.HasError)
             {
-                handler.ContinuousObservable.OnNext(info.Message);
-
-                if (info.Completed)
+                if (!info.Completed)
+                {
+                    Task.Factory.StartNew(() =>
+                    {
+                        handler.ContinuousObservable.OnNext(info.Message);
+                    });
+                }
+                else
                 {
                     _pendingRequests.Remove(handler);
-                    handler.ContinuousObservable.OnCompleted();
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        handler.ContinuousObservable.OnNext(info.Message);
+                        handler.ContinuousObservable.OnCompleted();
+                    });
                 }
             }
             else
             {
-                handler.ContinuousObservable.OnError(new ResonanceResponseException(info.ErrorMessage));
+                Task.Factory.StartNew(() =>
+                {
+                    handler.ContinuousObservable.OnError(new ResonanceResponseException(info.ErrorMessage));
+                });
             }
         }
 
