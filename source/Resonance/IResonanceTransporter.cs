@@ -13,7 +13,7 @@ namespace Resonance
     /// Represents a transportation engine which can send and receive messages using a <see cref="IResonanceAdapter">Transport adapter</see>.
     /// </summary>
     /// <seealso cref="Tango.Transport.ITransportComponent" />
-    public interface IResonanceTransporter : IResonanceComponent, IDisposable
+    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent
     {
         /// <summary>
         /// Occurs when a new request message has been received.
@@ -57,14 +57,7 @@ namespace Resonance
         /// </summary>
         IResonanceDecoder Decoder { get; set; }
 
-        ResonanceComponentState State { get; }
-
         IResonanceTokenGenerator TokenGenerator { get; set; }
-
-        /// <summary>
-        /// Gets the last failed state exception/reason.
-        /// </summary>
-        Exception FailedStateException { get; }
 
         /// <summary>
         /// Gets or sets the default request timeout.
@@ -155,14 +148,5 @@ namespace Resonance
         Task SendErrorResponse(Exception exception, String token);
 
         Task SendErrorResponse(String message, string token);
-
-        Task Connect();
-
-        Task Disconnect();
-
-        /// <summary>
-        /// Clears all message queues.
-        /// </summary>
-        void ClearQueues();
     }
 }

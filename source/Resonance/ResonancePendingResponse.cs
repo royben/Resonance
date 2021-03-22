@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Resonance
 {
-    internal class ResonanceResponseHandler
+    internal class ResonancePendingResponse
     {
         public ResonanceResponse Response { get; set; }
         public TaskCompletionSource<Object> CompletionSource { get; set; }

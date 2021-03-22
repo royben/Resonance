@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Resonance
+namespace Resonance.Exceptions
 {
     public class ResonanceResponseException : Exception
     {

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Resonance
 {
-    public interface IResonanceDecoder
+    public interface IResonanceDecoder : IResonanceComponent
     {
         /// <summary>
         /// Decodes the specified data to an <see cref="ITangoMessage"/>.

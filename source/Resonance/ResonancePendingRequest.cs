@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Resonance
 {
-    internal class ResonanceRequestHandler : IResonanceRequestHandler
+    internal class ResonancePendingRequest : IResonancePendingRequest
     {
         public ResonanceRequest Request { get; set; }
         public ResonanceRequestConfig Config { get; set; }

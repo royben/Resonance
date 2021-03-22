@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Resonance
 {
-    internal class ResonanceContinuousRequestHandler : IResonanceRequestHandler
+    internal class ResonancePendingContinuousRequest : IResonancePendingRequest
     {
         public ResonanceRequest Request { get; set; }
         public ResonanceContinuousRequestConfig Config { get; set; }

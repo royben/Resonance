@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Resonance
 {
-    internal interface IResonanceRequestHandler
+    internal interface IResonancePendingRequest
     {
         ResonanceRequest Request { get; set; }
     }

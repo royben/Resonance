@@ -9,11 +9,8 @@ namespace Resonance
     /// <summary>
     /// Represents a transport component.
     /// </summary>
-    public interface IResonanceComponent
+    public interface IResonanceComponent : IDisposable
     {
-        /// <summary>
-        /// Gets or sets the name of the transport component.
-        /// </summary>
-        String ComponentName { get; set; }
+
     }
 }

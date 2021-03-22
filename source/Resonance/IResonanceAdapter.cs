@@ -11,17 +11,8 @@ namespace Resonance
     /// Represents a transport adapter capable of connecting, writing and receiving data from a stream.
     /// </summary>
     /// <seealso cref="Tango.Transport.ITransportComponent" />
-    public interface IResonanceAdapter : IResonanceComponent, INotifyPropertyChanged
+    public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent
     {
-        ResonanceComponentState State { get; }
-
-        event EventHandler<ResonanceComponentState> StateChanged;
-
-        /// <summary>
-        /// Gets the last failed state exception/reason.
-        /// </summary>
-        Exception FailedStateException { get; }
-
         /// <summary>
         /// Gets the total bytes received.
         /// </summary>
@@ -52,10 +43,5 @@ namespace Resonance
         /// Occurs when new data is available.
         /// </summary>
         event EventHandler<byte[]> DataAvailable;
-
-        /// <summary>
-        /// Gets or sets the adapter address.
-        /// </summary>
-        String Address { get; set; }
     }
 }
