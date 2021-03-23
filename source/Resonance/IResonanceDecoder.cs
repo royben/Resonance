@@ -11,6 +11,6 @@ namespace Resonance
         /// </summary>
         /// <param name="data">The data.</param>
         /// <returns></returns>
-        ResonanceTranscodingInformation Decode(byte[] data);
+        void Decode(byte[] data, ResonanceDecodingInformation info);
     }
 }

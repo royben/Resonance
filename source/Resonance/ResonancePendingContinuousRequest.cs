@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace Resonance
 {
@@ -11,5 +12,6 @@ namespace Resonance
         public ResonanceContinuousRequestConfig Config { get; set; }
         public IResonanceObservable ContinuousObservable { get; set; }
         public TimeSpan? ContinuousTimeout { get; set; }
+        public CancellationToken CancellationToken { get; set; }
     }
 }

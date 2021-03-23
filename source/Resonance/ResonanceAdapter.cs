@@ -14,6 +14,7 @@ namespace Resonance
         protected static long _component_counter = 1;
         private long _transferRateTotalBytes;
         private Timer _transferRateTimer;
+        private object _disposeLock = new object();
 
         #region Events
 
@@ -205,8 +206,14 @@ namespace Resonance
         /// </summary>
         public virtual void Dispose()
         {
-            Disconnect().Wait();
-            State = ResonanceComponentState.Disposed; 
+            lock (_disposeLock)
+            {
+                if (State != ResonanceComponentState.Disposed)
+                {
+                    Disconnect().Wait();
+                    State = ResonanceComponentState.Disposed;
+                }
+            }
         }
 
         #endregion

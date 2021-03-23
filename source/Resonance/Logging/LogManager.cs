@@ -67,7 +67,7 @@ namespace Resonance.Logging
         {
             ExceptionLogItem log = new ExceptionLogItem();
             log.CallerMethodName = caller;
-            log.CallerFile = file;
+            log.CallerFile = Path.GetFileNameWithoutExtension(file);
             log.CallerLineNumber = lineNumber;
             log.TimeStamp = DateTime.Now;
             log.Exception = e;
@@ -96,7 +96,7 @@ namespace Resonance.Logging
         {
             MessageLogItem log = new MessageLogItem();
             log.CallerMethodName = caller;
-            log.CallerFile = file;
+            log.CallerFile = Path.GetFileNameWithoutExtension(file);
             log.CallerLineNumber = lineNumber;
             log.TimeStamp = DateTime.Now;
             log.Level = level;

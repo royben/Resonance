@@ -16,7 +16,7 @@ namespace Resonance.Transcoding.Json
             _settings.TypeNameHandling = TypeNameHandling.Objects;
         }
 
-        public override byte[] Encode(ResonanceTranscodingInformation message)
+        public override byte[] Encode(ResonanceEncodingInformation message)
         {
             using (MemoryStream ms = new MemoryStream())
             {

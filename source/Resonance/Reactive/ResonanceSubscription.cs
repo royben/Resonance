@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Resonance.Reactive
 {
@@ -8,14 +9,22 @@ namespace Resonance.Reactive
     {
         private readonly Action _onDispose;
 
-        public ResonanceSubscription(Action onDispose)
+        private TaskCompletionSource<object> _completionSource = new TaskCompletionSource<object>();
+
+        public ResonanceSubscription(Action onDispose, TaskCompletionSource<object> completionSource)
         {
+            _completionSource = completionSource;
             _onDispose = onDispose;
         }
 
         public void Dispose()
         {
             _onDispose?.Invoke();
+        }
+
+        public Task WaitAsync()
+        {
+            return _completionSource.Task;
         }
     }
 }

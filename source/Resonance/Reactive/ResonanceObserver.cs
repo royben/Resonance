@@ -12,6 +12,13 @@ namespace Resonance.Reactive
 
         public bool IsCompleted { get; private set; }
 
+        public ResonanceObserver(Action<T> onNext, Action<Exception> onError, Action onComplete)
+        {
+            _onNext = onNext;
+            _onError = onError;
+            _onComplete = onComplete;
+        }
+
         public void OnCompleted()
         {
             if (!IsCompleted)

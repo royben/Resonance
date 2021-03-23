@@ -1,21 +1,14 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace Resonance.Transcoding.Json
+namespace Resonance.Tests.Common.Transcoding
 {
-    public class JsonDecoder : ResonanceDecoder
+    public class CorruptedDecoder : ResonanceDecoder
     {
-        private JsonSerializerSettings _settings;
-
-        public JsonDecoder()
-        {
-            _settings = new JsonSerializerSettings();
-            _settings.TypeNameHandling = TypeNameHandling.Objects;
-        }
-
         public override void Decode(byte[] data, ResonanceDecodingInformation info)
         {
             using (MemoryStream ms = new MemoryStream(data))
@@ -23,9 +16,7 @@ namespace Resonance.Transcoding.Json
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
                     ReadHeader(info, reader);
-
-                    String json = reader.ReadString();
-                    info.Message = JsonConvert.DeserializeObject(json, _settings);
+                    throw new CorruptedDecoderException();
                 }
             }
         }

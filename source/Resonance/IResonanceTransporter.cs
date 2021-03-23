@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using Resonance.Reactive;
 
 namespace Resonance
 {
@@ -126,7 +127,7 @@ namespace Resonance
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="config">Request configuration.</param>
         /// <returns></returns>
-        IObservable<Response> SendContinuousRequest<Request, Response>(Request request, ResonanceContinuousRequestConfig config = null);
+        ResonanceObservable<Response> SendContinuousRequest<Request, Response>(Request request, ResonanceContinuousRequestConfig config = null);
 
         /// <summary>
         /// Sends the response.

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Resonance
 {
-    public class ResonanceTranscodingInformation
+    public class ResonanceEncodingInformation
     {
         public bool IsRequest { get; set; }
         public String Token { get; set; }

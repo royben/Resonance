@@ -16,6 +16,6 @@ namespace Resonance
         /// </summary>
         /// <param name="message">The message.</param>
         /// <returns></returns>
-        byte[] Encode(ResonanceTranscodingInformation message);
+        byte[] Encode(ResonanceEncodingInformation message);
     }
 }
