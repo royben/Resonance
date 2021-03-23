@@ -6,7 +6,7 @@ namespace Resonance.Tokens
 {
     public class GuidTokenGenerator : IResonanceTokenGenerator
     {
-        public string Generate(object message)
+        public string GenerateToken(object message)
         {
             return Guid.NewGuid().ToString();
         }

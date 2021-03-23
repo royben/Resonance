@@ -6,6 +6,6 @@ namespace Resonance
 {
     public interface IResonanceTokenGenerator
     {
-        String Generate(Object message);
+        String GenerateToken(Object message);
     }
 }

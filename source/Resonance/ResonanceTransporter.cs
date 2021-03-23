@@ -170,7 +170,7 @@ namespace Resonance
             config.Timeout = config.Timeout ?? RequestTimeout;
 
             ResonanceRequest resonanceRequest = new ResonanceRequest();
-            resonanceRequest.Token = TokenGenerator.Generate(request);
+            resonanceRequest.Token = TokenGenerator.GenerateToken(request);
             resonanceRequest.Message = request;
 
             ResonancePendingRequest pendingRequest = new ResonancePendingRequest();
@@ -197,7 +197,7 @@ namespace Resonance
             config.ContinuousTimeout = config.ContinuousTimeout ?? RequestTimeout;
 
             ResonanceRequest resonanceRequest = new ResonanceRequest();
-            resonanceRequest.Token = TokenGenerator.Generate(request);
+            resonanceRequest.Token = TokenGenerator.GenerateToken(request);
             resonanceRequest.Message = request;
 
             ResonanceObservable<Response> observable = new ResonanceObservable<Response>();
