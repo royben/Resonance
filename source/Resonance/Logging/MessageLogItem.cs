@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Resonance.Logging
 {
     /// <summary>
-    /// Represents an exception log item.
+    /// Represents a Resonance information log item.
     /// </summary>
     public class MessageLogItem : LogItemBase
     {

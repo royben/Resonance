@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace Resonance.Logging
 {
     /// <summary>
-    /// Represents a base class for log items.
+    /// Represents a Resonance log item base class.
     /// </summary>
     public abstract class LogItemBase
     {
         /// <summary>
-        /// Gets or sets the caller method adding the exception.
+        /// Gets or sets the caller method.
         /// </summary>
         public String CallerMethodName { get; set; }
 
@@ -35,7 +35,7 @@ namespace Resonance.Logging
         public DateTime TimeStamp { get; set; }
 
         /// <summary>
-        /// Gets or sets the log category.
+        /// Gets or sets the log level.
         /// </summary>
         public LogLevel Level { get; set; }
 

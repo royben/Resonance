@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Resonance.Logging
 {
     /// <summary>
-    /// Represents the different logging categories.
+    /// Represents a Resonance log item level.
     /// </summary>
     public enum LogLevel
     {

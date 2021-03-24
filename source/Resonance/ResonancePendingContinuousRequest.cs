@@ -6,12 +6,30 @@ using System.Threading;
 
 namespace Resonance
 {
-    internal class ResonancePendingContinuousRequest : IResonancePendingRequest
+    /// <summary>
+    /// Represents a registration of an awaiting continuous request.
+    /// </summary>
+    /// <seealso cref="Resonance.IResonancePendingRequest" />
+    public class ResonancePendingContinuousRequest : IResonancePendingRequest
     {
+        /// <summary>
+        /// Gets or sets the Resonance request.
+        /// </summary>
         public ResonanceRequest Request { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request configuration.
+        /// </summary>
         public ResonanceContinuousRequestConfig Config { get; set; }
+
+        /// <summary>
+        /// Gets or sets the continuous request observable.
+        /// </summary>
         public IResonanceObservable ContinuousObservable { get; set; }
-        public TimeSpan? ContinuousTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request cancellation token.
+        /// </summary>
         public CancellationToken CancellationToken { get; set; }
     }
 }

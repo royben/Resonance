@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Resonance.Logging
 {
     /// <summary>
-    /// Represents logging manager for logging information and errors.
+    /// Represents the Resonance library log manager.
     /// </summary>
     public class LogManager
     {

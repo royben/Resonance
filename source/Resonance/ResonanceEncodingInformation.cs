@@ -4,13 +4,12 @@ using System.Text;
 
 namespace Resonance
 {
-    public class ResonanceEncodingInformation
+    /// <summary>
+    /// Represents an outgoing message encoding information.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceTranscodingInformation" />
+    public class ResonanceEncodingInformation : ResonanceTranscodingInformation
     {
-        public bool IsRequest { get; set; }
-        public String Token { get; set; }
-        public bool Completed { get; set; }
-        public bool HasError { get; set; }
-        public String ErrorMessage { get; set; }
-        public object Message { get; set; }
+
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a <see cref="ITransportComponent"/> state.
+    /// Represents an <see cref="IResonanceStateComponent"/> state.
     /// </summary>
     public enum ResonanceComponentState
     {

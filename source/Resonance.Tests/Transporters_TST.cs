@@ -23,6 +23,11 @@ namespace Resonance.Tests
         {
             Init();
 
+            IResonanceDecoder d;
+            ResonanceDecoder dd;
+            
+
+
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 

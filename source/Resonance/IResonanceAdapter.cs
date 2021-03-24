@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a transport adapter capable of connecting, writing and receiving data from a stream.
+    /// Represents a Resonance adapter capable of connecting, reading and writing data.
     /// </summary>
-    /// <seealso cref="Tango.Transport.ITransportComponent" />
+    /// <seealso cref="Resonance.IResonanceComponent" />
+    /// <seealso cref="Resonance.IResonanceStateComponent" />
+    /// <seealso cref="Resonance.IResonanceConnectionComponent" />
     public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent
     {
         /// <summary>
@@ -24,7 +26,7 @@ namespace Resonance
         long TotalBytesSent { get; }
 
         /// <summary>
-        /// Gets the adapter current transfer rate.
+        /// Gets the current transfer rate.
         /// </summary>
         long TransferRate { get; }
 
@@ -34,14 +36,14 @@ namespace Resonance
         bool EnableCompression { get; set; }
 
         /// <summary>
-        /// Writes the specified data to the stream.
+        /// Writes the specified encoded data.
         /// </summary>
         /// <param name="data">The data.</param>
         void Write(byte[] data);
 
         /// <summary>
-        /// Occurs when new data is available.
+        /// Occurs when a new encoded data is available.
         /// </summary>
-        event EventHandler<byte[]> DataAvailable;
+        event EventHandler<ResonanceAdapterDataAvailableEventArgs> DataAvailable;
     }
 }

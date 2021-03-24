@@ -8,6 +8,9 @@ using System.Timers;
 
 namespace Resonance
 {
+    /// <summary>
+    /// Represents an <see cref="IResonanceAdapter"/> base class
+    /// </summary>
     public abstract class ResonanceAdapter : ResonanceObject, IResonanceAdapter
     {
         protected long _totalBytes;
@@ -19,14 +22,14 @@ namespace Resonance
         #region Events
 
         /// <summary>
-        /// Occurs when component state changes.
+        /// Occurs when the current state of the component has changed.
         /// </summary>
-        public event EventHandler<ResonanceComponentState> StateChanged;
+        public event EventHandler<ResonanceComponentStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        /// Occurs when new data is available.
+        /// Occurs when a new encoded data is available.
         /// </summary>
-        public event EventHandler<byte[]> DataAvailable;
+        public event EventHandler<ResonanceAdapterDataAvailableEventArgs> DataAvailable;
 
         #endregion
 
@@ -54,7 +57,7 @@ namespace Resonance
 
         private long _transferRate;
         /// <summary>
-        /// Gets the adapter current transfer rate.
+        /// Gets the current transfer rate.
         /// </summary>
         public long TransferRate
         {
@@ -66,13 +69,13 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Gets the last failed state exception/reason.
+        /// Gets the last failed state exception of this component.
         /// </summary>
         public Exception FailedStateException { get; private set; }
 
         private ResonanceComponentState _state;
         /// <summary>
-        /// Gets the component state.
+        /// Gets the current state of the component.
         /// </summary>
         public ResonanceComponentState State
         {
@@ -81,8 +84,9 @@ namespace Resonance
             {
                 if (_state != value)
                 {
+                    var prev = _state;
                     _state = value;
-                    OnStateChanged(_state);
+                    OnStateChanged(prev, _state);
                 }
             }
         }
@@ -104,7 +108,7 @@ namespace Resonance
         /// <summary>
         /// Called when the adapter has failed.
         /// </summary>
-        /// <param name="ex">The ex.</param>
+        /// <param name="ex">The exception.</param>
         protected virtual void OnFailed(Exception ex)
         {
             FailedStateException = ex;
@@ -114,26 +118,27 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Called when there is new data available.
+        /// Called when there is new encoded data available.
         /// </summary>
-        /// <param name="data">The data.</param>
+        /// <param name="data">The encoded data.</param>
         protected virtual void OnDataAvailable(byte[] data)
         {
             TotalBytesReceived += data.Length;
             _totalBytes += data.Length;
             AppendTransferRateBytes(data.Length);
-            DataAvailable?.Invoke(this, data);
+            DataAvailable?.Invoke(this, new ResonanceAdapterDataAvailableEventArgs(data));
         }
 
         /// <summary>
-        /// Called when the adapter state has changed.
+        ///  Called when the adapter state has changed.
         /// </summary>
-        /// <param name="state">The state.</param>
-        protected virtual void OnStateChanged(ResonanceComponentState state)
+        /// <param name="previousState">The previous component state.</param>
+        /// <param name="newState">The new component state.</param>
+        protected virtual void OnStateChanged(ResonanceComponentState previousState, ResonanceComponentState newState)
         {
-            StateChanged?.Invoke(this, state);
+            StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
 
-            if (state == ResonanceComponentState.Connected)
+            if (newState == ResonanceComponentState.Connected)
             {
                 _totalBytes = 0;
                 TransferRate = 0;
@@ -159,7 +164,7 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Throws an exception if adapter is in a failed or disposed state.
+        /// Throws an exception if this adapter is in a disposed state.
         /// </summary>
         protected virtual void ThrowIfDisposed()
         {
@@ -170,11 +175,11 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Applies any additional headers if required.
+        /// Prepends the size of the byte array and returns a new byte array.
         /// </summary>
         /// <param name="data">The data.</param>
         /// <returns></returns>
-        protected virtual byte[] PrepandDataHeaderSize(byte[] data)
+        protected virtual byte[] PrependDataHeaderSize(byte[] data)
         {
             byte[] postData = data;
 
@@ -192,6 +197,10 @@ namespace Resonance
 
         #region Private Methods
 
+        /// <summary>
+        /// Appends the specified data length to the transfer rate bytes.
+        /// </summary>
+        /// <param name="dataLength">Length of the data.</param>
         protected void AppendTransferRateBytes(long dataLength)
         {
             _transferRateTotalBytes += dataLength;
@@ -221,20 +230,19 @@ namespace Resonance
         #region Abstract Methods
 
         /// <summary>
-        /// Writes the specified data to the stream.
+        /// Writes the specified encoded data.
         /// </summary>
         /// <param name="data">The data.</param>
-        /// <param name="immidiate">Writes the data as soon as possible while ignoring any message queuing and batching.</param>
         public abstract void Write(byte[] data);
 
         /// <summary>
-        /// Connects the transport component.
+        /// Connects this component.
         /// </summary>
         /// <returns></returns>
         public abstract Task Connect();
 
         /// <summary>
-        /// Disconnects the transport component.
+        /// Disconnects this component.
         /// </summary>
         /// <returns></returns>
         public abstract Task Disconnect();

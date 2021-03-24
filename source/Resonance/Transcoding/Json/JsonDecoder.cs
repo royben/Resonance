@@ -6,30 +6,40 @@ using System.Text;
 
 namespace Resonance.Transcoding.Json
 {
+    /// <summary>
+    /// Represents a Json Resonance message decoder.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceDecoder" />
     public class JsonDecoder : ResonanceDecoder
     {
-        private JsonSerializerSettings _settings;
+        /// <summary>
+        /// Gets the Json settings.
+        /// </summary>
+        public JsonSerializerSettings Settings { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonDecoder"/> class.
+        /// </summary>
         public JsonDecoder()
         {
-            _settings = new JsonSerializerSettings();
-            _settings.TypeNameHandling = TypeNameHandling.Objects;
+            Settings = new JsonSerializerSettings();
+            Settings.TypeNameHandling = TypeNameHandling.Objects;
         }
 
-        public override void Decode(byte[] data, ResonanceDecodingInformation info)
+        /// <summary>
+        /// Decodes a message using the specified binary reader.
+        /// </summary>
+        /// <param name="reader">The binary reader.</param>
+        /// <returns></returns>
+        protected override object Decode(BinaryReader reader)
         {
-            using (MemoryStream ms = new MemoryStream(data))
-            {
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    ReadHeader(info, reader);
-
-                    String json = reader.ReadString();
-                    info.Message = JsonConvert.DeserializeObject(json, _settings);
-                }
-            }
+            String json = reader.ReadString();
+            return JsonConvert.DeserializeObject(json, Settings);
         }
 
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
         public override void Dispose()
         {
             //throw new NotImplementedException();

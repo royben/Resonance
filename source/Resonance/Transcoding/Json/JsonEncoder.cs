@@ -6,31 +6,40 @@ using System.Text;
 
 namespace Resonance.Transcoding.Json
 {
+    /// <summary>
+    /// Represents a Json Resonance message encoder.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceEncoder" />
     public class JsonEncoder : ResonanceEncoder
     {
-        private JsonSerializerSettings _settings;
+        /// <summary>
+        /// Gets or sets the Json settings.
+        /// </summary>
+        public JsonSerializerSettings Settings { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonEncoder"/> class.
+        /// </summary>
         public JsonEncoder()
         {
-            _settings = new JsonSerializerSettings();
-            _settings.TypeNameHandling = TypeNameHandling.Objects;
+            Settings = new JsonSerializerSettings();
+            Settings.TypeNameHandling = TypeNameHandling.Objects;
         }
 
-        public override byte[] Encode(ResonanceEncodingInformation message)
+        /// <summary>
+        /// Encodes the specified message using the specified writer.
+        /// </summary>
+        /// <param name="writer">The binary writer.</param>
+        /// <param name="message">The message.</param>
+        protected override void Encode(BinaryWriter writer, object message)
         {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(ms))
-                {
-                    WriterHeader(message, writer);
-                    String json = JsonConvert.SerializeObject(message.Message, _settings);
-                    writer.Write(json);
-
-                    return ms.ToArray();
-                }
-            }
+            String json = JsonConvert.SerializeObject(message, Settings);
+            writer.Write(json);
         }
 
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
         public override void Dispose()
         {
             //throw new NotImplementedException();

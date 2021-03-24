@@ -7,15 +7,16 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a Transport message encoder capable of encoding or decoding <see cref="ITangoMessage">Tango Messages</see>.
+    /// Represents a Resonance encoder capable of encoding <see cref="ResonanceEncodingInformation"/> to a byte array.
     /// </summary>
+    /// <seealso cref="Resonance.IResonanceComponent" />
     public interface IResonanceEncoder : IResonanceComponent
     {
         /// <summary>
-        /// Encodes the specified message.
+        /// Encodes the specified encoding information.
         /// </summary>
-        /// <param name="message">The message.</param>
+        /// <param name="info">The encoding information.</param>
         /// <returns></returns>
-        byte[] Encode(ResonanceEncodingInformation message);
+        byte[] Encode(ResonanceEncodingInformation info);
     }
 }

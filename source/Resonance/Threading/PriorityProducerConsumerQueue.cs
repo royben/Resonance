@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace Resonance.Threading
 {
+    /// <summary>
+    /// Priority queue.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class PriorityProducerConsumerQueue<T>
     {
         private ProducerConsumerQueue<T> _lowPriorityCollection;

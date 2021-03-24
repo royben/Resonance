@@ -6,15 +6,24 @@ using System.Threading.Tasks;
 
 namespace Resonance
 {
-    public class ResonanceRequestFailedEventArgs : EventArgs
+    /// <summary>
+    /// Represents an <see cref="IResonanceTransporter.RequestFailed"/> event arguments.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceRequestEventArgs" />
+    public class ResonanceRequestFailedEventArgs : ResonanceRequestEventArgs
     {
-        public ResonanceRequest Request { get; set; }
-
+        /// <summary>
+        /// Gets or sets the failed exception.
+        /// </summary>
         public Exception Exception { get; set; }
 
-        public ResonanceRequestFailedEventArgs(ResonanceRequest request, Exception exception)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceRequestFailedEventArgs"/> class.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="exception">The exception.</param>
+        public ResonanceRequestFailedEventArgs(ResonanceRequest request, Exception exception) : base(request)
         {
-            Request = request;
             Exception = exception;
         }
     }

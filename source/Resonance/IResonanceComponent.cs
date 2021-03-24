@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a transport component.
+    /// Represents a Resonance component.
     /// </summary>
     public interface IResonanceComponent : IDisposable
     {

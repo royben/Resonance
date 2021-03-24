@@ -7,14 +7,22 @@ using System.Text;
 
 namespace Resonance
 {
-    public class ResonanceObject : INotifyPropertyChanged
+    /// <summary>
+    /// Represents a basic Resonance object with <see cref="INotifyPropertyChanged"/> support.
+    /// </summary>
+    /// <seealso cref="System.ComponentModel.INotifyPropertyChanged" />
+    public abstract class ResonanceObject : INotifyPropertyChanged
     {
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        /// <returns></returns>
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// Gets the default log manager.
         /// </summary>
-        public LogManager LogManager
+        protected LogManager LogManager
         {
             get { return LogManager.Default; }
         }
