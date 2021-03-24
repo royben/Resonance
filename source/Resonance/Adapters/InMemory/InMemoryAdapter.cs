@@ -6,14 +6,21 @@ using System.Threading.Tasks;
 
 namespace Resonance.Adapters.InMemory
 {
+    /// <summary>
+    /// Represents a Resonance In-Memory adapter for reading/writing data to and from another In-Memory adapter with the same address.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceAdapter" />
     public class InMemoryAdapter : ResonanceAdapter
     {
         private static int _counter;
 
+        /// <summary>
+        /// Gets the adapter address.
+        /// </summary>
         public String Address { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MemoryTransportAdapter"/> class.
+        /// Initializes a new instance of the <see cref="InMemoryAdapter"/> class.
         /// </summary>
         /// <param name="address">The address.</param>
         public InMemoryAdapter(String address)
@@ -23,7 +30,7 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Emulates in coming data.
+        /// Emulates data available event on this adapter.
         /// </summary>
         /// <param name="data">The data.</param>
         internal void EmulateDataAvailable(byte[] data)
@@ -32,7 +39,7 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Writes the specified data to the stream.
+        /// Writes the specified encoded data.
         /// </summary>
         /// <param name="data">The data.</param>
         public override void Write(byte[] data)
@@ -53,7 +60,7 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Connects the transport component.
+        /// Connects this component.
         /// </summary>
         /// <returns></returns>
         public override Task Connect()
@@ -64,7 +71,7 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Disconnects the transport component.
+        /// Disconnects this component.
         /// </summary>
         /// <returns></returns>
         public override Task Disconnect()
@@ -74,6 +81,12 @@ namespace Resonance.Adapters.InMemory
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             return $"In-Memory Adapter {_counter} ({Address})";
