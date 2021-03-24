@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Resonance
@@ -19,12 +20,18 @@ namespace Resonance
         public ResonanceCompressionConfiguration CompressionConfiguration { get; }
 
         /// <summary>
+        /// Gets the encryption configuration.
+        /// </summary>
+        public ResonanceEncryptionConfiguration EncryptionConfiguration { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceDecoder"/> class.
         /// </summary>
         public ResonanceDecoder()
         {
             _headerTranscoder = OnCreateHeaderTranscoder();
             CompressionConfiguration = new ResonanceCompressionConfiguration();
+            EncryptionConfiguration = new ResonanceEncryptionConfiguration();
         }
 
         /// <summary>
@@ -44,24 +51,53 @@ namespace Resonance
                     {
                         ms.Position = info.ActualMessageStreamPosition;
 
+                        byte[] msgData = reader.ReadBytes((int)(ms.Length - ms.Position));
+
                         if (info.IsCompressed)
                         {
-                            byte[] compressedData = reader.ReadBytes((int)(ms.Length - ms.Position));
-                            byte[] uncompressedData = CompressionConfiguration.Compressor.Decompress(compressedData);
-                            using (MemoryStream msgMs = new MemoryStream(uncompressedData))
-                            {
-                                using (BinaryReader msgReader = new BinaryReader(msgMs))
-                                {
-                                    info.Message = Decode(msgReader);
-                                }
-                            }
+                            msgData = DecompressMessageData(msgData);
                         }
-                        else
+
+                        if (info.IsEncrypted)
                         {
-                            info.Message = Decode(reader);
+                            msgData = DecryptMessageData(msgData);
+                        }
+
+                        using (MemoryStream msgMs = new MemoryStream(msgData))
+                        {
+                            using (BinaryReader msgReader = new BinaryReader(msgMs))
+                            {
+                                info.Message = Decode(msgReader);
+                            }
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Decompresses the message data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns></returns>
+        protected virtual byte[] DecompressMessageData(byte[] data)
+        {
+            return CompressionConfiguration.Compressor.Decompress(data);
+        }
+
+        /// <summary>
+        /// Decrypts the message data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns></returns>
+        protected virtual byte[] DecryptMessageData(byte[] data)
+        {
+            using (MemoryStream decryptedMs = new MemoryStream())
+            {
+                CryptoStream cs = new CryptoStream(decryptedMs, EncryptionConfiguration.SymmetricAlgorithm.CreateDecryptor(), CryptoStreamMode.Write);
+                cs.Write(data, 0, data.Length);
+                cs.Close();
+                return decryptedMs.ToArray();
             }
         }
 

@@ -16,6 +16,11 @@ namespace Resonance
         ResonanceCompressionConfiguration CompressionConfiguration { get; }
 
         /// <summary>
+        /// Gets the encryption configuration.
+        /// </summary>
+        ResonanceEncryptionConfiguration EncryptionConfiguration { get; }
+
+        /// <summary>
         /// Decodes the specified data and populates the specified decoding information.
         /// </summary>
         /// <param name="data">The encoded data.</param>

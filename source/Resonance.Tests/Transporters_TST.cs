@@ -160,6 +160,43 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
+        public void Send_And_Receive_Standard_Request_With_Encryption()
+        {
+            Init();
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Encoder.EncryptionConfiguration.Enable = true;
+            t2.Encoder.EncryptionConfiguration.Enable = true;
+
+            t1.Encoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
+            t1.Decoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
+            t2.Encoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
+            t2.Decoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
+
+            t1.Encoder.CompressionConfiguration.Enable = true;
+            t2.Encoder.CompressionConfiguration.Enable = true;
+
+            t1.Connect().Wait();
+            t2.Connect().Wait();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+            };
+
+            var request = new CalculateRequest() { A = 10, B = 15 };
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Assert.AreEqual(response.Sum, request.A + request.B);
+        }
+
+        [TestMethod]
         public void Send_And_Receive_Continuous_Request_With_Error()
         {
             Init();

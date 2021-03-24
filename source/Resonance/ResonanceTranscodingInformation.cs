@@ -15,6 +15,11 @@ namespace Resonance
         public bool IsCompressed { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable encryption decryption.
+        /// </summary>
+        public bool IsEncrypted { get; set; }
+
+        /// <summary>
         /// Gets or sets the type of the message.
         /// </summary>
         public ResonanceTranscodingInformationType Type { get; set; }

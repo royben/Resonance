@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Resonance
@@ -19,12 +20,18 @@ namespace Resonance
         public ResonanceCompressionConfiguration CompressionConfiguration { get; }
 
         /// <summary>
+        /// Gets the encryption configuration.
+        /// </summary>
+        public ResonanceEncryptionConfiguration EncryptionConfiguration { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceEncoder"/> class.
         /// </summary>
         public ResonanceEncoder()
         {
             _headerTranscoder = OnCreateHeaderTranscoder();
             CompressionConfiguration = new ResonanceCompressionConfiguration();
+            EncryptionConfiguration = new ResonanceEncryptionConfiguration();
         }
 
         /// <summary>
@@ -35,6 +42,7 @@ namespace Resonance
         public virtual byte[] Encode(ResonanceEncodingInformation info)
         {
             info.IsCompressed = CompressionConfiguration.Enable;
+            info.IsEncrypted = EncryptionConfiguration.Enable;
 
             using (MemoryStream ms = new MemoryStream())
             {
@@ -44,27 +52,59 @@ namespace Resonance
 
                     if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
                     {
-                        if (CompressionConfiguration.Enable)
+                        byte[] msgData = null;
+
+                        using (MemoryStream msgMs = new MemoryStream())
                         {
-                            using (MemoryStream msgMs = new MemoryStream())
+                            using (BinaryWriter msgWriter = new BinaryWriter(msgMs))
                             {
-                                using (BinaryWriter msgWriter = new BinaryWriter(msgMs))
-                                {
-                                    Encode(msgWriter, info.Message);
-                                    byte[] compressedData = CompressionConfiguration.Compressor.Compress(msgMs.ToArray());
-                                    writer.Write(compressedData);
-                                }
+                                Encode(msgWriter, info.Message);
+                                msgData = msgMs.ToArray();
                             }
                         }
-                        else
+
+                        if (EncryptionConfiguration.Enable)
                         {
-                            Encode(writer, info.Message);
+                            msgData = EncryptMessageData(msgData);
                         }
+
+                        if (CompressionConfiguration.Enable)
+                        {
+                            msgData = CompressMessageData(msgData);
+                        }
+
+                        writer.Write(msgData);
                     }
 
                     return ms.ToArray();
                 }
             }
+        }
+
+        /// <summary>
+        /// Encrypts the message data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns></returns>
+        protected virtual byte[] EncryptMessageData(byte[] data)
+        {
+            using (MemoryStream encryptedMs = new MemoryStream())
+            {
+                CryptoStream cs = new CryptoStream(encryptedMs, EncryptionConfiguration.SymmetricAlgorithm.CreateEncryptor(), CryptoStreamMode.Write);
+                cs.Write(data, 0, data.Length);
+                cs.Close();
+                return encryptedMs.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Compresses the message data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns></returns>
+        protected virtual byte[] CompressMessageData(byte[] data)
+        {
+            return CompressionConfiguration.Compressor.Compress(data);
         }
 
         /// <summary>
