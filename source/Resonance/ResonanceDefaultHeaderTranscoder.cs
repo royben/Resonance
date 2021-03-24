@@ -31,7 +31,8 @@ namespace Resonance
             writer.Write(info.Completed);
             writer.Write(info.HasError);
             writer.Write(info.ErrorMessage ?? String.Empty);
-            writer.Write((uint)writer.BaseStream.Position + sizeof(uint));
+            writer.Write((uint)writer.BaseStream.Position + sizeof(uint)); //Increase size when adding fields.
+            //Add new fields here...
         }
 
         /// <summary>
@@ -50,6 +51,11 @@ namespace Resonance
             info.HasError = reader.ReadBoolean();
             info.ErrorMessage = reader.ReadString();
             info.ActualMessageStreamPosition = reader.ReadUInt32();
+
+            if (info.ProtocolVersion >= ProtocolVersion)
+            {
+                //Add new fields here...
+            }
         }
     }
 }

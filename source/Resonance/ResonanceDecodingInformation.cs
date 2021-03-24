@@ -13,7 +13,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the protocol version.
         /// </summary>
-        public int ProtocolVersion { get; set; }
+        public byte ProtocolVersion { get; set; }
 
         /// <summary>
         /// Gets or sets the actual message stream position.
