@@ -3,14 +3,31 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Roy Ben Shabat</Authors>
+    <Company>Roy Ben Shabat</Company>
+    <Description>Resonance is a high performance real-time communication library with support for multiple protocols and end points.</Description>
+    <PackageProjectUrl>https://github.com/royben/Resonance</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
+    <PackageTags>Communication;RealTime;TCP;USB</PackageTags>
+    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance\bin\Debug\Resonance.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
