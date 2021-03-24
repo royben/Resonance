@@ -10,6 +10,11 @@ namespace Resonance
     public abstract class ResonanceTranscodingInformation
     {
         /// <summary>
+        /// Gets or sets a value indicating whether to enable compression/decompression.
+        /// </summary>
+        public bool IsCompressed { get; set; }
+
+        /// <summary>
         /// Gets or sets the type of the message.
         /// </summary>
         public ResonanceTranscodingInformationType Type { get; set; }

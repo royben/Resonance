@@ -11,6 +11,22 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceEncoder" />
     public abstract class ResonanceEncoder : IResonanceEncoder
     {
+        private IResonanceHeaderTranscoder _headerTranscoder;
+
+        /// <summary>
+        /// Gets or sets the message compression configuration.
+        /// </summary>
+        public ResonanceCompressionConfiguration CompressionConfiguration { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceEncoder"/> class.
+        /// </summary>
+        public ResonanceEncoder()
+        {
+            _headerTranscoder = OnCreateHeaderTranscoder();
+            CompressionConfiguration = new ResonanceCompressionConfiguration();
+        }
+
         /// <summary>
         /// Encodes the specified encoding information.
         /// </summary>
@@ -18,19 +34,32 @@ namespace Resonance
         /// <returns></returns>
         public virtual byte[] Encode(ResonanceEncodingInformation info)
         {
+            info.IsCompressed = CompressionConfiguration.Enable;
+
             using (MemoryStream ms = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(ms))
                 {
-                    writer.Write(info.Token);
-                    writer.Write((byte)info.Type);
-                    writer.Write(info.Completed);
-                    writer.Write(info.HasError);
-                    writer.Write(info.ErrorMessage ?? String.Empty);
+                    _headerTranscoder.Encode(writer, info);
 
                     if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
                     {
-                        Encode(writer, info.Message);
+                        if (CompressionConfiguration.Enable)
+                        {
+                            using (MemoryStream msgMs = new MemoryStream())
+                            {
+                                using (BinaryWriter msgWriter = new BinaryWriter(msgMs))
+                                {
+                                    Encode(msgWriter, info.Message);
+                                    byte[] compressedData = CompressionConfiguration.Compressor.Compress(msgMs.ToArray());
+                                    writer.Write(compressedData);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Encode(writer, info.Message);
+                        }
                     }
 
                     return ms.ToArray();
@@ -39,21 +68,20 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Override to use a different header transcoder other than the default.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
+        {
+            return new ResonanceDefaultHeaderTranscoder();
+        }
+
+        /// <summary>
         /// Encodes the specified message using the specified writer.
         /// </summary>
         /// <param name="writer">The binary writer.</param>
         /// <param name="message">The message.</param>
         protected abstract void Encode(BinaryWriter writer, Object message);
-
-        /// <summary>
-        /// Writers the header.
-        /// </summary>
-        /// <param name="info">The information.</param>
-        /// <param name="writer">The writer.</param>
-        protected virtual void WriterHeader(ResonanceEncodingInformation info, BinaryWriter writer)
-        {
-
-        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

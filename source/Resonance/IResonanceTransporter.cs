@@ -76,7 +76,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the keep alive configuration.
         /// </summary>
-        ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; set; }
+        ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the transporter will get in to a failed state if the <see cref="Adapter"/> fails.

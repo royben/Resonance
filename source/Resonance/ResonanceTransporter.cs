@@ -135,7 +135,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the keep alive configuration.
         /// </summary>
-        public ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; set; }
+        public ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; private set; }
 
         #endregion
 
@@ -474,8 +474,7 @@ namespace Resonance
                     });
                 }
 
-                byte[] data = Encoder.Encode(info);
-                Adapter.Write(data);
+                OnEncodeAndWriteData(info);
 
                 Task.Delay(pendingRequest.Config.Timeout.Value, pendingRequest.Config.CancellationToken).ContinueWith((x) =>
                 {
@@ -534,8 +533,7 @@ namespace Resonance
                     });
                 }
 
-                byte[] data = Encoder.Encode(info);
-                Adapter.Write(data);
+                OnEncodeAndWriteData(info);
 
                 Task.Delay(pendingContinuousRequest.Config.Timeout.Value).ContinueWith((x) =>
                 {
@@ -606,8 +604,7 @@ namespace Resonance
                 info.HasError = pendingResponse.Config.HasError;
                 info.Type = ResonanceTranscodingInformationType.Response;
 
-                byte[] data = Encoder.Encode(info);
-                Adapter.Write(data);
+                OnEncodeAndWriteData(info);
 
                 pendingResponse.CompletionSource.SetResult(true);
 
@@ -620,6 +617,16 @@ namespace Resonance
             {
                 pendingResponse.CompletionSource.SetException(ex);
             }
+        }
+
+        /// <summary>
+        /// Performs the actual encoding and adapter writing.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        protected virtual void OnEncodeAndWriteData(ResonanceEncodingInformation info)
+        {
+            byte[] data = Encoder.Encode(info);
+            Adapter.Write(data);
         }
 
         #endregion

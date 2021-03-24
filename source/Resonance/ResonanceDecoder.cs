@@ -11,6 +11,22 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceDecoder" />
     public abstract class ResonanceDecoder : IResonanceDecoder
     {
+        private IResonanceHeaderTranscoder _headerTranscoder;
+
+        /// <summary>
+        /// Gets or sets the message compression configuration.
+        /// </summary>
+        public ResonanceCompressionConfiguration CompressionConfiguration { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceDecoder"/> class.
+        /// </summary>
+        public ResonanceDecoder()
+        {
+            _headerTranscoder = OnCreateHeaderTranscoder();
+            CompressionConfiguration = new ResonanceCompressionConfiguration();
+        }
+
         /// <summary>
         /// Decodes the specified data and populates the specified decoding information.
         /// </summary>
@@ -22,18 +38,40 @@ namespace Resonance
             {
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
-                    info.Token = reader.ReadString();
-                    info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
-                    info.Completed = reader.ReadBoolean();
-                    info.HasError = reader.ReadBoolean();
-                    info.ErrorMessage = reader.ReadString();
+                    _headerTranscoder.Decode(reader, info);
 
                     if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
                     {
-                        info.Message = Decode(reader);
+                        ms.Position = info.ActualMessageStreamPosition;
+
+                        if (info.IsCompressed)
+                        {
+                            byte[] compressedData = reader.ReadBytes((int)(ms.Length - ms.Position));
+                            byte[] uncompressedData = CompressionConfiguration.Compressor.Decompress(compressedData);
+                            using (MemoryStream msgMs = new MemoryStream(uncompressedData))
+                            {
+                                using (BinaryReader msgReader = new BinaryReader(msgMs))
+                                {
+                                    info.Message = Decode(msgReader);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            info.Message = Decode(reader);
+                        }
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Override to use a different header transcoder other than the default.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
+        {
+            return new ResonanceDefaultHeaderTranscoder();
         }
 
         /// <summary>

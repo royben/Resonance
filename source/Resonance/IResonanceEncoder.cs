@@ -13,6 +13,11 @@ namespace Resonance
     public interface IResonanceEncoder : IResonanceComponent
     {
         /// <summary>
+        /// Gets or sets the message compression configuration.
+        /// </summary>
+        ResonanceCompressionConfiguration CompressionConfiguration { get; }
+
+        /// <summary>
         /// Encodes the specified encoding information.
         /// </summary>
         /// <param name="info">The encoding information.</param>

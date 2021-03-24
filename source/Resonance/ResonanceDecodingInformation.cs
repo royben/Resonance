@@ -11,6 +11,16 @@ namespace Resonance
     public class ResonanceDecodingInformation : ResonanceTranscodingInformation
     {
         /// <summary>
+        /// Gets or sets the protocol version.
+        /// </summary>
+        public int ProtocolVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the actual message stream position.
+        /// </summary>
+        public uint ActualMessageStreamPosition { get; set; }
+
+        /// <summary>
         /// Gets or sets an optional decoder exception that has occurred during the decoding.
         /// </summary>
         public Exception DecoderException { get; set; }
