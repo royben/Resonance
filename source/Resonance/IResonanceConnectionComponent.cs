@@ -8,7 +8,7 @@ namespace Resonance
     /// <summary>
     /// Represents a Resonance component capable of connecting and disconnecting.
     /// </summary>
-    public interface IResonanceConnectionComponent
+    public interface IResonanceConnectionComponent : IResonanceComponent
     {
         /// <summary>
         /// Connects this component.

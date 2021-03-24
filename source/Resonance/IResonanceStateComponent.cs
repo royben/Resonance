@@ -7,7 +7,7 @@ namespace Resonance
     /// <summary>
     /// Represents a Resonance component with support for state change notifications.
     /// </summary>
-    public interface IResonanceStateComponent
+    public interface IResonanceStateComponent : IResonanceComponent
     {
         /// <summary>
         /// Occurs when the current state of the component has changed.
