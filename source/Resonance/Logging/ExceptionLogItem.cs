@@ -19,7 +19,14 @@ namespace Resonance.Logging
         /// <returns></returns>
         protected override string GetToStringMessage()
         {
-            return $"{Message}\n{Exception.FlattenException()}";
+            if (Message != null)
+            {
+                return $"{Message}\n{Exception.FlattenException()}";
+            }
+            else
+            {
+                return $"{Exception.FlattenException()}";
+            }
         }
     }
 }

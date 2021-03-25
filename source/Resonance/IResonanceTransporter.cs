@@ -49,6 +49,11 @@ namespace Resonance
         event EventHandler<ResonanceResponseFailedEventArgs> ResponseFailed;
 
         /// <summary>
+        /// Occurs when the keep alive mechanism is enabled and has failed by reaching the given timeout and retries.
+        /// </summary>
+        event EventHandler KeepAliveFailed;
+
+        /// <summary>
         /// Gets or sets the Resonance adapter used to send and receive actual encoded data.
         /// </summary>
         IResonanceAdapter Adapter { get; set; }

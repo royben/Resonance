@@ -21,6 +21,7 @@ namespace Resonance
     {
         private static int _globalTransporterCounter = 1;
         private int _transporterCounter;
+        private DateTime _lastIncomingMessageTime;
 
         private object _disposeLock = new object();
 
@@ -29,6 +30,7 @@ namespace Resonance
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
         private Thread _pushThread;
         private Thread _pullThread;
+        private Thread _keepAliveThread;
 
         #region Events
 
@@ -66,6 +68,11 @@ namespace Resonance
         /// Occurs when the current state of the component has changed.
         /// </summary>
         public event EventHandler<ResonanceComponentStateChangedEventArgs> StateChanged;
+
+        /// <summary>
+        /// Occurs when the keep alive mechanism is enabled and has failed by reaching the given timeout and retries.
+        /// </summary>
+        public event EventHandler KeepAliveFailed;
 
         #endregion
 
@@ -149,6 +156,8 @@ namespace Resonance
         public ResonanceTransporter()
         {
             _transporterCounter = _globalTransporterCounter++;
+
+            _lastIncomingMessageTime = DateTime.Now;
 
             KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
             TokenGenerator = new GuidTokenGenerator();
@@ -460,7 +469,15 @@ namespace Resonance
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingRequest.Request.Token;
                 info.Message = pendingRequest.Request.Message;
-                info.Type = ResonanceTranscodingInformationType.Request;
+
+                if (pendingRequest.Request.Message is ResonanceKeepAliveRequest)
+                {
+                    info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
+                }
+                else
+                {
+                    info.Type = ResonanceTranscodingInformationType.Request;
+                }
 
                 if (pendingRequest.Config.CancellationToken != null)
                 {
@@ -607,7 +624,15 @@ namespace Resonance
                 info.Completed = pendingResponse.Config.Completed;
                 info.ErrorMessage = pendingResponse.Config.ErrorMessage;
                 info.HasError = pendingResponse.Config.HasError;
-                info.Type = ResonanceTranscodingInformationType.Response;
+
+                if (pendingResponse.Response.Message is ResonanceKeepAliveResponse)
+                {
+                    info.Type = ResonanceTranscodingInformationType.KeepAliveResponse;
+                }
+                else
+                {
+                    info.Type = ResonanceTranscodingInformationType.Response;
+                }
 
                 OnEncodeAndWriteData(info);
 
@@ -668,6 +693,10 @@ namespace Resonance
                             {
                                 OnIncomingRequest(info);
                             }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.KeepAliveRequest)
+                        {
+                            OnKeepAliveRequestReceived(info);
                         }
                         else
                         {
@@ -802,6 +831,85 @@ namespace Resonance
             }
         }
 
+        /// <summary>
+        /// Called when an incoming keep alive request has been received.
+        /// </summary>
+        /// <param name="info">The decoding information.</param>
+        protected async virtual void OnKeepAliveRequestReceived(ResonanceDecodingInformation info)
+        {
+            if (KeepAliveConfiguration.EnableAutoResponse)
+            {
+                await SendResponse(new ResonanceKeepAliveResponse(), info.Token);
+            }
+        }
+
+        #endregion
+
+        #region KeepAlive
+
+        private void KeepAliveThreadMethod()
+        {
+            int retryCounter = 0;
+
+            while (State == ResonanceComponentState.Connected)
+            {
+                if (KeepAliveConfiguration.Enabled)
+                {
+                    try
+                    {
+                        retryCounter++;
+
+                        var response = SendRequest<ResonanceKeepAliveRequest, ResonanceKeepAliveResponse>(new ResonanceKeepAliveRequest(), new ResonanceRequestConfig()
+                        {
+                            Priority = QueuePriority.High
+                        }).GetAwaiter().GetResult();
+
+                        retryCounter = 0;
+                    }
+                    catch (TimeoutException)
+                    {
+                        if (KeepAliveConfiguration.Enabled)
+                        {
+                            if (DateTime.Now - _lastIncomingMessageTime > DefaultRequestTimeout)
+                            {
+                                if (retryCounter >= KeepAliveConfiguration.Retries)
+                                {
+                                    var keepAliveException = new ResonanceKeepAliveException("The transporter has not received a KeepAlive response within the given time.");
+                                    LogManager.Log(keepAliveException);
+                                    OnKeepAliveFailed();
+
+                                    if (KeepAliveConfiguration.FailTransporterOnTimeout)
+                                    {
+                                        OnFailed(keepAliveException);
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        retryCounter = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    LogManager.Log($"{this}: The transporter has not received a KeepAlive response within the given time. Retrying ({retryCounter}/{KeepAliveConfiguration.Retries})...", LogLevel.Warning);
+                                }
+                            }
+                            else
+                            {
+                                retryCounter = 0;
+                                LogManager.Log($"{this}: The transporter has not received a KeepAlive response within the given time, but was rescued due to other message received within the given time.", LogLevel.Warning);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(ex, $"{this}: Error occurred on keep alive mechanism.");
+                    }
+                }
+
+                Thread.Sleep((int)Math.Max(KeepAliveConfiguration.Interval.TotalMilliseconds, 500));
+            }
+        }
+
         #endregion
 
         #region Start/Stop Threads
@@ -821,6 +929,11 @@ namespace Resonance
             _pushThread.Name = $"{this} Push Thread";
             _pushThread.IsBackground = true;
             _pushThread.Start();
+
+            _keepAliveThread = new Thread(KeepAliveThreadMethod);
+            _keepAliveThread.Name = $"{this} KeepAlive Thread";
+            _keepAliveThread.IsBackground = true;
+            _keepAliveThread.Start();
         }
 
         private Task StopThreads()
@@ -970,9 +1083,17 @@ namespace Resonance
         /// </summary>
         /// <param name="response">The response.</param>
         /// <param name="exception">The exception.</param>
-        protected virtual void OnResponseFailed(ResonanceResponse response,Exception exception)
+        protected virtual void OnResponseFailed(ResonanceResponse response, Exception exception)
         {
             ResponseFailed?.Invoke(this, new ResonanceResponseFailedEventArgs(response, exception));
+        }
+
+        /// <summary>
+        /// Called when when the keep alive mechanism is enabled and has failed.
+        /// </summary>
+        protected virtual void OnKeepAliveFailed()
+        {
+            KeepAliveFailed?.Invoke(this, new EventArgs());
         }
 
         #endregion
@@ -1031,6 +1152,7 @@ namespace Resonance
         /// <param name="e">The <see cref="ResonanceAdapterDataAvailableEventArgs"/> instance containing the event data.</param>
         protected virtual void OnAdapterDataAvailable(object sender, ResonanceAdapterDataAvailableEventArgs e)
         {
+            _lastIncomingMessageTime = DateTime.Now;
             _arrivedMessages.BlockEnqueue(e.Data);
         }
 

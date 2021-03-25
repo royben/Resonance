@@ -57,7 +57,6 @@ namespace Resonance.Reactive
         /// <summary>
         /// Notifies the provider that an observer is to receive notifications.
         /// </summary>
-        /// <param name="observer">The object that is to receive notifications.</param>
         /// <param name="next">Provide a delegate for an incoming responses.</param>
         /// <param name="error">Provide a delegate for an error response.</param>
         /// <param name="completed">Provide a delegate for when the continuous request completes.</param>

@@ -41,8 +41,8 @@ namespace Resonance
         /// <returns></returns>
         public virtual byte[] Encode(ResonanceEncodingInformation info)
         {
-            info.IsCompressed = CompressionConfiguration.Enable;
-            info.IsEncrypted = EncryptionConfiguration.Enable;
+            info.IsCompressed = CompressionConfiguration.Enabled;
+            info.IsEncrypted = EncryptionConfiguration.Enabled;
 
             using (MemoryStream ms = new MemoryStream())
             {
@@ -63,12 +63,12 @@ namespace Resonance
                             }
                         }
 
-                        if (EncryptionConfiguration.Enable)
+                        if (EncryptionConfiguration.Enabled)
                         {
                             msgData = EncryptMessageData(msgData);
                         }
 
-                        if (CompressionConfiguration.Enable)
+                        if (CompressionConfiguration.Enabled)
                         {
                             msgData = CompressMessageData(msgData);
                         }

@@ -13,7 +13,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets a value indicating whether to enable compression.
         /// </summary>
-        public bool Enable { get; set; }
+        public bool Enabled { get; set; }
 
         /// <summary>
         /// Gets or sets the compressor instance.

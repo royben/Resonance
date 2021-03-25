@@ -13,7 +13,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets a value indicating whether to enable encryption.
         /// </summary>
-        public bool Enable { get; set; }
+        public bool Enabled { get; set; }
 
         /// <summary>
         /// Gets or sets the symmetric algorithm used for encryption decryption.

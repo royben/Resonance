@@ -39,7 +39,6 @@ namespace Resonance
         /// <summary>
         /// Raises the property changed event.
         /// </summary>
-        /// <param name="propName">Name of the property.</param>
         protected virtual void RaisePropertyChangedAuto([CallerMemberName] string caller = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));

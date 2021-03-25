@@ -12,22 +12,27 @@ namespace Resonance
         /// <summary>
         /// Gets or sets a value indicating whether to use the keep alive mechanism.
         /// </summary>
-        bool Enable { get; set; }
+        public bool Enabled { get; set; }
 
         /// <summary>
-        /// Gets or sets the timeout to fail this transporter.
+        /// Gets or sets the KeepAlive request interval.
         /// </summary>
-        TimeSpan Timeout { get; set; }
+        public TimeSpan Interval { get; set; }
 
         /// <summary>
         /// Gets or sets the keep alive retries.
         /// </summary>
-        int Retries { get; set; }
+        public uint Retries { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to auto respond to keep alive requests.
         /// </summary>
-        bool EnableAutoResponse { get; set; }
+        public bool EnableAutoResponse { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the transporter should fail if the keep alive has reached the given timeout and retries.
+        /// </summary>
+        public bool FailTransporterOnTimeout { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceKeepAliveConfiguration"/> class.
@@ -35,7 +40,8 @@ namespace Resonance
         public ResonanceKeepAliveConfiguration()
         {
             EnableAutoResponse = true;
-            Timeout = TimeSpan.FromSeconds(2);
+            Interval = TimeSpan.FromSeconds(2);
+            FailTransporterOnTimeout = true;
             Retries = 5;
         }
     }

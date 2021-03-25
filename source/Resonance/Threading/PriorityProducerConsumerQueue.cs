@@ -30,6 +30,7 @@ namespace Resonance.Threading
         /// Enqueues the specified item.
         /// </summary>
         /// <param name="item">The item.</param>
+        /// <param name="priority">Queue priority.</param>
         public void BlockEnqueue(T item, QueuePriority priority = QueuePriority.Standard)
         {
             switch (priority)

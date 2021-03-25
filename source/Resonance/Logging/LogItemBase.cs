@@ -61,7 +61,7 @@ namespace Resonance.Logging
         /// </returns>
         public override string ToString()
         {
-            return $"[{TimeStamp.ToString("HH:mm:ss.ff")}] [{Level}] [{CallerFile}] [{CallerMethodName}] [{CallerLineNumber}] [{GetToStringMessage()}]";
+            return $"[{TimeStamp.ToString("HH:mm:ss.ff")}] [{Level}] [{CallerFile}] [{CallerMethodName}] [{CallerLineNumber}]: {GetToStringMessage()}";
         }
     }
 }
