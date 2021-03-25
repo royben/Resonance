@@ -36,6 +36,16 @@ namespace Resonance
         bool EnableCompression { get; set; }
 
         /// <summary>
+        /// Gets or sets the adapter data writing mode.
+        /// </summary>
+        ResonanceAdapterWriteMode WriteMode { get; set; }
+
+        /// <summary>
+        /// Gets the queue write mode interval when <see cref="WriteMode"/> is set to <see cref="ResonanceAdapterWriteMode.Queue"/>.
+        /// </summary>
+        TimeSpan QueueWriteModeInterval { get; set; }
+
+        /// <summary>
         /// Writes the specified encoded data.
         /// </summary>
         /// <param name="data">The data.</param>

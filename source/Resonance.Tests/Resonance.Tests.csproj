@@ -55,10 +55,12 @@
     <Compile Include="Common\Messages\ProgressRequest.cs" />
     <Compile Include="Common\Messages\ProgressResponse.cs" />
     <Compile Include="Common\ResonanceTest.cs" />
+    <Compile Include="Common\TestHelper.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoderException.cs" />
     <Compile Include="Transporters_TST.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Adapters_TST.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

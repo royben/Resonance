@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Resonance.Logging;
 using Resonance.Tests.Common.Logging;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,14 @@ namespace Resonance.Tests.Common
         {
             get { return testContextInstance; }
             set { testContextInstance = value; }
+        }
+
+        /// <summary>
+        /// Gets the default log manager.
+        /// </summary>
+        public LogManager LogManager
+        {
+            get { return LogManager.Default; }
         }
 
         protected void Init()

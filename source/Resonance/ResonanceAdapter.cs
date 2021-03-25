@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.Threading;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -13,11 +14,14 @@ namespace Resonance
     /// </summary>
     public abstract class ResonanceAdapter : ResonanceObject, IResonanceAdapter
     {
-        protected long _totalBytes;
-        protected static long _component_counter = 1;
+        private long _totalBytes;
+        private static int _component_counter = 1;
         private long _transferRateTotalBytes;
         private Timer _transferRateTimer;
         private object _disposeLock = new object();
+        private System.Threading.Thread _pushThread;
+        private ProducerConsumerQueue<byte[]> _pushQueue;
+        private int _adapterCounter;
 
         #region Events
 
@@ -101,6 +105,30 @@ namespace Resonance
             set { _enableCompression = value; RaisePropertyChangedAuto(); }
         }
 
+        /// <summary>
+        /// Gets or sets the adapter data writing mode.
+        /// </summary>
+        public ResonanceAdapterWriteMode WriteMode { get; set; }
+
+        /// <summary>
+        /// Gets the queue write mode interval when <see cref="WriteMode" /> is set to <see cref="ResonanceAdapterWriteMode.Queue" />.
+        /// </summary>
+        public TimeSpan QueueWriteModeInterval { get; set; }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceAdapter"/> class.
+        /// </summary>
+        public ResonanceAdapter()
+        {
+            _adapterCounter = _component_counter++;
+            WriteMode = ResonanceAdapterWriteMode.Direct;
+            QueueWriteModeInterval = TimeSpan.FromMilliseconds(10);
+        }
+
         #endregion
 
         #region Virtual Methods
@@ -179,18 +207,9 @@ namespace Resonance
         /// </summary>
         /// <param name="data">The data.</param>
         /// <returns></returns>
-        protected virtual byte[] PrependDataHeaderSize(byte[] data)
+        protected virtual byte[] PrependDataSize(byte[] data)
         {
-            byte[] postData = data;
-
-            postData = BitConverter.GetBytes(data.Length).Concat(data).ToArray();
-
-            TotalBytesSent += postData.Length;
-            _totalBytes += postData.Length;
-
-            AppendTransferRateBytes(postData.Length);
-
-            return postData;
+            return BitConverter.GetBytes(data.Length).Concat(data).ToArray();
         }
 
         #endregion
@@ -227,25 +246,92 @@ namespace Resonance
 
         #endregion
 
-        #region Abstract Methods
-
-        /// <summary>
-        /// Writes the specified encoded data.
-        /// </summary>
-        /// <param name="data">The data.</param>
-        public abstract void Write(byte[] data);
+        #region Public Methods
 
         /// <summary>
         /// Connects this component.
         /// </summary>
         /// <returns></returns>
-        public abstract Task Connect();
+        public async Task Connect()
+        {
+            ThrowIfDisposed();
+            await OnConnect();
+
+            if (WriteMode == ResonanceAdapterWriteMode.Queue)
+            {
+                _pushQueue = new ProducerConsumerQueue<byte[]>();
+                _pushThread = new System.Threading.Thread(PushThreadMethod);
+                _pushThread.IsBackground = true;
+                _pushThread.Name = $"{this} Push Thread";
+                _pushThread.Start();
+            }
+        }
 
         /// <summary>
         /// Disconnects this component.
         /// </summary>
         /// <returns></returns>
-        public abstract Task Disconnect();
+        public async Task Disconnect()
+        {
+            await OnDisconnect();
+
+            if (WriteMode == ResonanceAdapterWriteMode.Queue)
+            {
+                _pushQueue.BlockEnqueue(null); //Will terminate the push thread.
+            }
+        }
+
+        /// <summary>
+        /// Writes the specified encoded data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        public void Write(byte[] data)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (WriteMode == ResonanceAdapterWriteMode.Direct)
+                {
+                    OnWrite(data);
+                }
+                else
+                {
+                    _pushQueue.BlockEnqueue(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                OnFailed(ex);
+                throw;
+            }
+
+            TotalBytesSent += data.Length;
+            _totalBytes += data.Length;
+            AppendTransferRateBytes(data.Length);
+        }
+
+        #endregion
+
+        #region Abstract Methods
+
+        /// <summary>
+        /// Called when the adapter is connecting.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract Task OnConnect();
+
+        /// <summary>
+        /// Called when the adapter is disconnecting.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract Task OnDisconnect();
+
+        /// <summary>
+        /// Called when the adapter is writing.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        protected abstract void OnWrite(byte[] data);
 
         #endregion
 
@@ -259,7 +345,50 @@ namespace Resonance
         /// </returns>
         public override string ToString()
         {
-            return $"{this.GetType().Name}";
+            return $"{this.GetType().Name} {_adapterCounter}";
+        }
+
+        #endregion
+
+        #region Push Queue Thread
+
+        private void PushThreadMethod()
+        {
+            try
+            {
+                while (State == ResonanceComponentState.Connected)
+                {
+                    List<byte[]> dataCollection = new List<byte[]>();
+
+                    var data = _pushQueue.BlockDequeue();
+                    if (data == null) return;
+
+                    var first = true;
+
+                    while (_pushQueue.Count > 0 || first)
+                    {
+                        if (!first)
+                        {
+                            data = _pushQueue.BlockDequeue();
+                        }
+                        else
+                        {
+                            first = false;
+                        }
+
+                        dataCollection.Add(data);
+                    }
+
+                    if (dataCollection.Count > 0)
+                    {
+                        byte[] allData = dataCollection.SelectMany(a => a).ToArray();
+                        OnWrite(allData);
+                    }
+
+                    System.Threading.Thread.Sleep(QueueWriteModeInterval);
+                }
+            }
+            catch (System.Threading.ThreadAbortException) { }
         }
 
         #endregion

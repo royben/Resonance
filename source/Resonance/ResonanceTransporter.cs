@@ -19,7 +19,9 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceTransporter" />
     public abstract class ResonanceTransporter : ResonanceObject, IResonanceTransporter
     {
-        private static int _transporterCounter;
+        private static int _globalTransporterCounter = 1;
+        private int _transporterCounter;
+
         private object _disposeLock = new object();
 
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
@@ -146,7 +148,7 @@ namespace Resonance
         /// </summary>
         public ResonanceTransporter()
         {
-            _transporterCounter++;
+            _transporterCounter = _globalTransporterCounter++;
 
             KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
             TokenGenerator = new GuidTokenGenerator();
@@ -414,7 +416,7 @@ namespace Resonance
                 while (State == ResonanceComponentState.Connected)
                 {
                     Object pending = _sendingQueue.BlockDequeue();
-                    if (pending == null) return;
+                    if (pending == null || State != ResonanceComponentState.Connected) return;
 
                     if (pending is ResonancePendingRequest pendingRequest)
                     {
@@ -464,27 +466,27 @@ namespace Resonance
                 {
                     Task.Factory.StartNew(() =>
                     {
-                        pendingRequest.Config.CancellationToken.WaitHandle.WaitOne(pendingRequest.Config.Timeout.Value);
-
-                        if (pendingRequest.Config.CancellationToken.IsCancellationRequested)
+                        while (!pendingRequest.CompletionSource.Task.IsCompleted)
                         {
-                            _pendingRequests.Remove(pendingRequest);
-                            pendingRequest.CompletionSource.SetException(new OperationCanceledException());
+                            Thread.Sleep(10);
+
+                            if (pendingRequest.Config.CancellationToken.Value.IsCancellationRequested)
+                            {
+                                _pendingRequests.Remove(pendingRequest);
+                                pendingRequest.CompletionSource.SetException(new OperationCanceledException());
+                            }
                         }
                     });
                 }
 
                 OnEncodeAndWriteData(info);
 
-                Task.Delay(pendingRequest.Config.Timeout.Value, pendingRequest.Config.CancellationToken).ContinueWith((x) =>
+                Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
                 {
                     if (!pendingRequest.CompletionSource.Task.IsCompleted)
                     {
-                        if (pendingRequest.Config.CancellationToken == null || !pendingRequest.Config.CancellationToken.IsCancellationRequested)
-                        {
-                            _pendingRequests.Remove(pendingRequest);
-                            pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.Seconds} seconds and has timed out."));
-                        }
+                        _pendingRequests.Remove(pendingRequest);
+                        pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.Seconds} seconds and has timed out."));
                     }
                 });
 
@@ -523,12 +525,15 @@ namespace Resonance
                 {
                     Task.Factory.StartNew(() =>
                     {
-                        pendingContinuousRequest.Config.CancellationToken.WaitHandle.WaitOne(pendingContinuousRequest.Config.Timeout.Value);
-
-                        if (pendingContinuousRequest.Config.CancellationToken.IsCancellationRequested)
+                        while (!pendingContinuousRequest.ContinuousObservable.IsCompleted)
                         {
-                            _pendingRequests.Remove(pendingContinuousRequest);
-                            pendingContinuousRequest.ContinuousObservable.OnError(new OperationCanceledException());
+                            Thread.Sleep(10);
+
+                            if (pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
+                            {
+                                _pendingRequests.Remove(pendingContinuousRequest);
+                                pendingContinuousRequest.ContinuousObservable.OnError(new OperationCanceledException());
+                            }
                         }
                     });
                 }
@@ -539,7 +544,7 @@ namespace Resonance
                 {
                     if (!pendingContinuousRequest.ContinuousObservable.FirstMessageArrived)
                     {
-                        if (pendingContinuousRequest.Config.CancellationToken == null || !pendingContinuousRequest.Config.CancellationToken.IsCancellationRequested)
+                        if (pendingContinuousRequest.Config.CancellationToken == null || !pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
                         {
                             _pendingRequests.Remove(pendingContinuousRequest);
                             pendingContinuousRequest.ContinuousObservable.OnError(new TimeoutException($"{pendingContinuousRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingContinuousRequest.Config.Timeout.Value.Seconds} seconds and has timed out."));
@@ -616,6 +621,7 @@ namespace Resonance
             catch (Exception ex)
             {
                 pendingResponse.CompletionSource.SetException(ex);
+                OnResponseFailed(pendingResponse.Response, ex);
             }
         }
 
@@ -640,7 +646,7 @@ namespace Resonance
                 while (State == ResonanceComponentState.Connected)
                 {
                     byte[] data = _arrivedMessages.BlockDequeue();
-                    if (data == null) return;
+                    if (data == null || State != ResonanceComponentState.Connected) return;
 
                     try
                     {
@@ -957,6 +963,16 @@ namespace Resonance
         protected virtual void OnResponseReceived(ResonanceResponse response)
         {
             ResponseReceived?.Invoke(this, new ResonanceResponseEventArgs(response));
+        }
+
+        /// <summary>
+        /// Called when a response has failed.
+        /// </summary>
+        /// <param name="response">The response.</param>
+        /// <param name="exception">The exception.</param>
+        protected virtual void OnResponseFailed(ResonanceResponse response,Exception exception)
+        {
+            ResponseFailed?.Invoke(this, new ResonanceResponseFailedEventArgs(response, exception));
         }
 
         #endregion

@@ -39,31 +39,10 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Writes the specified encoded data.
-        /// </summary>
-        /// <param name="data">The data.</param>
-        public override void Write(byte[] data)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                TotalBytesSent += data.Length;
-                _totalBytes += data.Length;
-                InMemoryAdaptersManager.Write(this, data);
-            }
-            catch (Exception ex)
-            {
-                OnFailed(LogManager.Log(ex));
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Connects this component.
+        /// Called when the adapter is connecting.
         /// </summary>
         /// <returns></returns>
-        public override Task Connect()
+        protected override Task OnConnect()
         {
             InMemoryAdaptersManager.RegisterAdapter(this);
             State = ResonanceComponentState.Connected;
@@ -71,14 +50,23 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
-        /// Disconnects this component.
+        /// Called when the adapter is disconnecting.
         /// </summary>
         /// <returns></returns>
-        public override Task Disconnect()
+        protected override Task OnDisconnect()
         {
             InMemoryAdaptersManager.UnregisterAdapter(this);
             State = ResonanceComponentState.Disconnected;
             return Task.FromResult(true);
+        }
+
+        /// <summary>
+        /// Called when the adapter is writing.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        protected override void OnWrite(byte[] data)
+        {
+            InMemoryAdaptersManager.Write(this, data);
         }
 
         /// <summary>

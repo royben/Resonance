@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.645
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance", "Resonance\Resonance.csproj", "{67F02CFB-010F-47F2-8752-2D615CEF135F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Tests", "Resonance.Tests\Resonance.Tests.csproj", "{CE621B6E-6929-4420-AA4E-779886836045}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Tests.CLI", "Resonance.Tests.CLI\Resonance.Tests.CLI.csproj", "{7D1449FF-0B5D-4630-949E-A1C20339274B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{CE621B6E-6929-4420-AA4E-779886836045}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE621B6E-6929-4420-AA4E-779886836045}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE621B6E-6929-4420-AA4E-779886836045}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

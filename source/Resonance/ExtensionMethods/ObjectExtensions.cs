@@ -27,5 +27,15 @@ namespace Resonance.ExtensionMethods
             if (obj == null) return "null";
             return JsonConvert.SerializeObject(obj, Formatting.Indented, _jsonSettings);
         }
+
+        /// <summary>
+        /// Returns the object's ToString() value. If the object is null, will return and String.Empty.
+        /// </summary>
+        /// <param name="obj">The object.</param>
+        /// <returns></returns>
+        public static String ToStringOrEmpty(this object obj)
+        {
+            return obj != null ? obj.ToString() : String.Empty;
+        }
     }
 }

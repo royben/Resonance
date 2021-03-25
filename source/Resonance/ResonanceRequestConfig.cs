@@ -31,6 +31,6 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the request cancellation token.
         /// </summary>
-        public CancellationToken CancellationToken { get; set; }
+        public CancellationToken? CancellationToken { get; set; }
     }
 }

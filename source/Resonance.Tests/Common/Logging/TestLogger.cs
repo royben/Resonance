@@ -2,6 +2,7 @@
 using Resonance.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace Resonance.Tests.Common.Logging
         private static void Default_NewLog(object sender, LogItemBase e)
         {
             _context.WriteLine(e.ToString());
+            Debug.WriteLine(e.ToString());
         }
     }
 }
