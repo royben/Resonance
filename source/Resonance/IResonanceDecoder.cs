@@ -26,5 +26,13 @@ namespace Resonance
         /// <param name="data">The encoded data.</param>
         /// <param name="info">The decoding information object to populate.</param>
         void Decode(byte[] data, ResonanceDecodingInformation info);
+
+        /// <summary>
+        /// Decodes the specified data and returns the <see cref="ResonanceDecodingInformation"/> as type T.
+        /// </summary>
+        /// <typeparam name="T">Type of expected message.</typeparam>
+        /// <param name="data">The encoded data.</param>
+        /// <returns></returns>
+        T Decode<T>(byte[] data);
     }
 }

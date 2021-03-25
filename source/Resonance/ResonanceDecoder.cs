@@ -76,6 +76,19 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Decodes the specified data and returns the <see cref="ResonanceDecodingInformation"/> as type T.
+        /// </summary>
+        /// <typeparam name="T">Type of expected message.</typeparam>
+        /// <param name="data">The encoded data.</param>
+        /// <returns></returns>
+        public T Decode<T>(byte[] data)
+        {
+            ResonanceDecodingInformation info = new ResonanceDecodingInformation();
+            Decode(data, info);
+            return (T)info.Message;
+        }
+
+        /// <summary>
         /// Decompresses the message data.
         /// </summary>
         /// <param name="data">The data.</param>

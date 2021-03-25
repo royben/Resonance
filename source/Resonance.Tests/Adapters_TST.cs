@@ -33,7 +33,7 @@ namespace Resonance.Tests
 
             t1.Connect().Wait();
 
-            while (t1.State != ResonanceComponentState.Connected)
+            while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }

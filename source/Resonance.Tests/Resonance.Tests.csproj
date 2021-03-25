@@ -61,6 +61,7 @@
     <Compile Include="Transporters_TST.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Adapters_TST.cs" />
+    <Compile Include="Discovery_TST.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
