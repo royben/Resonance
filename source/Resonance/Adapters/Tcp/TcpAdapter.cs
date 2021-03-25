@@ -148,7 +148,7 @@ namespace Resonance.Adapters.Tcp
 
         #endregion
 
-        #region Override Methods
+        #region Connect / Disconnect / Write
 
         protected override Task OnConnect()
         {
@@ -162,6 +162,15 @@ namespace Resonance.Adapters.Tcp
                         {
                             _socket = new TcpClient(Address, Port);
                             SetSocketProperties();
+                        }
+                        else if (!_socket.Connected)
+                        {
+                            _socket.Connect(Address, Port);
+                        }
+                        else
+                        {
+                            Address = _socket.GetIPAddress().ToStringOrEmpty();
+                            Port = _socket.GetPort();
                         }
 
                         LogManager.Log($"{this}: Connected...");
@@ -212,6 +221,15 @@ namespace Resonance.Adapters.Tcp
             {
                 OnFailed(LogManager.Log(ex, $"{this}: Error writing to socket stream."));
             }
+        }
+
+        #endregion
+
+        #region ToString
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} ({Address}/{Port})";
         }
 
         #endregion

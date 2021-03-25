@@ -17,5 +17,15 @@ namespace Resonance.ExtensionMethods
         {
             return (tcpClient.Client.RemoteEndPoint as IPEndPoint).Address;
         }
+
+        /// <summary>
+        /// Gets the TcpClient remote end point port number.
+        /// </summary>
+        /// <param name="tcpClient">The tcp client.</param>
+        /// <returns></returns>
+        public static int GetPort(this TcpClient tcpClient)
+        {
+            return ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Port;
+        }
     }
 }

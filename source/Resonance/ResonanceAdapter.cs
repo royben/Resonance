@@ -14,14 +14,13 @@ namespace Resonance
     /// </summary>
     public abstract class ResonanceAdapter : ResonanceObject, IResonanceAdapter
     {
-        private long _totalBytes;
         private static int _component_counter = 1;
         private long _transferRateTotalBytes;
         private Timer _transferRateTimer;
         private object _disposeLock = new object();
         private System.Threading.Thread _pushThread;
         private ProducerConsumerQueue<byte[]> _pushQueue;
-        private int _adapterCounter;
+        protected int _adapterCounter;
 
         #region Events
 
@@ -46,7 +45,7 @@ namespace Resonance
         public long TotalBytesReceived
         {
             get { return _totalBytesReceived; }
-            protected set { _totalBytesReceived = value; RaisePropertyChanged(nameof(TotalBytesReceived)); }
+            private set { _totalBytesReceived = value; RaisePropertyChanged(nameof(TotalBytesReceived)); }
         }
 
         private long _totalBytesSent;
@@ -56,7 +55,7 @@ namespace Resonance
         public long TotalBytesSent
         {
             get { return _totalBytesSent; }
-            protected set { _totalBytesSent = value; RaisePropertyChanged(nameof(TotalBytesSent)); }
+            private set { _totalBytesSent = value; RaisePropertyChanged(nameof(TotalBytesSent)); }
         }
 
         private long _transferRate;
@@ -65,11 +64,8 @@ namespace Resonance
         /// </summary>
         public long TransferRate
         {
-            get
-            {
-                return _transferRate;
-            }
-            protected set { _transferRate = value; RaisePropertyChanged(nameof(TransferRate)); }
+            get { return _transferRate; }
+            private set { _transferRate = value; RaisePropertyChanged(nameof(TransferRate)); }
         }
 
         /// <summary>
@@ -152,7 +148,6 @@ namespace Resonance
         protected virtual void OnDataAvailable(byte[] data)
         {
             TotalBytesReceived += data.Length;
-            _totalBytes += data.Length;
             AppendTransferRateBytes(data.Length);
             DataAvailable?.Invoke(this, new ResonanceAdapterDataAvailableEventArgs(data));
         }
@@ -168,7 +163,6 @@ namespace Resonance
 
             if (newState == ResonanceComponentState.Connected)
             {
-                _totalBytes = 0;
                 TransferRate = 0;
 
                 if (_transferRateTimer != null)
@@ -246,7 +240,7 @@ namespace Resonance
 
         #endregion
 
-        #region Public Methods
+        #region Connect / Disconnect /Write
 
         /// <summary>
         /// Connects this component.
@@ -299,16 +293,15 @@ namespace Resonance
                 {
                     _pushQueue.BlockEnqueue(data);
                 }
+
+                TotalBytesSent += data.Length;
+                AppendTransferRateBytes(data.Length);
             }
             catch (Exception ex)
             {
                 OnFailed(ex);
                 throw;
             }
-
-            TotalBytesSent += data.Length;
-            _totalBytes += data.Length;
-            AppendTransferRateBytes(data.Length);
         }
 
         #endregion
