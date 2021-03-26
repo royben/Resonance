@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Resonance.Tokens;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Resonance.Adapters.Udp
@@ -14,21 +17,33 @@ namespace Resonance.Adapters.Udp
     /// <seealso cref="Resonance.ResonanceAdapter" />
     public class UdpAdapter : ResonanceAdapter
     {
-        private bool _initializedFromConstructor;
         private UdpClient _socket;
-        private IPEndPoint _endPoint;
+        private byte[] _tokenData;
+        private Thread _pullThread;
 
         #region Properties
 
         /// <summary>
-        /// Gets or sets the host IP address.
+        /// Gets the remote end point to connect to.
         /// </summary>
-        public String Address { get; set; }
+        public IPEndPoint RemoteEndPoint { get; }
 
         /// <summary>
-        /// Gets or sets the host port.
+        /// Gets or sets the local end point to bind to.
         /// </summary>
-        public int Port { get; set; }
+        public IPEndPoint LocalEndPoint { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to prevent packs sent by this adapter to be received by this adapter even when sent to the localhost address.
+        /// This is done by attaching a 22 bytes adapter identifier to each message.
+        /// For this to work properly, all adapters participating should use the same setting.
+        /// </summary>
+        public bool PreventLoopback { get; set; }
+
+        /// <summary>
+        /// Gets the adapter identifier used to identify this adapter when using <see cref="PreventLoopback"/>.
+        /// </summary>
+        public String AdapterIdentifier { get; }
 
         #endregion
 
@@ -37,50 +52,15 @@ namespace Resonance.Adapters.Udp
         /// <summary>
         /// Initializes a new instance of the <see cref="UdpAdapter"/> class.
         /// </summary>
-        public UdpAdapter()
+        public UdpAdapter(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint)
         {
-            Address = "127.0.0.1";
-            Port = 9999;
-        }
+            LocalEndPoint = localEndPoint;
+            RemoteEndPoint = remoteEndPoint;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UdpAdapter"/> class.
-        /// </summary>
-        /// <param name="address">The remote peer ip address.</param>
-        /// <param name="port">The udp port.</param>
-        public UdpAdapter(String address, int port) : this()
-        {
-            Address = address;
-            Port = port;
-        }
+            AdapterIdentifier = new ShortGuidGenerator().GenerateToken(null);
+            _tokenData = Encoding.ASCII.GetBytes(AdapterIdentifier);
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UdpAdapter"/> class.
-        /// </summary>
-        /// <param name="udpClient">The UDP client.</param>
-        /// <param name="endPoint">The remote end point.</param>
-        public UdpAdapter(UdpClient udpClient, IPEndPoint endPoint) : this()
-        {
-            _initializedFromConstructor = true;
-            _socket = udpClient;
-            _endPoint = endPoint;
-            Address = endPoint.Address.ToString();
-            Port = endPoint.Port;
-            SetSocketProperties();
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        private void SetSocketProperties()
-        {
-            _socket.EnableBroadcast = true;
-            _socket.ExclusiveAddressUse = false;
-            _socket.MulticastLoopback = false;
-
-            _socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _socket.Client.Bind(_endPoint);
+            _socket = new UdpClient();
         }
 
         #endregion
@@ -99,26 +79,27 @@ namespace Resonance.Adapters.Udp
                 {
                     if (State != ResonanceComponentState.Connected)
                     {
-                        if (!_initializedFromConstructor)
-                        {
-                            _socket = new UdpClient();
-                            _endPoint = new IPEndPoint(IPAddress.Parse(Address), Port);
-                            SetSocketProperties();
-                        }
+                        _socket.EnableBroadcast = true;
+                        _socket.ExclusiveAddressUse = false;
+                        _socket.MulticastLoopback = false;
+                        _socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                        _socket.Client.Bind(LocalEndPoint);
+
+                        //_socket.Connect(RemoteEndPoint);
 
                         LogManager.Log($"{this}: Connected...");
 
                         State = ResonanceComponentState.Connected;
 
-                        Task.Factory.StartNew(() =>
-                        {
-                            WaitForData();
-                        }, TaskCreationOptions.LongRunning);
+                        _pullThread = new Thread(PullThreadMethod);
+                        _pullThread.IsBackground = true;
+                        _pullThread.Name = $"{this} pull thread";
+                        _pullThread.Start();
                     }
                 }
                 catch (Exception ex)
                 {
-                    throw LogManager.Log(ex, $"Could not connect the TCP adapter ({Address}).");
+                    throw LogManager.Log(ex, $"{this}: Could not connect the UDP adapter.");
                 }
             });
         }
@@ -155,7 +136,12 @@ namespace Resonance.Adapters.Udp
         {
             try
             {
-                _socket.Send(data, data.Length, _endPoint);
+                if (PreventLoopback)
+                {
+                    data = _tokenData.Concat(data).ToArray();
+                }
+
+                _socket.Send(data, data.Length, RemoteEndPoint);
             }
             catch (Exception ex)
             {
@@ -167,7 +153,7 @@ namespace Resonance.Adapters.Udp
 
         #region Pull Thread
 
-        private void WaitForData()
+        private void PullThreadMethod()
         {
             try
             {
@@ -175,12 +161,29 @@ namespace Resonance.Adapters.Udp
                 {
                     try
                     {
-                        byte[] data = _socket.Receive(ref _endPoint);
+                        var remoteEndPoint = RemoteEndPoint;
+                        byte[] data = _socket.Receive(ref remoteEndPoint);
+
+                        if (PreventLoopback)
+                        {
+                            ArraySegment<byte> tokenData = new ArraySegment<byte>(data, 0, _tokenData.Length);
+                            ArraySegment<byte> restOfData = new ArraySegment<byte>(data, _tokenData.Length - 1, data.Length - _tokenData.Length);
+                            data = restOfData.ToArray();
+
+                            if (tokenData.SequenceEqual(_tokenData))
+                            {
+                                continue;
+                            }
+                        }
+
                         OnDataAvailable(data);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        Debugger.Break();
+                        if (ex.Message != "A blocking operation was interrupted by a call to WSACancelBlockingCall")
+                        {
+                            Debugger.Break();
+                        }
                     }
                 }
             }
@@ -202,7 +205,7 @@ namespace Resonance.Adapters.Udp
         /// </returns>
         public override string ToString()
         {
-            return $"{base.ToString()} ({Address}/{Port})";
+            return $"{base.ToString()} ({RemoteEndPoint.Address.ToString()}/{RemoteEndPoint.Port})";
         }
 
         #endregion

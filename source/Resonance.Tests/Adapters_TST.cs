@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.Tcp;
@@ -21,7 +22,7 @@ namespace Resonance.Tests
         {
             Init();
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter("127.0.0.1", 9999));
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
@@ -79,11 +80,14 @@ namespace Resonance.Tests
         {
             Init();
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UdpAdapter("127.0.0.1", 9999));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UdpAdapter("127.0.0.1", 9999));
+            IPAddress localIpAddress = IPAddress.Parse(TcpAdapter.GetLocalIPAddress());
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)));
+            t1.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)));
 
             t1.Connect().Wait();
-            //t2.Connect().Wait();
+            t2.Connect().Wait();
 
             t2.RequestReceived += (s, e) =>
             {

@@ -3,6 +3,9 @@ using Resonance.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -173,7 +176,7 @@ namespace Resonance.Adapters.Tcp
                             Port = _socket.GetPort();
                         }
 
-                        LogManager.Log($"{this}: Connected...");
+                        LogManager.Log($"{this}: Connected.");
 
                         State = ResonanceComponentState.Connected;
 
@@ -185,7 +188,7 @@ namespace Resonance.Adapters.Tcp
                 }
                 catch (Exception ex)
                 {
-                    throw LogManager.Log(ex, $"Could not connect the TCP adapter ({Address}).");
+                    throw LogManager.Log(ex, $"{this}: Could not connect the adapter.");
                 }
             });
         }
@@ -230,6 +233,38 @@ namespace Resonance.Adapters.Tcp
         public override string ToString()
         {
             return $"{base.ToString()} ({Address}/{Port})";
+        }
+
+        #endregion
+
+        #region Static Methods
+
+        /// <summary>
+        /// Gets the machine's LAN IP address.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception">No network adapters with an IPv4 address in the system!</exception>
+        public static String GetLocalIPAddress()
+        {
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                var addr = ni.GetIPProperties().GatewayAddresses.FirstOrDefault();
+                if (addr != null && !addr.Address.ToString().Equals("0.0.0.0"))
+                {
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                    {
+                        foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                        {
+                            if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                            {
+                                return ip.Address.ToString();
+                            }
+                        }
+                    }
+                }
+            }
+
+            throw new Exception("Could not retrieve this machine local IP address.");
         }
 
         #endregion
