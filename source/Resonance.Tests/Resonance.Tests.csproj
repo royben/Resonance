@@ -68,6 +68,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.USB\Resonance.USB.csproj">
+      <Project>{737d3507-e83d-4620-8b99-7325749ae85d}</Project>
+      <Name>Resonance.USB</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resonance\Resonance.csproj">
       <Project>{67f02cfb-010f-47f2-8752-2d615cef135f}</Project>
       <Name>Resonance</Name>
