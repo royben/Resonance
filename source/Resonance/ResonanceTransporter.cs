@@ -160,7 +160,7 @@ namespace Resonance
             _lastIncomingMessageTime = DateTime.Now;
 
             KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
-            TokenGenerator = new GuidTokenGenerator();
+            TokenGenerator = new ShortGuidGenerator();
 
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
