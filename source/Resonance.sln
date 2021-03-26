@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Tests", "Resonanc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Tests.CLI", "Resonance.Tests.CLI\Resonance.Tests.CLI.csproj", "{7D1449FF-0B5D-4630-949E-A1C20339274B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.USB", "Resonance.USB\Resonance.USB.csproj", "{737D3507-E83D-4620-8B99-7325749AE85D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D1449FF-0B5D-4630-949E-A1C20339274B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{737D3507-E83D-4620-8B99-7325749AE85D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{737D3507-E83D-4620-8B99-7325749AE85D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{737D3507-E83D-4620-8B99-7325749AE85D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{737D3507-E83D-4620-8B99-7325749AE85D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
