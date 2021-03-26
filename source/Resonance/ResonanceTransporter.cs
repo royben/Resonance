@@ -17,7 +17,7 @@ namespace Resonance
     /// Represents an <see cref="IResonanceTransporter"/> base class.
     /// </summary>
     /// <seealso cref="Resonance.IResonanceTransporter" />
-    public abstract class ResonanceTransporter : ResonanceObject, IResonanceTransporter
+    public class ResonanceTransporter : ResonanceObject, IResonanceTransporter
     {
         private static int _globalTransporterCounter = 1;
         private int _transporterCounter;
@@ -1215,6 +1215,18 @@ namespace Resonance
             {
                 Adapter.Dispose();
             }
+        }
+
+        #endregion
+
+        #region Builder
+
+        /// <summary>
+        /// Gets a new transporter builder.
+        /// </summary>
+        public static ResonanceTransporterBuilder Builder
+        {
+            get { return new ResonanceTransporterBuilder(); }
         }
 
         #endregion
