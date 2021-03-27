@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configurations that affect the Test Framework -->
+  <RunConfiguration>
+    <!--<MaxCpuCount>1</MaxCpuCount>-->
+    <!-- Path relative to directory that contains .runsettings file-->
+    <!--<ResultsDirectory>.\TestResults</ResultsDirectory>-->
+
+    <!-- x86 or x64 -->
+    <!-- You can also change it from the Test menu; choose "Processor Architecture for AnyCPU Projects" -->
+    <!--<TargetPlatform>x86</TargetPlatform>-->
+
+    <!-- Framework35 | [Framework40] | Framework45 -->
+    <!--<TargetFrameworkVersion>Framework40</TargetFrameworkVersion>-->
+
+    <!-- Path to Test Adapters -->
+    <!--<TestAdaptersPaths>%SystemDrive%\Temp\foo;%SystemDrive%\Temp\bar</TestAdaptersPaths>-->
+
+    <!-- TestSessionTimeout was introduced in Visual Studio 2017 version 15.5 -->
+    <!-- Specify timeout in milliseconds. A valid value should be greater than 0 -->
+    <!--<TestSessionTimeout>10000</TestSessionTimeout>-->
+
+    <!-- true or false -->
+    <!-- Value that specifies the exit code when no tests are discovered -->
+    <!--<TreatNoTestsAsError>true</TreatNoTestsAsError>-->
+  </RunConfiguration>
+
+  <!-- Parameters used by tests at run time -->
+  <TestRunParameters>
+    <Parameter name="IsFromAzure" value="false" />
+  </TestRunParameters>
+
+  <!-- Configuration for loggers -->
+  <!--<LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>quiet</Verbosity>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="trx" enabled="True">
+        <Configuration>
+          <LogFileName>foo.trx</LogFileName>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="html" enabled="True">
+        <Configuration>
+          <LogFileName>foo.html</LogFileName>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="blame" enabled="True" />
+    </Loggers>
+  </LoggerRunSettings>-->
+
+  <!-- Adapter Specific sections -->
+
+  <!-- MSTest adapter -->
+  <!--<MSTest>
+    <MapInconclusiveToFailed>True</MapInconclusiveToFailed>
+    <CaptureTraceOutput>false</CaptureTraceOutput>
+    <DeleteDeploymentDirectoryAfterTestRunIsComplete>False</DeleteDeploymentDirectoryAfterTestRunIsComplete>
+    <DeploymentEnabled>False</DeploymentEnabled>
+    <AssemblyResolution>
+      <Directory path="D:\myfolder\bin\" includeSubDirectories="false"/>
+    </AssemblyResolution>
+  </MSTest>-->
+
+</RunSettings>

@@ -31,9 +31,12 @@ namespace Resonance.Tests.Common
             get { return LogManager.Default; }
         }
 
+        public bool IsRunningOnAzurePipelines { get; set; }
+
         protected void Init()
         {
             TestLogger.Init(TestContext);
+            IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
         }
     }
 }
