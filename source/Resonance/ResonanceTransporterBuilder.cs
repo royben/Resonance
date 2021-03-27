@@ -27,6 +27,7 @@ namespace Resonance
         ITcpAdapterPortBuilder,
         IInMemoryAdapterBuilder,
         ITranscodingBuilder,
+        IKeepAliveBuilder,
         IEncryptionBuilder,
         ICompressionBuilder,
         IResonanceTransporterBuilder
@@ -110,14 +111,14 @@ namespace Resonance
             ITranscodingBuilder WithAddress(String address);
         }
 
-        public interface ITranscodingBuilder : IBuildTransporter
+        public interface ITranscodingBuilder
         {
             /// <summary>
             /// Sets the transporter encoder/decoder.
             /// </summary>
             /// <typeparam name="TEncoder">The type of the encoder.</typeparam>
             /// <typeparam name="TDecoder">The type of the decoder.</typeparam>
-            IEncryptionBuilder WithTranscoding<TEncoder, TDecoder>() where TEncoder : IResonanceEncoder where TDecoder : IResonanceDecoder;
+            IKeepAliveBuilder WithTranscoding<TEncoder, TDecoder>() where TEncoder : IResonanceEncoder where TDecoder : IResonanceDecoder;
 
             /// <summary>
             /// Sets the transporter encoder/decoder.
@@ -127,7 +128,27 @@ namespace Resonance
             /// <param name="encoder">The encoder.</param>
             /// <param name="decoder">The decoder.</param>
             /// <returns></returns>
-            IEncryptionBuilder WithTranscoding<TEncoder, TDecoder>(TEncoder encoder, TDecoder decoder) where TEncoder : IResonanceEncoder where TDecoder : IResonanceDecoder;
+            IKeepAliveBuilder WithTranscoding<TEncoder, TDecoder>(TEncoder encoder, TDecoder decoder) where TEncoder : IResonanceEncoder where TDecoder : IResonanceDecoder;
+        }
+
+        public interface IKeepAliveBuilder : IBuildTransporter
+        {
+            /// <summary>
+            /// Enables the transporter automatic keep alive mechanism.
+            /// </summary>
+            IEncryptionBuilder WithKeepAlive();
+
+            /// <summary>
+            /// Enables the transporter automatic keep alive mechanism.
+            /// </summary>
+            /// <param name="interval">Keep alive signal interval.</param>
+            /// <param name="retries">Number of failed retries.</param>
+            IEncryptionBuilder WithKeepAlive(TimeSpan interval, int retries);
+
+            /// <summary>
+            /// Disables the transporter automatic keep alive mechanism.
+            /// </summary>
+            IEncryptionBuilder NoKeepAlive();
         }
 
         public interface IEncryptionBuilder : IBuildTransporter
@@ -239,19 +260,40 @@ namespace Resonance
             return this;
         }
 
-        public IEncryptionBuilder WithTranscoding<TEncoder, TDecoder>()
+        public IKeepAliveBuilder WithTranscoding<TEncoder, TDecoder>()
             where TEncoder : IResonanceEncoder
             where TDecoder : IResonanceDecoder
         {
             return WithTranscoding(Activator.CreateInstance<TEncoder>(), Activator.CreateInstance<TDecoder>());
         }
 
-        public IEncryptionBuilder WithTranscoding<TEncoder, TDecoder>(TEncoder encoder, TDecoder decoder)
+        public IKeepAliveBuilder WithTranscoding<TEncoder, TDecoder>(TEncoder encoder, TDecoder decoder)
             where TEncoder : IResonanceEncoder
             where TDecoder : IResonanceDecoder
         {
             Transporter.Encoder = encoder;
             Transporter.Decoder = decoder;
+            return this;
+        }
+
+        public IEncryptionBuilder WithKeepAlive()
+        {
+            Transporter.KeepAliveConfiguration.Enabled = true;
+            Transporter.KeepAliveConfiguration.EnableAutoResponse = true;
+            return this;
+        }
+
+        public IEncryptionBuilder WithKeepAlive(TimeSpan interval, int retries)
+        {
+            WithKeepAlive();
+            Transporter.KeepAliveConfiguration.Interval = interval;
+            Transporter.KeepAliveConfiguration.Retries = (uint)retries;
+            return this;
+        }
+
+        public IEncryptionBuilder NoKeepAlive()
+        {
+            Transporter.KeepAliveConfiguration.Enabled = false;
             return this;
         }
 

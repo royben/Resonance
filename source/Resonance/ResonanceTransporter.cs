@@ -1009,7 +1009,14 @@ namespace Resonance
         {
             if (KeepAliveConfiguration.EnableAutoResponse)
             {
-                await SendResponse(new ResonanceKeepAliveResponse(), info.Token);
+                try
+                {
+                    await SendResponse(new ResonanceKeepAliveResponse(), info.Token);
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Log(ex, "Error sending keep alive auto response.");
+                }
             }
         }
 
