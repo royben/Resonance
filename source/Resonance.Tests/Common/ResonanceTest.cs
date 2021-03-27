@@ -41,7 +41,7 @@ namespace Resonance.Tests.Common
 
         private void Default_NewLog(object sender, LogItemBase e)
         {
-            if (IsRunningOnAzurePipelines && e.Level == LogLevel.Debug) return;
+            if (IsRunningOnAzurePipelines && (e.Level == LogLevel.Debug || e.Level == LogLevel.Error)) return;
 
             TestContext.WriteLine(e.ToString());
             Debug.WriteLine(e.ToString());
