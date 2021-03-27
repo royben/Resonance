@@ -18,7 +18,7 @@ public static class ResonanceTransporterBuilderExtension
     }
 }
 
-namespace Resonance.USB.BuilderExtension
+namespace Resonance.USB.BuilderExtension   
 {
     public class UsbAdapterBuilderBase
     {
@@ -30,7 +30,7 @@ namespace Resonance.USB.BuilderExtension
         }
     }
 
-    public class UsbAdapterBuilder : UsbAdapterBuilderBase
+    public class UsbAdapterBuilder : UsbAdapterBuilderBase  
     {
         internal UsbAdapterBuilder(ResonanceTransporterBuilder builder) : base(builder)
         {
