@@ -49,7 +49,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\Logging\TestLogger.cs" />
     <Compile Include="Common\Messages\CalculateRequest.cs" />
     <Compile Include="Common\Messages\CalculateResponse.cs" />
     <Compile Include="Common\Messages\ProgressRequest.cs" />

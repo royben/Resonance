@@ -1,8 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Logging;
-using Resonance.Tests.Common.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,8 +35,16 @@ namespace Resonance.Tests.Common
 
         protected void Init()
         {
-            TestLogger.Init(TestContext);
             IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
+            LogManager.Default.NewLog += Default_NewLog;
+        }
+
+        private void Default_NewLog(object sender, LogItemBase e)
+        {
+            if (IsRunningOnAzurePipelines && e.Level == LogLevel.Debug) return;
+
+            TestContext.WriteLine(e.ToString());
+            Debug.WriteLine(e.ToString());
         }
     }
 }
