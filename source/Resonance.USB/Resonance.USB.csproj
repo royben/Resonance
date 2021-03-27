@@ -14,8 +14,12 @@
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    
+  </Target>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if not $(ConfigurationName) == AzureBuild powershell start-process -WindowStyle Hidden $(SolutionDir)Resonance.PostBuild\bin\$(ConfigurationName)\Resonance.PostBuild.exe $(ProjectDir)bin\$(ConfigurationName)" />
+    <Exec Command="if not $(ConfigurationName) == AzureBuild powershell start-process -WindowStyle Hidden $(SolutionDir)Resonance.PostBuild\bin\$(ConfigurationName)\Resonance.PostBuild.exe $(ConfigurationName)" />
   </Target>
 
 </Project>
