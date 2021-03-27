@@ -11,5 +11,6 @@ namespace Resonance
         public Action<IResonanceTransporter, Object> Callback { get; set; }
         public Func<Object, Object> ResponseCallback { get; set; }
         public object RegisteredCallback { get; set; }
+        public IResonanceService Service { get; set; }
     }
 }

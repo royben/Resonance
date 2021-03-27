@@ -65,6 +65,7 @@
     <Compile Include="Discovery_TST.cs" />
     <Compile Include="Builders.cs" />
     <Compile Include="RequestHandlers_TST.cs" />
+    <Compile Include="Services_TST.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -7,6 +7,7 @@ using Resonance.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +31,7 @@ namespace Resonance
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
         private List<ResonanceRequestHandler> _requestHandlers;
+        private List<IResonanceService> _services;
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
@@ -160,6 +162,7 @@ namespace Resonance
             _transporterCounter = _globalTransporterCounter++;
 
             _requestHandlers = new List<ResonanceRequestHandler>();
+            _services = new List<IResonanceService>();
 
             _lastIncomingMessageTime = DateTime.Now;
 
@@ -245,16 +248,85 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Copies this instance request handlers to the specified instance.
+        /// Copies this instance request handlers and registered services to the specified instance.
         /// </summary>
         /// <param name="transporter">The transporter to copy the handlers to.</param>
-        public void CopyRequestHandlers(IResonanceTransporter transporter)
+        public void CopyRequestHandlersAndServices(IResonanceTransporter transporter)
         {
+            foreach (var service in _services.ToList())
+            {
+                (transporter as ResonanceTransporter)._services.Add(service);
+                _services.Remove(service);
+            }
+
             foreach (var handler in _requestHandlers.ToList())
             {
                 (transporter as ResonanceTransporter)._requestHandlers.Add(handler);
                 _requestHandlers.Remove(handler);
             }
+        }
+
+        #endregion
+
+        #region Services
+
+        /// <summary>
+        /// Registers an instance of <see cref="IResonanceService" /> as a request handler service.
+        /// Each method with return type of <see cref="ResonanceActionResult{T}" /> will be registered has a request handler.
+        /// Request handler methods should accept only the request as a single parameter.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        public void RegisterService(IResonanceService service)
+        {
+            if (_services.Contains(service)) throw new InvalidOperationException("The specified service is already registered.");
+
+            List<MethodInfo> methods = new List<MethodInfo>();
+
+            foreach (var method in service.GetType().GetMethods())
+            {
+                if (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType))
+                {
+                    if (method.GetParameters().Length > 1)
+                    {
+                        throw new InvalidOperationException($"Request handler '{method.Name}' should accept only the request as a parameter.");
+                    }
+
+                    if (method.GetParameters().Length == 0)
+                    {
+                        throw new InvalidOperationException($"Request handler '{method.Name}' does not define any request as a parameter.");
+                    }
+
+                    methods.Add(method);
+                }
+            }
+
+            foreach (var method in methods)
+            {
+                var requestType = method.GetParameters()[0].ParameterType;
+
+                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                handler.HasResponse = true;
+                handler.RequestType = requestType;
+                handler.Service = service;
+                handler.ResponseCallback = (request) =>
+                {
+                    return method.Invoke(service, new object[] { request });
+                };
+
+                _requestHandlers.Add(handler);
+            }
+
+            _services.Add(service);
+        }
+
+        /// <summary>
+        /// Detach the specified <see cref="IResonanceService" /> and all its request handlers.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        public void UnregisterService(IResonanceService service)
+        {
+            _requestHandlers.RemoveAll(x => x.Service == service);
+            _services.Remove(service);
         }
 
         #endregion
@@ -1206,6 +1278,15 @@ namespace Resonance
         protected virtual void OnStateChanged(ResonanceComponentState previousState, ResonanceComponentState newState)
         {
             StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
+
+            foreach (var service in _services.ToList())
+            {
+                try
+                {
+                    service.OnTransporterStateChanged(newState);
+                }
+                catch { }
+            }
         }
 
         /// <summary>

@@ -122,10 +122,24 @@ namespace Resonance
         void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
-        /// Copies this instance request handlers to the specified instance.
+        /// Registers an instance of <see cref="IResonanceService"/> as a request handler service.
+        /// Each method with return type of <see cref="ResonanceActionResult{T}"/> will be registered has a request handler.
+        /// Request handler methods should accept only the request as a single parameter.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        void RegisterService(IResonanceService service);
+
+        /// <summary>
+        /// Detach the specified <see cref="IResonanceService"/> and all its request handlers.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        void UnregisterService(IResonanceService service);
+
+        /// <summary>
+        /// Copies this instance request handlers and registered services to the specified instance.
         /// </summary>
         /// <param name="transporter">The transporter to copy the handlers to.</param>
-        void CopyRequestHandlers(IResonanceTransporter transporter);
+        void CopyRequestHandlersAndServices(IResonanceTransporter transporter);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
