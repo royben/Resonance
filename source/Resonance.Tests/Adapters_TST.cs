@@ -76,7 +76,10 @@ namespace Resonance.Tests
 
             double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
 
-            Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+            if (!IsRunningOnAzurePipelines)
+            {
+                Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+            }
         }
 
         [TestMethod]
@@ -123,7 +126,10 @@ namespace Resonance.Tests
 
             double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
 
-            Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+            if (!IsRunningOnAzurePipelines)
+            {
+                Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+            }
         }
 
         [TestMethod]
@@ -142,7 +148,7 @@ namespace Resonance.Tests
 
             var names = SerialPort.GetPortNames().ToList();
 
-            Assert.IsTrue(names.Contains(com1) && names.Contains(com2), 
+            Assert.IsTrue(names.Contains(com1) && names.Contains(com2),
 $@"This test requires a bridges virtual serial ports.
 Please download from https://freevirtualserialports.com and create a bridge between {com1} <-> {com2}.");
 
