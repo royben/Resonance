@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png" />
+</p>
+
 # Resonance
 Cross Platform Real-Time Communication Library
 
