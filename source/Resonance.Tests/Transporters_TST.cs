@@ -446,6 +446,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines) return;
+
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -475,6 +477,8 @@ namespace Resonance.Tests
         public void KeepAlive_Timeout_Does_Not_Fails_Transporter()
         {
             Init();
+
+            if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -512,6 +516,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines) return;
+
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -539,6 +545,8 @@ namespace Resonance.Tests
         public void KeepAlive_Timeout_Retries()
         {
             Init();
+
+            if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
