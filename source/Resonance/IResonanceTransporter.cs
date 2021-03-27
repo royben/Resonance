@@ -9,7 +9,9 @@ using static Resonance.ResonanceTransporterBuilder;
 
 namespace Resonance
 {
-    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceRequest<Request> request);
+    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceRequest<Request> request) where Request : class;
+
+    public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
 
     /// <summary>
     /// Represents a Resonance Transporter capable of sending and receiving request/response messages.
@@ -93,15 +95,31 @@ namespace Resonance
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
-        /// <param name="callback">The callback.</param>
+        /// <param name="callback">The callback method to register.</param>
         void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
-        /// <param name="callback">The callback.</param>
+        /// <param name="callback">The callback method to detach.</param>
         void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Copies this instance request handlers to the specified instance.

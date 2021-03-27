@@ -19,6 +19,18 @@ namespace Resonance
         /// Gets or sets the request message.
         /// </summary>
         public object Message { get; set; }
+
+        /// <summary>
+        /// Creates a generic ResonanceRequest T from the specified type.
+        /// </summary>
+        /// <param name="messageType">Type of the message.</param>
+        /// <returns></returns>
+        internal static ResonanceRequest CreateGenericRequest(Type messageType)
+        {
+            Type[] typeArgs = { messageType };
+            var genericType = typeof(ResonanceRequest<>).MakeGenericType(typeArgs);
+            return Activator.CreateInstance(genericType) as ResonanceRequest;
+        }
     }
 
     /// <summary>

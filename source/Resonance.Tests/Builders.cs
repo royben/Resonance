@@ -3,6 +3,7 @@ using Resonance.Adapters.InMemory;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
+using Resonance.Tests.Common;
 using Resonance.Transcoding.Json;
 using System;
 using System.Net;
@@ -11,11 +12,13 @@ namespace Resonance.Tests
 {
     [TestClass]
     [TestCategory("Builders")]
-    public class Builders
+    public class Builders : ResonanceTest
     {
         [TestMethod]
         public void Transporter_Builder()
         {
+            Init();
+
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
                 .WithTcpAdapter()

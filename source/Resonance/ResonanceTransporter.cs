@@ -29,6 +29,7 @@ namespace Resonance
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
+        private List<ResonanceRequestHandler> _requestHandlers;
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
@@ -158,6 +159,8 @@ namespace Resonance
         {
             _transporterCounter = _globalTransporterCounter++;
 
+            _requestHandlers = new List<ResonanceRequestHandler>();
+
             _lastIncomingMessageTime = DateTime.Now;
 
             KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
@@ -174,19 +177,84 @@ namespace Resonance
 
         #region Request Handlers
 
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
         public void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
         {
-            throw new NotImplementedException();
+            ResonanceRequestHandler handler = new ResonanceRequestHandler();
+            handler.RequestType = typeof(Request);
+            handler.RegisteredCallback = callback;
+            handler.Callback = (transporter, resonanceRequest) =>
+            {
+                callback?.Invoke(transporter, resonanceRequest as ResonanceRequest<Request>);
+            };
+
+            _requestHandlers.Add(handler);
         }
 
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
         {
-            throw new NotImplementedException();
+            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request>) == callback);
+            if (handler != null)
+            {
+                _requestHandlers.Remove(handler);
+            }
         }
 
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            ResonanceRequestHandler handler = new ResonanceRequestHandler();
+            handler.HasResponse = true;
+            handler.RequestType = typeof(Request);
+            handler.RegisteredCallback = callback;
+            handler.ResponseCallback = (request) =>
+            {
+                return (ResonanceActionResult<Response>)callback.Invoke(request as Request);
+            };
+
+            _requestHandlers.Add(handler);
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
+            if (handler != null)
+            {
+                _requestHandlers.Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// Copies this instance request handlers to the specified instance.
+        /// </summary>
+        /// <param name="transporter">The transporter to copy the handlers to.</param>
         public void CopyRequestHandlers(IResonanceTransporter transporter)
         {
-            throw new NotImplementedException();
+            foreach (var handler in _requestHandlers.ToList())
+            {
+                (transporter as ResonanceTransporter)._requestHandlers.Add(handler);
+                _requestHandlers.Remove(handler);
+            }
         }
 
         #endregion
@@ -742,13 +810,42 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnIncomingRequest(ResonanceDecodingInformation info)
         {
-            ResonanceRequest request = new ResonanceRequest();
+            ResonanceRequest request = ResonanceRequest.CreateGenericRequest(info.Message.GetType());
             request.Token = info.Token;
             request.Message = info.Message;
 
             Task.Factory.StartNew(() =>
             {
                 OnRequestReceived(request);
+
+                var handlers = _requestHandlers.ToList().Where(x => x.RequestType == request.Message.GetType()).ToList();
+
+                foreach (var handler in handlers)
+                {
+                    try
+                    {
+                        Task.Factory.StartNew(() =>
+                        {
+                            if (handler.HasResponse)
+                            {
+                                IResonanceActionResult result = handler.ResponseCallback.Invoke(request.Message) as IResonanceActionResult;
+
+                                if (result != null && result.Response != null)
+                                {
+                                    SendResponse(result.Response, request.Token, result.Config).GetAwaiter().GetResult();
+                                }
+                            }
+                            else
+                            {
+                                handler.Callback.Invoke(this, request);
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log(ex, $"{this}: Error occurred on request handler.");
+                    }
+                }
             });
         }
 
