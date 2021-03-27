@@ -131,6 +131,12 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines)
+            {
+                LogManager.Log("Running on azure. Skipping USB Adapter test.");
+                return;
+            }
+
             String com1 = "COM1";
             String com2 = "COM5";
 
