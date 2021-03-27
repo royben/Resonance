@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static Resonance.ResonanceTransporterBuilder;
 
 namespace Resonance
 {
@@ -1181,7 +1182,11 @@ namespace Resonance
         /// </returns>
         public override string ToString()
         {
-            return $"Transporter {_transporterCounter} => {Encoder} / {Decoder} => {Adapter}";
+            String encoder = Encoder != null ? Encoder.ToString() : "No Encoder";
+            String decoder = Decoder != null ? Decoder.ToString() : "No Decoder";
+            String adapter = Adapter != null ? Adapter.ToString() : "No Adapter";
+
+            return $"Transporter {_transporterCounter} => {encoder} / {decoder} => {adapter}";
         }
 
         #endregion
@@ -1224,9 +1229,17 @@ namespace Resonance
         /// <summary>
         /// Gets a new transporter builder.
         /// </summary>
-        public static ResonanceTransporterBuilder Builder
+        public static IResonanceTransporterBuilder Builder
         {
-            get { return new ResonanceTransporterBuilder(); }
+            get { return ResonanceTransporterBuilder.New(); }
+        }
+
+        /// <summary>
+        /// Creates a new transporter builder based on this transporter.
+        /// </summary>
+        public IAdapterBuilder CreateBuilder()
+        {
+            return ResonanceTransporterBuilder.From(this);
         }
 
         #endregion

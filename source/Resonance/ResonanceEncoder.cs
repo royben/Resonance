@@ -131,7 +131,7 @@ namespace Resonance
         /// </returns>
         public override string ToString()
         {
-            return GetType().Name;
+            return this != null ? GetType().Name : "No Encoder";
         }
 
         /// <summary>

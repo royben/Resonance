@@ -217,7 +217,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Config.cs" />
     <Compile Include="Messages\CalculateRequest.cs" />
     <Compile Include="Messages\CalculateResponse.cs" />
     <Compile Include="Program.cs" />

@@ -338,7 +338,7 @@ namespace Resonance
         /// </returns>
         public override string ToString()
         {
-            return $"{this.GetType().Name} {_adapterCounter}";
+            return this != null ? $"{this.GetType().Name} {_adapterCounter}" : "No Adapter";
         }
 
         #endregion

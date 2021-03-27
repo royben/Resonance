@@ -26,12 +26,12 @@ namespace Resonance.Adapters.Udp
         /// <summary>
         /// Gets the remote end point to connect to.
         /// </summary>
-        public IPEndPoint RemoteEndPoint { get; }
+        public IPEndPoint RemoteEndPoint { get; set; }
 
         /// <summary>
         /// Gets or sets the local end point to bind to.
         /// </summary>
-        public IPEndPoint LocalEndPoint { get; }
+        public IPEndPoint LocalEndPoint { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to prevent packs sent by this adapter to be received by this adapter even when sent to the localhost address.
@@ -52,15 +52,21 @@ namespace Resonance.Adapters.Udp
         /// <summary>
         /// Initializes a new instance of the <see cref="UdpAdapter"/> class.
         /// </summary>
-        public UdpAdapter(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint)
+        public UdpAdapter()
         {
-            LocalEndPoint = localEndPoint;
-            RemoteEndPoint = remoteEndPoint;
-
             AdapterIdentifier = new ShortGuidGenerator().GenerateToken(null);
             _tokenData = Encoding.ASCII.GetBytes(AdapterIdentifier);
 
             _socket = new UdpClient();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UdpAdapter"/> class.
+        /// </summary>
+        public UdpAdapter(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint) : this()
+        {
+            LocalEndPoint = localEndPoint;
+            RemoteEndPoint = remoteEndPoint;
         }
 
         #endregion
@@ -205,7 +211,14 @@ namespace Resonance.Adapters.Udp
         /// </returns>
         public override string ToString()
         {
-            return $"{base.ToString()} ({RemoteEndPoint.Address.ToString()}/{RemoteEndPoint.Port})";
+            if (RemoteEndPoint != null)
+            {
+                return $"{base.ToString()} ({RemoteEndPoint.Address.ToString()}/{RemoteEndPoint.Port})";
+            }
+            else
+            {
+                return $"{base.ToString()} (no remote endpoint)";
+            }
         }
 
         #endregion

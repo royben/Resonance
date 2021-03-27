@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace Resonance.Adapters.Usb
 {
+    /// <summary>
+    /// Represents a USB resonance adapter capable of sending/receiving data over a serial port.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceAdapter" />
     public class UsbAdapter : ResonanceAdapter
     {
         private SerialPort _serialPort; //Serial port instance used to communicate over the serial port.
@@ -23,7 +27,7 @@ namespace Resonance.Adapters.Usb
         /// <summary>
         /// Gets or sets the COM port.
         /// </summary>
-        public String COMPort { get; set; }
+        public String Port { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum expected incoming data.
@@ -47,27 +51,27 @@ namespace Resonance.Adapters.Usb
         /// </summary>
         public UsbAdapter()
         {
-            COMPort = "COM1";
+            Port = "COM1";
             BaudRate = (int)BaudRates.BR_9600;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UsbAdapter"/> class.
         /// </summary>
-        /// <param name="name">The COM port name (e.g COM1).</param>
+        /// <param name="port">The COM port name (e.g COM1).</param>
         /// <param name="baudRate">The serial baud rate.</param>
-        public UsbAdapter(String name, int baudRate) : this()
+        public UsbAdapter(String port, int baudRate) : this()
         {
-            COMPort = name;
+            Port = port;
             BaudRate = baudRate;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UsbAdapter"/> class.
         /// </summary>
-        /// <param name="name">The COM port name (e.g COM1).</param>
+        /// <param name="port">The COM port name (e.g COM1).</param>
         /// <param name="baudRate">The serial baud rate.</param>
-        public UsbAdapter(String name, BaudRates baudRate) : this(name, (int)baudRate)
+        public UsbAdapter(String port, BaudRates baudRate) : this(port, (int)baudRate)
         {
 
         }
@@ -90,7 +94,7 @@ namespace Resonance.Adapters.Usb
                 {
                     try
                     {
-                        LogManager.Log($"{this}: Connecting adapter on {COMPort}...");
+                        LogManager.Log($"{this}: Connecting adapter on {Port}...");
 
                         if (_serialPort != null)
                         {
@@ -99,7 +103,7 @@ namespace Resonance.Adapters.Usb
 
                         _serialPort = new SerialPort();
                         _serialPort.BaudRate = BaudRate;
-                        _serialPort.PortName = COMPort;
+                        _serialPort.PortName = Port;
                         _serialPort.ReadBufferSize = MaxBufferSize;
                         _serialPort.WriteBufferSize = MaxBufferSize;
                         _serialPort.Open();
@@ -122,7 +126,7 @@ namespace Resonance.Adapters.Usb
                     {
                         if (!source.Task.IsCompleted)
                         {
-                            source.SetException(LogManager.Log(ex, $"{this}: Error connecting on {COMPort}."));
+                            source.SetException(LogManager.Log(ex, $"{this}: Error connecting on {Port}."));
                         }
                     }
                 });

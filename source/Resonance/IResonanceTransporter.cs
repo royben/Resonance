@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using Resonance.Reactive;
+using static Resonance.ResonanceTransporterBuilder;
 
 namespace Resonance
 {
@@ -185,5 +186,10 @@ namespace Resonance
         /// <param name="token">The request token.</param>
         /// <returns></returns>
         Task SendErrorResponse(String message, string token);
+
+        /// <summary>
+        /// Creates a new transporter builder based on this transporter.
+        /// </summary>
+        IAdapterBuilder CreateBuilder();
     }
 }

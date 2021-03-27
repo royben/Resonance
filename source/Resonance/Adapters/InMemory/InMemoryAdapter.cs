@@ -12,8 +12,6 @@ namespace Resonance.Adapters.InMemory
     /// <seealso cref="Resonance.ResonanceAdapter" />
     public class InMemoryAdapter : ResonanceAdapter
     {
-        private static int _counter;
-
         /// <summary>
         /// Gets the adapter address.
         /// </summary>
@@ -23,10 +21,9 @@ namespace Resonance.Adapters.InMemory
         /// Initializes a new instance of the <see cref="InMemoryAdapter"/> class.
         /// </summary>
         /// <param name="address">The address.</param>
-        public InMemoryAdapter(String address)
+        public InMemoryAdapter(String address) : base()
         {
             Address = address;
-            _counter++;
         }
 
         /// <summary>
@@ -77,7 +74,7 @@ namespace Resonance.Adapters.InMemory
         /// </returns>
         public override string ToString()
         {
-            return $"In-Memory Adapter {_counter} ({Address})";
+            return $"{base.ToString()} ({Address})";
         }
     }
 }
