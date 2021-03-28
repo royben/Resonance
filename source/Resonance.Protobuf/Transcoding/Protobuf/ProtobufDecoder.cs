@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -13,14 +14,14 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
     /// <seealso cref="Resonance.ResonanceDecoder" />
     public class ProtobufDecoder : ResonanceDecoder
     {
-        private static Dictionary<Type, MessageParser> _parsers;
+        private static ConcurrentDictionary<Type, MessageParser> _parsers;
 
         /// <summary>
         /// Initializes the <see cref="ProtobufDecoder"/> class.
         /// </summary>
         static ProtobufDecoder()
         {
-            _parsers = new Dictionary<Type, MessageParser>();
+            _parsers = new ConcurrentDictionary<Type, MessageParser>();
         }
 
         /// <summary>
