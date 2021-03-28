@@ -117,7 +117,7 @@ namespace Resonance
         /// <returns></returns>
         protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
         {
-            return new ResonanceDefaultHeaderTranscoder();
+            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder;
         }
 
         /// <summary>

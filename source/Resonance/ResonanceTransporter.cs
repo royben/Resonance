@@ -173,7 +173,7 @@ namespace Resonance
             _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
             _arrivedMessages = new ProducerConsumerQueue<byte[]>();
 
-            DefaultRequestTimeout = TimeSpan.FromSeconds(5);
+            DefaultRequestTimeout = ResonanceGlobalSettings.Default.DefaultRequestTimeout;
         }
 
         #endregion
