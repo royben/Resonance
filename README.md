@@ -38,3 +38,7 @@ The following built-in adapters are currently supported by the library:
 The following diagram described a simple request-response scenario.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
+
+The following is a class diagram lays down some of library components.
+
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance.png)
