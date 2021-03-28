@@ -576,5 +576,27 @@ namespace Resonance.Tests
             t1.Dispose(true);
             t2.Dispose(true);
         }
+
+        [TestMethod]
+        public void Disconnection_Request()
+        {
+            Init();
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect().Wait();
+            t2.Connect().Wait();
+
+            t2.Disconnect().Wait();
+
+            Thread.Sleep(1000);
+
+            Assert.IsTrue(t1.State == ResonanceComponentState.Failed);
+            Assert.IsTrue(t1.FailedStateException is ResonanceConnectionClosedException);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
     }
 }

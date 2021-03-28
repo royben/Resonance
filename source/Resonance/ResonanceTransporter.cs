@@ -360,6 +360,15 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected)
             {
+                if (Adapter.State == ResonanceComponentState.Connected)
+                {
+                    try
+                    {
+                        var response = await SendRequest(new ResonanceDisconnectRequest());
+                    }
+                    catch { }
+                }
+
                 State = ResonanceComponentState.Disconnected;
 
                 await FinalizeDisconnection();
@@ -615,6 +624,11 @@ namespace Resonance
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
                 }
+                else if (pendingRequest.Request.Message is ResonanceDisconnectRequest)
+                {
+                    info.Type = ResonanceTranscodingInformationType.Disconnect;
+                    pendingRequest.CompletionSource.SetResult(true);
+                }
                 else
                 {
                     info.Type = ResonanceTranscodingInformationType.Request;
@@ -839,6 +853,10 @@ namespace Resonance
                         {
                             OnKeepAliveRequestReceived(info);
                         }
+                        else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
+                        {
+                            OnDisconnectRequestReceived(info);
+                        }
                         else
                         {
                             IResonancePendingRequest pending = _pendingRequests.ToList().FirstOrDefault(x => x.Request.Token == info.Token);
@@ -1018,6 +1036,16 @@ namespace Resonance
                     LogManager.Log(ex, "Error sending keep alive auto response.");
                 }
             }
+        }
+
+        /// <summary>
+        /// Called when a <see cref="ResonanceDisconnectRequest"/> has been received.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        /// <exception cref="NotImplementedException"></exception>
+        protected virtual void OnDisconnectRequestReceived(ResonanceDecodingInformation info)
+        {
+            OnFailed(new ResonanceConnectionClosedException());
         }
 
         #endregion

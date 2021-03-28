@@ -34,7 +34,7 @@ namespace Resonance.Tcp
         /// <summary>
         /// Occurs when a new <see cref="TcpClient"/> has connected.
         /// </summary>
-        public event EventHandler<ClientConnectedEventArgs> ClientConnected;
+        public event EventHandler<ResonanceTcpServerClientConnectedEventArgs> ClientConnected;
 
         #endregion
 
@@ -116,7 +116,7 @@ namespace Resonance.Tcp
         /// <param name="tcpClient">The tcp client.</param>
         protected virtual void OnClientConnected(TcpClient tcpClient)
         {
-            ClientConnected?.Invoke(this, new ClientConnectedEventArgs(tcpClient));
+            ClientConnected?.Invoke(this, new ResonanceTcpServerClientConnectedEventArgs(tcpClient));
         }
 
         #endregion

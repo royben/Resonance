@@ -14,5 +14,6 @@ namespace Resonance
         ContinuousRequest,
         KeepAliveRequest,
         KeepAliveResponse,
+        Disconnect,
     }
 }
