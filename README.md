@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png" />
+  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png" />    
 </p>
 
-# Resonance <img width="24" height="24" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png" />
+# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png" /> [![Build Status](https://sirilix.visualstudio.com/Resonance/_apis/build/status/royben.Resonance?branchName=main)](https://sirilix.visualstudio.com/Resonance/_build/latest?definitionId=1&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg)
 
 Resonance is a high performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
@@ -18,9 +18,5 @@ Encoders/Decoders are components that can be pluged to a transporter, they deter
 ### Adapters
 Adapters can also be pluged to a transporter to determine how outgoing/incoming encoded data is going to be transmitted and where.
 
-
-
-[![Build Status](https://sirilix.visualstudio.com/Resonance/_apis/build/status/royben.Resonance?branchName=main)](https://sirilix.visualstudio.com/Resonance/_build/latest?definitionId=1&branchName=main)
-![Issues](https://img.shields.io/github/issues/royben/Resonance.svg)
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
