@@ -6,6 +6,7 @@ namespace Resonance.Tokens
 {
     /// <summary>
     /// Generates tokens based on the message GetHashCode method.
+    /// See <see cref="Object.GetHashCode()"/>.
     /// </summary>
     /// <seealso cref="Resonance.IResonanceTokenGenerator" />
     public class HashCodeTokenGenerator : IResonanceTokenGenerator

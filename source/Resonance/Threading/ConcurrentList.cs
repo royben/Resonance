@@ -14,7 +14,7 @@ namespace Resonance.Threading
     /// <typeparam name="T"></typeparam>
     /// <seealso cref="System.Collections.Generic.IList{T}" />
     /// <seealso cref="System.IDisposable" />
-    internal class ConcurrentList<T> : IList<T>, IDisposable
+    public class ConcurrentList<T> : IList<T>, IDisposable
     {
         #region Fields
         internal readonly List<T> InnerList;
