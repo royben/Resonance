@@ -7,25 +7,43 @@ using System.Text;
 
 namespace Resonance.Transcoding.Bson
 {
+    /// <summary>
+    /// Represents a Bson Resonance encoder.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceEncoder" />
     public class BsonEncoder : ResonanceEncoder
     {
         private static JsonSerializer _serializer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BsonEncoder"/> class.
+        /// </summary>
         public BsonEncoder()
         {
             _serializer = new BsonSerializerWithUTC();
+            _serializer.TypeNameHandling = TypeNameHandling.Objects;
         }
 
+        /// <summary>
+        /// Encodes the specified message using the specified writer.
+        /// </summary>
+        /// <param name="writer">The binary writer.</param>
+        /// <param name="message">The message.</param>
         protected override void Encode(BinaryWriter writer, object message)
         {
-            MemoryStream ms = new MemoryStream();
-            using (BsonWriter writer = new BsonWriter(ms))
+            using (MemoryStream ms = new MemoryStream())
             {
-                _serializer.Serialize(writer, obj);
-                return ms.ToArray();
+                using (BsonDataWriter bsonWriter = new BsonDataWriter(ms))
+                {
+                    _serializer.Serialize(bsonWriter, message);
+                    writer.Write(ms.ToArray());
+                }
             }
         }
 
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
         public override void Dispose()
         {
             

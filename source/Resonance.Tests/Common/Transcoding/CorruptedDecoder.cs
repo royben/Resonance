@@ -14,7 +14,7 @@ namespace Resonance.Tests.Common.Transcoding
             //throw new NotImplementedException();
         }
 
-        protected override object Decode(BinaryReader reader)
+        protected override object Decode(MemoryStream stream)
         {
             throw new CorruptedDecoderException();
         }

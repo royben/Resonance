@@ -27,14 +27,17 @@ namespace Resonance.Transcoding.Json
         }
 
         /// <summary>
-        /// Decodes a message using the specified binary reader.
+        /// Decodes a message from the specified memory stream.
         /// </summary>
-        /// <param name="reader">The binary reader.</param>
+        /// <param name="stream">The memory stream.</param>
         /// <returns></returns>
-        protected override object Decode(BinaryReader reader)
+        protected override object Decode(MemoryStream stream)
         {
-            String json = reader.ReadString();
-            return JsonConvert.DeserializeObject(json, Settings);
+            using (BinaryReader reader = new BinaryReader(stream))
+            {
+                String json = reader.ReadString();
+                return JsonConvert.DeserializeObject(json, Settings);
+            }
         }
 
         /// <summary>

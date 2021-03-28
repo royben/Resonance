@@ -223,5 +223,11 @@ namespace Resonance
         /// Creates a new transporter builder based on this transporter.
         /// </summary>
         IAdapterBuilder CreateBuilder();
+
+        /// <summary>
+        /// Disconnects and disposes this transporter.
+        /// </summary>
+        /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
+        void Dispose(bool withAdapter = false);
     }
 }

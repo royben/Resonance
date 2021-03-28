@@ -19,7 +19,7 @@
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if not $(ConfigurationName) == AzureBuild powershell start-process -WindowStyle Hidden $(SolutionDir)Resonance.PostBuild\bin\$(ConfigurationName)\Resonance.PostBuild.exe $(ConfigurationName)" />
+    <Exec Command="if $(ConfigurationName) == Release powershell start-process -WindowStyle Hidden $(SolutionDir)Resonance.PostBuild\bin\$(ConfigurationName)\Resonance.PostBuild.exe $(ConfigurationName)" />
   </Target>
 
 </Project>

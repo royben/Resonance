@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace Resonance.Tokens
 {
@@ -19,7 +20,8 @@ namespace Resonance.Tokens
         /// <returns></returns>
         public string GenerateToken(object message)
         {
-            return _token++.ToString();
+            long token = Interlocked.Increment(ref _token);
+            return token.ToString();
         }
     }
 }

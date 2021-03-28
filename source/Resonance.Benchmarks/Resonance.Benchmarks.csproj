@@ -59,6 +59,9 @@
       <HintPath>..\packages\Microsoft.Diagnostics.Tracing.TraceEvent.2.0.49\lib\net45\Dia2Lib.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
+    <Reference Include="Google.Protobuf, Version=3.15.6.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Protobuf.3.15.6\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
     <Reference Include="Iced, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5baba79f4264913b, processorArchitecture=MSIL">
       <HintPath>..\packages\Iced.1.4.0\lib\net45\Iced.dll</HintPath>
     </Reference>
@@ -229,9 +232,12 @@
   <ItemGroup>
     <Compile Include="Messages\CalculateRequest.cs" />
     <Compile Include="Messages\CalculateResponse.cs" />
+    <Compile Include="Messages\Proto\CalculateRequest.cs" />
+    <Compile Include="Messages\Proto\CalculateResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AdaptersBenchmark.cs" />
+    <Compile Include="TranscodingBenchmark.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -242,6 +248,10 @@
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.2.6.1\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.Protobuf\Resonance.Protobuf.csproj">
+      <Project>{3ca3bbb8-99f7-43c5-a292-844fe2c8d627}</Project>
+      <Name>Resonance.Protobuf</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resonance.USB\Resonance.USB.csproj">
       <Project>{737d3507-e83d-4620-8b99-7325749ae85d}</Project>
       <Name>Resonance.USB</Name>

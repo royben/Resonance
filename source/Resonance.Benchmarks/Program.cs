@@ -13,8 +13,12 @@ namespace Resonance.Benchmarks
     {
         static void Main(string[] args)
         {
-            var summery = BenchmarkRunner.Run<AdaptersBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
+            var summery1 = BenchmarkRunner.Run<AdaptersBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
                 .WithOption(ConfigOptions.DisableOptimizationsValidator, true));
+
+            var summery2 = BenchmarkRunner.Run<TranscodingBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
+                .WithOption(ConfigOptions.DisableOptimizationsValidator, true));
+
             Console.ReadLine();
         }
     }

@@ -65,10 +65,7 @@ namespace Resonance
 
                         using (MemoryStream msgMs = new MemoryStream(msgData))
                         {
-                            using (BinaryReader msgReader = new BinaryReader(msgMs))
-                            {
-                                info.Message = Decode(msgReader);
-                            }
+                            info.Message = Decode(msgMs);
                         }
                     }
                 }
@@ -124,11 +121,10 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Decodes a message using the specified binary reader.
+        /// Decodes a message from the specified memory stream.
         /// </summary>
-        /// <param name="reader">The binary reader.</param>
-        /// <returns></returns>
-        protected abstract Object Decode(BinaryReader reader);
+        /// <param name="stream">The memory stream.</param>
+        protected abstract Object Decode(MemoryStream stream);
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

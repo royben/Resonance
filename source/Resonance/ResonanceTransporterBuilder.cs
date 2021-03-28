@@ -1,7 +1,9 @@
 ﻿using Resonance.Adapters.InMemory;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
+using Resonance.Transcoding.Bson;
 using Resonance.Transcoding.Json;
+using Resonance.Transcoding.Xml;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -129,6 +131,21 @@ namespace Resonance
             /// <param name="decoder">The decoder.</param>
             /// <returns></returns>
             IKeepAliveBuilder WithTranscoding<TEncoder, TDecoder>(TEncoder encoder, TDecoder decoder) where TEncoder : IResonanceEncoder where TDecoder : IResonanceDecoder;
+
+            /// <summary>
+            /// Sets the transporter encoder/decoder to Json.
+            /// </summary>
+            IKeepAliveBuilder WithJsonTranscoding();
+
+            /// <summary>
+            /// Sets the transporter encoder/decoder to Bson.
+            /// </summary>
+            IKeepAliveBuilder WithBsonTranscoding();
+
+            /// <summary>
+            /// Sets the transporter encoder/decoder to XML.
+            /// </summary>
+            IKeepAliveBuilder WithXmlTranscoding();
         }
 
         public interface IKeepAliveBuilder : IBuildTransporter
@@ -273,6 +290,27 @@ namespace Resonance
         {
             Transporter.Encoder = encoder;
             Transporter.Decoder = decoder;
+            return this;
+        }
+
+        public IKeepAliveBuilder WithJsonTranscoding()
+        {
+            Transporter.Encoder = new JsonEncoder();
+            Transporter.Decoder = new JsonDecoder();
+            return this;
+        }
+
+        public IKeepAliveBuilder WithBsonTranscoding()
+        {
+            Transporter.Encoder = new BsonEncoder();
+            Transporter.Decoder = new BsonDecoder();
+            return this;
+        }
+
+        public IKeepAliveBuilder WithXmlTranscoding()
+        {
+            Transporter.Encoder = new XmlEncoder();
+            Transporter.Decoder = new XmlDecoder();
             return this;
         }
 
