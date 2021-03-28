@@ -28,7 +28,7 @@ namespace Resonance
         void Decode(byte[] data, ResonanceDecodingInformation info);
 
         /// <summary>
-        /// Decodes the specified data and returns the <see cref="ResonanceDecodingInformation"/> as type T.
+        /// Decodes the specified data and returns the <see cref="ResonanceTranscodingInformation.Message"/> as type T.
         /// </summary>
         /// <typeparam name="T">Type of expected message.</typeparam>
         /// <param name="data">The encoded data.</param>
