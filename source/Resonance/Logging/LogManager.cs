@@ -17,12 +17,13 @@ namespace Resonance.Logging
     /// <summary>
     /// Represents the Resonance library log manager.
     /// </summary>
+#pragma warning disable CS1573
     public class LogManager
     {
-        private ProducerConsumerQueue<LogItemBase> _logs;
+        private readonly ProducerConsumerQueue<LogItemBase> _logs;
         private Thread _loggingThread;
         private bool _isStarted;
-        private static Lazy<LogManager> _default = new Lazy<LogManager>(() => new LogManager());
+        private static readonly Lazy<LogManager> _default = new Lazy<LogManager>(() => new LogManager());
 
         /// <summary>
         /// Occurs when a new log as been received.

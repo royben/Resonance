@@ -51,7 +51,7 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="T"/> to <see cref="ResonanceActionResult{T}"/>.
+        /// Performs an implicit conversion from T" to <see cref="ResonanceActionResult{T}"/>.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <returns>
@@ -63,7 +63,7 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="ResonanceActionResult{T}"/> to <see cref="T"/>.
+        /// Performs an implicit conversion from <see cref="ResonanceActionResult{T}"/> to T.
         /// </summary>
         /// <param name="instance">The instance.</param>
         /// <returns>
