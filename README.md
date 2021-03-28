@@ -7,6 +7,8 @@
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
 
+<br/>
+<br/>
 The resonance library might be described by the folowing layers:
 
 ### Transporting
