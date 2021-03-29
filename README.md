@@ -79,15 +79,11 @@ The following diagram described a simple request-response scenario.
             server.Start();
             server.ClientConnected += Server_ClientConnected;
 
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-                .Create()
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
                 .WithPort(8888)
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             await transporter1.Connect();
@@ -103,14 +99,10 @@ The following diagram described a simple request-response scenario.
 
         private async void Server_ClientConnected(object sender, ResonanceTcpServerClientConnectedEventArgs e)
         {
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-                .Create()
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .FromTcpClient(e.TcpClient)
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
                 
             transporter2.RequestReceived += Transporter2_RequestReceived;                
@@ -138,9 +130,6 @@ The following diagram described a simple request-response scenario.
                 .WithAddress("127.0.0.1")
                 .WithPort(8888)
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             transporter.RegisterRequestHandler<CalculateRequest>(HandleCalculateRequest);
@@ -168,9 +157,6 @@ The Transporter also supports registering a service instance as an easy request 
                 .WithAddress("127.0.0.1")
                 .WithPort(8888)
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             transporter.RegisterService(new MyResonanceService());
@@ -201,7 +187,6 @@ The Transporter also supports registering a service instance as an easy request 
 Communication testing can easily be done using the **InMemory** adapter.
 Notice how both transporters are using the In-Memory adapter with the same address.
 
-#### Registering a Resonance Service.
 ```c#
         public async void Demo()
         {
@@ -210,9 +195,6 @@ Notice how both transporters are using the In-Memory adapter with the same addre
                 .WithInMemoryAdapter()
                 .WithAddress("TEST")
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             IResonanceTransporter transporter2 = ResonanceTransporter.Builder
@@ -220,9 +202,6 @@ Notice how both transporters are using the In-Memory adapter with the same addre
                 .WithInMemoryAdapter()
                 .WithAddress("TEST")
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             await transporter1.Connect();
