@@ -71,7 +71,7 @@ The following diagram described a simple request-response scenario.
 ```
 <br/>
 
-#### Simple TCP request response.
+#### Connecting between transporters using a TCP server.
 ```c#
         public async void Demo()
         {
