@@ -30,7 +30,7 @@ namespace Resonance.Tests
         {
             public Type GetProtobufMessageType(string typeName)
             {
-                var type = Type.GetType($"Resonance.Tests.Common.Proto.{typeName}");
+                var type = typeof(CalculateRequest).Assembly.GetType($"Resonance.Messages.Proto.{typeName}");
                 Assert.IsNotNull(type);
                 return type;
             }
@@ -214,8 +214,6 @@ namespace Resonance.Tests
                 .WithMessageTypeHeaderMethod(MessageTypeHeaderMethod.Name)
                 .WithTypeResolver<ProtobufTypeResolver>()
                 .Build();
-
-            t1.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
 
             t1.Connect().Wait();
             t2.Connect().Wait();
