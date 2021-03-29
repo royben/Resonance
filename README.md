@@ -77,6 +77,7 @@ The following diagram described a simple request-response scenario.
         public async void Demo()
         {
             ResonanceTcpServer server = new ResonanceTcpServer(8888);
+            server.Start();
             server.ClientConnected += Server_ClientConnected;
 
             IResonanceTransporter transporter1 = ResonanceTransporter.Builder
@@ -135,6 +136,7 @@ The following diagram described a simple request-response scenario.
         public async void Demo()
         {
             ResonanceTcpServer server = new ResonanceTcpServer(8888);
+            server.Start();
             server.ClientConnected += Server_ClientConnected;
 
             IResonanceTransporter transporter1 = ResonanceTransporter.Builder
