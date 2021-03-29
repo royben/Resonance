@@ -71,7 +71,7 @@ The following diagram described a simple request-response scenario.
 ```
 <br/>
 
-#### Connecting between transporters using a TCP server.
+#### Connecting between Transporters using a TCP server.
 ```c#
         public async void Demo()
         {
@@ -129,7 +129,7 @@ The following diagram described a simple request-response scenario.
 ```
 <br/>
 
-#### Using a request handler.
+#### Using a Request Handler.
 ```c#
         public async void Demo()
         {
