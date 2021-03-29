@@ -42,3 +42,26 @@ The following diagram described a simple request-response scenario.
 The following is a class diagram lays down some of library components.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance.png)
+
+## Benchmarks
+>Intel Core i7-6700HQ CPU 2.60GHz (Skylake)
+
+>1000 Roundtrips (request -> response)
+
+**Transcoding**
+
+|                                       Method |     Mean |   Error |  StdDev |
+|--------------------------------------------- |---------:|--------:|--------:|
+| Json | 205.6 ms | 4.09 ms | 9.96 ms |
+| Protobuf | 207.3 ms | 4.07 ms | 3.81 ms |
+
+<br/>
+
+**Encryption / Compression**
+
+|                                                              Method |     Mean |   Error |   StdDev |
+|-------------------------------------------------------------------- |---------:|--------:|---------:|
+| Normal | 183.4 ms | 2.87 ms |  2.40 ms |
+| Compressed | 421.9 ms | 8.25 ms | 13.32 ms |
+| Encrypted | 260.9 ms | 5.18 ms | 12.41 ms |
+| Compressed / Encrypted | 517.2 ms | 9.12 ms |  8.08 ms |
