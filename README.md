@@ -242,7 +242,7 @@ Notice how both transporters are using the In-Memory adapter with the same addre
 |                                       Method |     Mean |   Error |  StdDev |
 |--------------------------------------------- |---------:|--------:|--------:|
 | Json | 205.6 ms | 4.09 ms | 9.96 ms |
-| Protobuf | 207.3 ms | 4.07 ms | 3.81 ms |
+| Protobuf | 180.3 ms | 4.07 ms | 3.81 ms |
 
 <br/>
 
