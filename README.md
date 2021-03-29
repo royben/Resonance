@@ -210,6 +210,61 @@ Notice how both transporters are using the In-Memory adapter with the same addre
 ```
 
 <br/>
+
+# Continuous Request
+The Resonance library supports the concept of a continuous request where one transporter sends a single request
+while expecting multiple response messages. This method works best when you want to report about some progress being made,
+or to send large amount of data with less overhead.
+
+Sending a continuous request can be done using the **SendContinuousRequest** method and providing an **observer**.
+
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+               .Create()
+               .WithInMemoryAdapter()
+               .WithAddress("TEST")
+               .WithJsonTranscoding()
+               .Build();
+
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TEST")
+                .WithJsonTranscoding()
+                .Build();
+
+            await transporter1.Connect();
+            await transporter2.Connect();
+
+            transporter2.RegisterRequestHandler<ProgressRequest>(async (t, request) =>
+            {
+                for (int i = 0; i < request.Message.Count; i++)
+                {
+                    await t.SendResponse(new ProgressResponse() { Value = i }, request.Token);
+                    Thread.Sleep(request.Message.Interval);
+                }
+            });
+
+            transporter1.SendContinuousRequest<ProgressRequest, ProgressResponse>(new ProgressRequest()
+            {
+                Interval = TimeSpan.FromSeconds(1),
+                Count = 10
+            }).Subscribe((response) =>
+            {
+                Console.WriteLine(response.Value);
+            }, (ex) =>
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }, () =>
+            {
+                Console.WriteLine($"Continuous Request Completed!");
+            });
+        }
+```
+
+<br/>
 <br/>
 <br/>
 
