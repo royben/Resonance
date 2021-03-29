@@ -188,7 +188,8 @@ The following diagram described a simple request-response scenario.
         public void Demo()
         {
             IResonanceTransporter transporter = ResonanceTransporter.Builder
-                .Create().WithTcpAdapter()
+                .Create()
+                .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
                 .WithPort(8888)
                 .WithJsonTranscoding()
