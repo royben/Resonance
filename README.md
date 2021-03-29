@@ -156,7 +156,7 @@ The following diagram described a simple request-response scenario.
 <br/>
 
 # Services
-The Transporter also supports registering a service instance as an easy request/response handling mechanism.
+The Transporter also supports registering a service instance as an easy request handling mechanism.
 
 #### Registering a Resonance Service.
 ```c#
