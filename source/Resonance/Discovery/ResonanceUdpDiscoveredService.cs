@@ -22,21 +22,14 @@ namespace Resonance.Discovery
         public String Address { get; }
 
         /// <summary>
-        /// Gets or sets the name of the host.
-        /// </summary>
-        public String HostName { get; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceUdpDiscoveredService{TDiscoveryInfo}"/> class.
         /// </summary>
         /// <param name="info">The information.</param>
         /// <param name="address">The service address.</param>
-        /// <param name="hostName">Name of the service host.</param>
-        public ResonanceUdpDiscoveredService(TDiscoveryInfo info, String address, String hostName)
+        public ResonanceUdpDiscoveredService(TDiscoveryInfo info, String address)
         {
             DiscoveryInfo = info;
             Address = address;
-            HostName = hostName;
         }
 
         /// <summary>
@@ -50,14 +43,19 @@ namespace Resonance.Discovery
         {
             ResonanceUdpDiscoveredService<TDiscoveryInfo> other = obj as ResonanceUdpDiscoveredService<TDiscoveryInfo>;
             if (obj == null || this == null) return false;
-            return (other.Address == this.Address && other.HostName == this.HostName);
+            return (other.Address == this.Address);
         }
 
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
         public override int GetHashCode()
         {
             int hashCode = 1893673367;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Address);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(HostName);
             return hashCode;
         }
     }
