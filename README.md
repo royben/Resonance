@@ -265,6 +265,56 @@ Sending a continuous request can be done using the **SendContinuousRequest** met
 ```
 
 <br/>
+
+# Error Handling
+The Resonance library supports an automatic error handling mechanism which makes it easy to report and handle errors.
+The following example demonstrate how to report an error from one side while handling it on the other.
+
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+               .Create()
+               .WithInMemoryAdapter()
+               .WithAddress("TEST")
+               .WithJsonTranscoding()
+               .Build();
+
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TEST")
+                .WithJsonTranscoding()
+                .Build();
+
+            await transporter1.Connect();
+            await transporter2.Connect();
+
+            transporter1.RegisterRequestHandler<CalculateRequest>(async (t, request) => 
+            {
+                try
+                {
+                    double sum = request.Message.A / request.Message.B;
+                }
+                catch (DivideByZeroException ex)
+                {
+                    await t.SendErrorResponse(ex, request.Token);
+                }
+            });
+
+
+            try
+            {
+                var response = await transporter2.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+```
+
+<br/>
 <br/>
 <br/>
 
