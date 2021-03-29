@@ -916,18 +916,36 @@ namespace Resonance
                     {
                         Task.Factory.StartNew(() =>
                         {
-                            if (handler.HasResponse)
+                            try
                             {
-                                IResonanceActionResult result = handler.ResponseCallback.Invoke(request.Message) as IResonanceActionResult;
-
-                                if (result != null && result.Response != null)
+                                if (handler.HasResponse)
                                 {
-                                    SendResponse(result.Response, request.Token, result.Config).GetAwaiter().GetResult();
+                                    IResonanceActionResult result = null;
+
+                                    try
+                                    {
+                                        result = handler.ResponseCallback.Invoke(request.Message) as IResonanceActionResult;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        if (ex.InnerException != null) ex = ex.InnerException;
+                                        SendErrorResponse(ex, request.Token).GetAwaiter().GetResult();
+                                        return;
+                                    }
+
+                                    if (result != null && result.Response != null)
+                                    {
+                                        SendResponse(result.Response, request.Token, result.Config).GetAwaiter().GetResult();
+                                    }
+                                }
+                                else
+                                {
+                                    handler.Callback.Invoke(this, request);
                                 }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                handler.Callback.Invoke(this, request);
+                                LogManager.Log(ex, "Unexpected error occurred on a request handler.");
                             }
                         });
                     }

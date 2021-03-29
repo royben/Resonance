@@ -43,8 +43,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Continuous_Request.cs" />
+    <Compile Include="Error_Handling.cs" />
+    <Compile Include="Init_Transporter_And_Send_Message.cs" />
+    <Compile Include="InMemory.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Request_Handler.cs" />
+    <Compile Include="Services.cs" />
+    <Compile Include="Simple_Request_Response_TCP.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
