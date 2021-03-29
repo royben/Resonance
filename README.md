@@ -58,6 +58,8 @@ The following diagram described a simple request-response scenario.
                 .WithCompression()
                 .Build();
 
+            await transporter.Connect();
+
             var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
             {
                 A = 10,
