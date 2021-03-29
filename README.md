@@ -70,6 +70,62 @@ The following diagram described a simple request-response scenario.
         }
 ```
 
+#### Simple TCP request response.
+```c#
+        public async void Demo()
+        {
+            ResonanceTcpServer server = new ResonanceTcpServer(8888);
+            server.ClientConnected += Server_ClientConnected;
+
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+                .Create()
+                .WithTcpAdapter()
+                .WithAddress("127.0.0.1")
+                .WithPort(8888)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            await transporter1.Connect();
+
+            var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+
+        private async void Server_ClientConnected(object sender, ResonanceTcpServerClientConnectedEventArgs e)
+        {
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithTcpAdapter()
+                .FromTcpClient(e.TcpClient)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            await transporter2.Connect();
+
+            transporter2.RequestReceived += Transporter2_RequestReceived;
+        }
+
+        private void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
+        {
+            CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+            (sender as IResonanceTransporter).SendResponse(new CalculateResponse() 
+            {
+                Sum = receivedRequest.A + receivedRequest.B 
+            }, e.Request.Token);
+        }
+```
+
 <br/>
 <br/>
 <br/>
