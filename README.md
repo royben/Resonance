@@ -198,7 +198,7 @@ The Transporter also supports registering a service instance as an easy request 
 <br/>
 
 # In-Memory Testing
-Communication testing can easily be done using the *InMemory* adapter.
+Communication testing can easily be done using the **InMemory** adapter.
 Notice how both transporters are using the In-Memory adapter with the same address.
 
 #### Registering a Resonance Service.
