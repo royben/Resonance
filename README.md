@@ -180,6 +180,42 @@ The following diagram described a simple request-response scenario.
             await transporter.SendResponse(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
         }
 ```
+<br/>
+<br/>
+
+#### Registering a Resonance Service.
+```c#
+        public void Demo()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+                .Create().WithTcpAdapter()
+                .WithAddress("127.0.0.1")
+                .WithPort(8888)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            transporter.RegisterService(new MyResonanceService());
+        }
+
+        private class MyResonanceService : IResonanceService
+        {
+            public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
+            {
+                return new CalculateResponse() { Sum = request.A + request.B };
+            }
+
+            public void OnTransporterStateChanged(ResonanceComponentState state)
+            {
+                if (state == ResonanceComponentState.Failed)
+                {
+                    //Connection lost
+                }
+            }
+        }
+```
 
 <br/>
 <br/>
