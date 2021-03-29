@@ -68,6 +68,10 @@ The following diagram described a simple request-response scenario.
         }
 ```
 
+<br/>
+<br/>
+<br/>
+
 # Benchmarks
 >1000 Roundtrips (request -> response), Intel Core i7-6700HQ CPU 2.60GHz (Skylake)
 
