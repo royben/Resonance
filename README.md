@@ -39,7 +39,11 @@ The following diagram described a simple request-response scenario.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
 
-# Create a Transporter and send a message.
+# Usage Examples
+
+<br/>
+
+#### Create a Transporter and send a message.
 ```c#
         public async void Demo()
         {
