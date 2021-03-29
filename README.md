@@ -160,7 +160,7 @@ The following diagram described a simple request-response scenario.
 
 #### Registering a Resonance Service.
 ```c#
-        public void Demo()
+        public async void Demo()
         {
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
@@ -174,6 +174,8 @@ The following diagram described a simple request-response scenario.
                 .Build();
 
             transporter.RegisterService(new MyResonanceService());
+
+            await transporter.Connect();
         }
 
         private class MyResonanceService : IResonanceService
