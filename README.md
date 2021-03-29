@@ -39,6 +39,31 @@ The following diagram described a simple request-response scenario.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
 
+# Create a Transporter and send a message.
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+                .Create()
+                .WithTcpAdapter()
+                .WithAddress("127.0.0.1")
+                .WithPort(8888)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+```
+
 # Benchmarks
 >1000 Roundtrips (request -> response), Intel Core i7-6700HQ CPU 2.60GHz (Skylake)
 
