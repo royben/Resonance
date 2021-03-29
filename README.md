@@ -69,6 +69,8 @@ The following diagram described a simple request-response scenario.
             Console.WriteLine(response.Sum);
         }
 ```
+<br/>
+<br/>
 
 #### Simple TCP request response.
 ```c#
@@ -110,10 +112,10 @@ The following diagram described a simple request-response scenario.
                 .NoEncryption()
                 .WithCompression()
                 .Build();
+                
+            transporter2.RequestReceived += Transporter2_RequestReceived;                
 
             await transporter2.Connect();
-
-            transporter2.RequestReceived += Transporter2_RequestReceived;
         }
 
         private void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
@@ -123,6 +125,59 @@ The following diagram described a simple request-response scenario.
             {
                 Sum = receivedRequest.A + receivedRequest.B 
             }, e.Request.Token);
+        }
+```
+<br/>
+<br/>
+
+#### Using a request handler.
+```c#
+        public async void Demo()
+        {
+            ResonanceTcpServer server = new ResonanceTcpServer(8888);
+            server.ClientConnected += Server_ClientConnected;
+
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+                .Create().WithTcpAdapter()
+                .WithAddress("127.0.0.1")
+                .WithPort(8888)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            await transporter1.Connect();
+
+            var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+
+        private async void Server_ClientConnected(object sender, ResonanceTcpServerClientConnectedEventArgs e)
+        {
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithTcpAdapter()
+                .FromTcpClient(e.TcpClient)
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            transporter2.RegisterRequestHandler<CalculateRequest>(HandleCalculateRequest);
+
+            await transporter2.Connect();
+        }
+
+        private async void HandleCalculateRequest(IResonanceTransporter transporter, ResonanceRequest<CalculateRequest> request)
+        {
+            await transporter.SendResponse(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
         }
 ```
 
