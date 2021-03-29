@@ -195,6 +195,39 @@ The Transporter also supports registering a service instance as an easy request 
         }
 ```
 
+# In Memory Testing
+Communication testing can easyly be done using the *InMemory* adapter.
+Notice how both transporters are using the In-Memory adapter with the same address.
+
+#### Registering a Resonance Service.
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TEST")
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TEST")
+                .WithJsonTranscoding()
+                .WithKeepAlive()
+                .NoEncryption()
+                .WithCompression()
+                .Build();
+
+            await transporter1.Connect();
+            await transporter2.Connect();
+        }
+```
+
 <br/>
 <br/>
 <br/>
