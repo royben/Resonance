@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Transporters;
 using System;
 using Google.Protobuf;
@@ -64,15 +64,19 @@ namespace Resonance.Tests
                 t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token);
             };
 
-            var request = new CalculateRequestWithDate() { A = 10, B = 15, Date = DateTime.UtcNow };
-            var response = t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request).GetAwaiter().GetResult();
+
+            for (int i = 0; i < 1000; i++)
+            {
+                var request = new CalculateRequestWithDate() { A = 10, B = 15, Date = DateTime.UtcNow };
+                var response = t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request).GetAwaiter().GetResult();
+
+                Assert.AreEqual(response.Sum, request.A + request.B);
+                Assert.AreEqual(request.Date.Kind, response.Date.Kind);
+                Assert.AreEqual(request.Date.ToString(), response.Date.ToString());
+            }
 
             t1.Dispose(true);
             t2.Dispose(true);
-
-            Assert.AreEqual(response.Sum, request.A + request.B);
-            Assert.AreEqual(request.Date.Kind, response.Date.Kind);
-            Assert.AreEqual(request.Date.ToString(), response.Date.ToString());
         }
 
         [TestMethod]
@@ -175,12 +179,12 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                Common.Proto.CalculateRequest receivedRequest = e.Request.Message as Common.Proto.CalculateRequest;
-                t2.SendResponse(new Common.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
-            var request = new Common.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<Common.Proto.CalculateRequest, Common.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+            var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -218,12 +222,12 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                Common.Proto.CalculateRequest receivedRequest = e.Request.Message as Common.Proto.CalculateRequest;
-                t2.SendResponse(new Common.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
-            var request = new Common.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<Common.Proto.CalculateRequest, Common.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+            var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
 
             t1.Dispose(true);
             t2.Dispose(true);

@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Transporters;
 using System;
 

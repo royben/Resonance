@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Resonance.Benchmarks.Messages.Proto {
+namespace Resonance.Messages.Proto {
 
   /// <summary>Holder for reflection information generated from CalculateRequest.proto</summary>
   public static partial class CalculateRequestReflection {
@@ -28,7 +28,7 @@ namespace Resonance.Benchmarks.Messages.Proto {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Resonance.Benchmarks.Messages.Proto.CalculateRequest), global::Resonance.Benchmarks.Messages.Proto.CalculateRequest.Parser, new[]{ "A", "B" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Resonance.Messages.Proto.CalculateRequest), global::Resonance.Messages.Proto.CalculateRequest.Parser, new[]{ "A", "B" }, null, null, null)
           }));
     }
     #endregion
@@ -42,7 +42,7 @@ namespace Resonance.Benchmarks.Messages.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Resonance.Benchmarks.Messages.Proto.CalculateRequestReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Resonance.Messages.Proto.CalculateRequestReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

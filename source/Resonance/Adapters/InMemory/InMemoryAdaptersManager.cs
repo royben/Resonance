@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,14 +12,14 @@ namespace Resonance.Adapters.InMemory
     /// </summary>
     internal static class InMemoryAdaptersManager
     {
-        private static List<InMemoryAdapter> _adapters;
+        private static readonly ConcurrentList<InMemoryAdapter> _adapters;
 
         /// <summary>
         /// Initializes the <see cref="InMemoryAdaptersManager"/> class.
         /// </summary>
         static InMemoryAdaptersManager()
         {
-            _adapters = new List<InMemoryAdapter>();
+            _adapters = new ConcurrentList<InMemoryAdapter>();
         }
 
         /// <summary>

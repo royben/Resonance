@@ -12,7 +12,7 @@ using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
 using Resonance.Tcp;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Transporters;
 
 namespace Resonance.Tests

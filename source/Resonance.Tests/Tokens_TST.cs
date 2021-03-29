@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Threading;
 using Resonance.Tokens;
 using System;

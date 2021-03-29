@@ -3,7 +3,7 @@ using Resonance.Adapters.Tcp;
 using Resonance.Discovery;
 using Resonance.Tcp;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Transcoding.Json;
 using Resonance.Transporters;
 using System;

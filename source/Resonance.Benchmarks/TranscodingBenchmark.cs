@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Resonance.Benchmarks.Messages;
+using Resonance.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,41 +52,42 @@ namespace Resonance.Benchmarks
             t2.Dispose(true);
         }
 
-        [Benchmark(Description = "1000 Request/Response Bson Transcoding")]
-        public void Bson_Encoding()
-        {
-            IResonanceTransporter t1 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TST")
-                .WithBsonTranscoding()
-                .Build();
+        // ### Causes BenchmarkDoNet to hang! ###
+        //[Benchmark(Description = "1000 Request/Response Bson Transcoding")]
+        //public void Bson_Encoding()
+        //{
+        //    IResonanceTransporter t1 = ResonanceTransporter.Builder
+        //        .Create()
+        //        .WithInMemoryAdapter()
+        //        .WithAddress("TST")
+        //        .WithBsonTranscoding()
+        //        .Build();
 
-            IResonanceTransporter t2 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TST")
-                .WithBsonTranscoding()
-                .Build();
+        //    IResonanceTransporter t2 = ResonanceTransporter.Builder
+        //        .Create()
+        //        .WithInMemoryAdapter()
+        //        .WithAddress("TST")
+        //        .WithBsonTranscoding()
+        //        .Build();
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+        //    t1.Connect().Wait();
+        //    t2.Connect().Wait();
 
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
+        //    t2.RequestReceived += (s, e) =>
+        //    {
+        //        CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+        //        t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+        //    };
 
-            for (int i = 0; i < 1000; i++)
-            {
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-            }
+        //    for (int i = 0; i < 1000; i++)
+        //    {
+        //        var request = new CalculateRequest() { A = 10, B = i };
+        //        var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+        //    }
 
-            t1.Dispose(true);
-            t2.Dispose(true);
-        }
+        //    t1.Dispose(true);
+        //    t2.Dispose(true);
+        //}
 
         [Benchmark(Description = "1000 Request/Response Protobuf Transcoding")]
         public void Protobuf_Encoding()

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Resonance.Benchmarks.Messages
+namespace Resonance.Messages
 {
-    public class CalculateResponse
+    public class ProgressResponse
     {
-        public double Sum { get; set; }
+        public int Value { get; set; }
     }
 }

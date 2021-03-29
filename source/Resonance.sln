@@ -20,7 +20,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.PostBuild", "Resonance.PostBuild\Resonance.PostBuild.csproj", "{E0094EFD-658D-41A5-8914-4998ADB6BD77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Protobuf", "Resonance.Protobuf\Resonance.Protobuf.csproj", "{3CA3BBB8-99F7-43C5-A292-844FE2C8D627}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.Protobuf", "Resonance.Protobuf\Resonance.Protobuf.csproj", "{3CA3BBB8-99F7-43C5-A292-844FE2C8D627}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples", "Resonance.Examples\Resonance.Examples.csproj", "{850605FC-0300-4EB6-AD72-61D957DB3A33}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Messages", "Messages", "{F9347109-4C1D-4FE8-B4B4-A5597453D3C3}"
+	ProjectSection(SolutionItems) = preProject
+		Messages\CalculateRequest.cs = Messages\CalculateRequest.cs
+		Messages\CalculateResponse.cs = Messages\CalculateResponse.cs
+		Messages\ProgressRequest.cs = Messages\ProgressRequest.cs
+		Messages\ProgressResponse.cs = Messages\ProgressResponse.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Proto", "Proto", "{6DD9C767-A019-4D5D-BD86-9DFC1A858BB9}"
+	ProjectSection(SolutionItems) = preProject
+		Messages\Proto\CalculateRequest.cs = Messages\Proto\CalculateRequest.cs
+		Messages\Proto\CalculateResponse.cs = Messages\Proto\CalculateResponse.cs
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Messages", "Resonance.Messages\Resonance.Messages.csproj", "{09262234-5E6B-4769-97A4-4101090D6B20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,9 +86,24 @@ Global
 		{3CA3BBB8-99F7-43C5-A292-844FE2C8D627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CA3BBB8-99F7-43C5-A292-844FE2C8D627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CA3BBB8-99F7-43C5-A292-844FE2C8D627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.AzureBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.AzureBuild|Any CPU.Build.0 = Debug|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{850605FC-0300-4EB6-AD72-61D957DB3A33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.AzureBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.AzureBuild|Any CPU.Build.0 = Debug|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09262234-5E6B-4769-97A4-4101090D6B20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6DD9C767-A019-4D5D-BD86-9DFC1A858BB9} = {F9347109-4C1D-4FE8-B4B4-A5597453D3C3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {742C7CB3-AF8C-42F7-A6DA-A1E67D1D7498}

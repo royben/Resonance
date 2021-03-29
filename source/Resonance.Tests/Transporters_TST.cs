@@ -7,7 +7,7 @@ using Resonance.Adapters;
 using Resonance.Adapters.InMemory;
 using Resonance.Exceptions;
 using Resonance.Tests.Common;
-using Resonance.Tests.Common.Messages;
+using Resonance.Messages;
 using Resonance.Tests.Common.Transcoding;
 using Resonance.Transporters;
 

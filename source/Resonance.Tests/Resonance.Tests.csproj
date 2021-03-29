@@ -74,12 +74,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\Messages\CalculateRequest.cs" />
-    <Compile Include="Common\Messages\CalculateResponse.cs" />
-    <Compile Include="Common\Messages\ProgressRequest.cs" />
-    <Compile Include="Common\Messages\ProgressResponse.cs" />
-    <Compile Include="Common\Proto\CalculateRequest.cs" />
-    <Compile Include="Common\Proto\CalculateResponse.cs" />
     <Compile Include="Common\ResonanceTest.cs" />
     <Compile Include="Common\TestHelper.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
@@ -98,6 +92,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.Messages\Resonance.Messages.csproj">
+      <Project>{09262234-5e6b-4769-97a4-4101090d6b20}</Project>
+      <Name>Resonance.Messages</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resonance.Protobuf\Resonance.Protobuf.csproj">
       <Project>{3ca3bbb8-99f7-43c5-a292-844fe2c8d627}</Project>
       <Name>Resonance.Protobuf</Name>

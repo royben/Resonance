@@ -1,8 +1,10 @@
 ﻿using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,13 +15,15 @@ namespace Resonance.Benchmarks
     {
         static void Main(string[] args)
         {
-            var summery1 = BenchmarkRunner.Run<AdaptersBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
+            Summary summary = null;
+
+            summary = BenchmarkRunner.Run<AdaptersBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
                 .WithOption(ConfigOptions.DisableOptimizationsValidator, true));
 
-            var summery2 = BenchmarkRunner.Run<TranscodingBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
+            summary = BenchmarkRunner.Run<TranscodingBenchmark>(ManualConfig.Create(DefaultConfig.Instance)
                 .WithOption(ConfigOptions.DisableOptimizationsValidator, true));
 
-            Console.ReadLine();
+            Process.Start("explorer.exe", string.Format("/select,\"{0}\"", summary.ResultsDirectoryPath));
         }
     }
 }
