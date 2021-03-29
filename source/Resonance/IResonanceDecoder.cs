@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Resonance
@@ -34,5 +35,11 @@ namespace Resonance
         /// <param name="data">The encoded data.</param>
         /// <returns></returns>
         T Decode<T>(byte[] data);
+
+        /// <summary>
+        /// Decodes a message from the specified memory stream.
+        /// </summary>
+        /// <param name="stream">The memory stream.</param>
+        Object Decode(MemoryStream stream);
     }
 }

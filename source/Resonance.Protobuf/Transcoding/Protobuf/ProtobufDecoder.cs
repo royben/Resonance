@@ -12,6 +12,7 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
     /// Represents a Resonance protobuf message encoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceDecoder" />
+    [ResonanceTranscoding("proto")]
     public class ProtobufDecoder : ResonanceDecoder
     {
         private static ConcurrentDictionary<Type, MessageParser> _parsers;
@@ -49,7 +50,7 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
         /// <param name="stream">The memory stream.</param>
         /// <returns></returns>
         /// <exception cref="NullReferenceException"></exception>
-        protected override object Decode(MemoryStream stream)
+        public override object Decode(MemoryStream stream)
         {
             using (BinaryReader reader = new BinaryReader(stream))
             {

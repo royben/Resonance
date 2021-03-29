@@ -6,9 +6,19 @@ using System.Xml.Serialization;
 
 namespace Resonance.Transcoding.Xml
 {
+    /// <summary>
+    /// Represents a Resonance XML message encoder.
+    /// </summary>
+    /// <seealso cref="Resonance.ResonanceDecoder" />
+    [ResonanceTranscoding("xml")]
     public class XmlDecoder : ResonanceDecoder
     {
-        protected override object Decode(MemoryStream stream)
+        /// <summary>
+        /// Decodes a message from the specified memory stream.
+        /// </summary>
+        /// <param name="stream">The memory stream.</param>
+        /// <returns></returns>
+        public override object Decode(MemoryStream stream)
         {
             using (BinaryReader reader = new BinaryReader(stream))
             {
@@ -19,9 +29,12 @@ namespace Resonance.Transcoding.Xml
             }
         }
 
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
         public override void Dispose()
         {
-            throw new NotImplementedException();
+            
         }
     }
 }

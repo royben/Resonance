@@ -10,6 +10,11 @@ namespace Resonance
     public abstract class ResonanceTranscodingInformation
     {
         /// <summary>
+        /// Gets or sets the transcoding name.
+        /// </summary>
+        public String Transcoding { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable compression/decompression.
         /// </summary>
         public bool IsCompressed { get; set; }

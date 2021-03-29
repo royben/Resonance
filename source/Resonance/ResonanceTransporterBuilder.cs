@@ -7,6 +7,7 @@ using Resonance.Transcoding.Xml;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using static Resonance.ResonanceTransporterBuilder;
 
@@ -75,6 +76,12 @@ namespace Resonance
             /// </summary>
             /// <param name="address">The address.</param>
             ITcpAdapterPortBuilder WithAddress(String address);
+
+            /// <summary>
+            /// Initialize the TCP adapter from an existing <see cref="TcpClient"/>.
+            /// </summary>
+            /// <param name="tcpClient">The TCP client.</param>
+            ITranscodingBuilder FromTcpClient(TcpClient tcpClient);
         }
 
         public interface ITcpAdapterPortBuilder
@@ -239,6 +246,12 @@ namespace Resonance
         public ITranscodingBuilder WithPort(int port)
         {
             (Transporter.Adapter as TcpAdapter).Port = port;
+            return this;
+        }
+
+        public ITranscodingBuilder FromTcpClient(TcpClient tcpClient)
+        {
+            Transporter.Adapter = new TcpAdapter(tcpClient);
             return this;
         }
 

@@ -11,6 +11,7 @@ namespace Resonance.Transcoding.Bson
     /// Represents a Bson Resonance encoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceEncoder" />
+    [ResonanceTranscoding("bson")]
     public class BsonEncoder : ResonanceEncoder
     {
         private static JsonSerializer _serializer;

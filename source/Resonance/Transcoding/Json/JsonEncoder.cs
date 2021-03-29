@@ -10,6 +10,7 @@ namespace Resonance.Transcoding.Json
     /// Represents a Json Resonance message encoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceEncoder" />
+    [ResonanceTranscoding("json")]
     public class JsonEncoder : ResonanceEncoder
     {
         /// <summary>

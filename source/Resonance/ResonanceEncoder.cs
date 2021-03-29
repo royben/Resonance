@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -13,6 +14,7 @@ namespace Resonance
     public abstract class ResonanceEncoder : IResonanceEncoder
     {
         private IResonanceHeaderTranscoder _headerTranscoder;
+        private String _transcodingName;
 
         /// <summary>
         /// Gets or sets the message compression configuration.
@@ -29,6 +31,8 @@ namespace Resonance
         /// </summary>
         public ResonanceEncoder()
         {
+            var att = this.GetType().GetCustomAttribute<ResonanceTranscodingAttribute>();
+            _transcodingName = att != null ? att.Name : null;
             _headerTranscoder = OnCreateHeaderTranscoder();
             CompressionConfiguration = new ResonanceCompressionConfiguration();
             EncryptionConfiguration = new ResonanceEncryptionConfiguration();
@@ -43,6 +47,7 @@ namespace Resonance
         {
             info.IsCompressed = CompressionConfiguration.Enabled;
             info.IsEncrypted = EncryptionConfiguration.Enabled;
+            info.Transcoding = _transcodingName;
 
             using (MemoryStream ms = new MemoryStream())
             {

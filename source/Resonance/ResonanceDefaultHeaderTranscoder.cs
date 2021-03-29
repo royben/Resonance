@@ -24,6 +24,7 @@ namespace Resonance
         public virtual void Encode(BinaryWriter writer, ResonanceEncodingInformation info)
         {
             writer.Write(ProtocolVersion);
+            writer.Write(info.Transcoding ?? String.Empty);
             writer.Write(info.IsCompressed);
             writer.Write(info.IsEncrypted);
             writer.Write(info.Token);
@@ -43,6 +44,7 @@ namespace Resonance
         public virtual void Decode(BinaryReader reader, ResonanceDecodingInformation info)
         {
             info.ProtocolVersion = reader.ReadByte();
+            info.Transcoding = reader.ReadString();
             info.IsCompressed = reader.ReadBoolean();
             info.IsEncrypted = reader.ReadBoolean();
             info.Token = reader.ReadString();

@@ -6,6 +6,9 @@ using Resonance.Transporters;
 using System;
 using Google.Protobuf;
 using Resonance.Protobuf.Transcoding.Protobuf;
+using Resonance.Transcoding.Json;
+using Resonance.Transcoding.Auto;
+using Resonance.Transcoding.Bson;
 
 namespace Resonance.Tests
 {
@@ -97,7 +100,7 @@ namespace Resonance.Tests
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B}, e.Request.Token);
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -221,6 +224,43 @@ namespace Resonance.Tests
 
             var request = new Common.Proto.CalculateRequest() { A = 10, B = 15 };
             var response = t1.SendRequest<Common.Proto.CalculateRequest, Common.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Assert.AreEqual(response.Sum, request.A + request.B);
+        }
+
+        [TestMethod]
+        public void Auto_Decoding()
+        {
+            Init();
+
+            IResonanceTransporter t1 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TST")
+                .WithTranscoding<BsonEncoder, AutoDecoder>()
+                .Build();
+
+            IResonanceTransporter t2 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TST")
+                .WithTranscoding<JsonEncoder, AutoDecoder>()
+                .Build();
+
+            t1.Connect().Wait();
+            t2.Connect().Wait();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+            };
+
+            var request = new CalculateRequest() { A = 10, B = 15 };
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
 
             t1.Dispose(true);
             t2.Dispose(true);

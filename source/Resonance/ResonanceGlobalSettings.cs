@@ -23,6 +23,14 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Prevents a default instance of the <see cref="ResonanceGlobalSettings"/> class from being created.
+        /// </summary>
+        private ResonanceGlobalSettings()
+        {
+
+        }
+
+        /// <summary>
         /// Gets or sets the default header transcoder for all <see cref="IResonanceEncoder"/> and <see cref="IResonanceDecoder"/>.
         /// </summary>
         public IResonanceHeaderTranscoder DefaultHeaderTranscoder { get; set; } = new ResonanceDefaultHeaderTranscoder();

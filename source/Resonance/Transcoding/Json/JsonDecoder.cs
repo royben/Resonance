@@ -10,6 +10,7 @@ namespace Resonance.Transcoding.Json
     /// Represents a Json Resonance message decoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceDecoder" />
+    [ResonanceTranscoding("json")]
     public class JsonDecoder : ResonanceDecoder
     {
         /// <summary>
@@ -31,7 +32,7 @@ namespace Resonance.Transcoding.Json
         /// </summary>
         /// <param name="stream">The memory stream.</param>
         /// <returns></returns>
-        protected override object Decode(MemoryStream stream)
+        public override object Decode(MemoryStream stream)
         {
             using (BinaryReader reader = new BinaryReader(stream))
             {

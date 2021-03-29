@@ -11,6 +11,7 @@ namespace Resonance.Transcoding.Bson
     /// Represents a Bson Resonance decoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceDecoder" />
+    [ResonanceTranscoding("bson")]
     public class BsonDecoder : ResonanceDecoder
     {
         private static JsonSerializer _serializer;
@@ -29,7 +30,7 @@ namespace Resonance.Transcoding.Bson
         /// </summary>
         /// <param name="stream">The memory stream.</param>
         /// <returns></returns>
-        protected override object Decode(MemoryStream stream)
+        public override object Decode(MemoryStream stream)
         {
             using (BsonDataReader reader = new BsonDataReader(stream))
             {

@@ -10,6 +10,7 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
     /// Represents a Resonance protobuf message decoder.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceEncoder" />
+    [ResonanceTranscoding("proto")]
     public class ProtobufEncoder : ResonanceEncoder
     {
         /// <summary>

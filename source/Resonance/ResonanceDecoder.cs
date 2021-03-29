@@ -46,6 +46,7 @@ namespace Resonance
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
                     _headerTranscoder.Decode(reader, info);
+                    OnTranscodingInformationDecoded(info);
 
                     if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
                     {
@@ -70,6 +71,15 @@ namespace Resonance
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Called when the transcoding information is first available.
+        /// </summary>
+        /// <param name="info">The transcoding information.</param>
+        protected virtual void OnTranscodingInformationDecoded(ResonanceDecodingInformation info)
+        {
+            //Leave it.
         }
 
         /// <summary>
@@ -124,7 +134,7 @@ namespace Resonance
         /// Decodes a message from the specified memory stream.
         /// </summary>
         /// <param name="stream">The memory stream.</param>
-        protected abstract Object Decode(MemoryStream stream);
+        public abstract Object Decode(MemoryStream stream);
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

@@ -658,7 +658,7 @@ namespace Resonance
                     if (!pendingRequest.CompletionSource.Task.IsCompleted)
                     {
                         _pendingRequests.Remove(pendingRequest);
-                        pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.Seconds} seconds and has timed out."));
+                        pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
                     }
                 });
 
