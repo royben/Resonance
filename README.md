@@ -70,7 +70,6 @@ The following diagram described a simple request-response scenario.
         }
 ```
 <br/>
-<br/>
 
 #### Simple TCP request response.
 ```c#
@@ -129,7 +128,6 @@ The following diagram described a simple request-response scenario.
         }
 ```
 <br/>
-<br/>
 
 #### Using a request handler.
 ```c#
@@ -156,7 +154,9 @@ The following diagram described a simple request-response scenario.
         }
 ```
 <br/>
-<br/>
+
+# Services
+The Transporter also supports registering a service instance as an easy request/response handling mechanism.
 
 #### Registering a Resonance Service.
 ```c#
@@ -219,8 +219,3 @@ The following diagram described a simple request-response scenario.
 | Compressed | 421.9 ms | 8.25 ms | 13.32 ms |
 | Encrypted | 260.9 ms | 5.18 ms | 12.41 ms |
 | Compressed / Encrypted | 517.2 ms | 9.12 ms |  8.08 ms |
-
-
-The following is a class diagram lays down some of library components.
-
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance.png)
