@@ -195,7 +195,9 @@ The Transporter also supports registering a service instance as an easy request 
         }
 ```
 
-# In Memory Testing
+<br/>
+
+# In-Memory Testing
 Communication testing can easyly be done using the *InMemory* adapter.
 Notice how both transporters are using the In-Memory adapter with the same address.
 
