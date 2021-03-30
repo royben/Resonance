@@ -150,6 +150,28 @@ namespace Resonance
         /// </summary>
         public ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; private set; }
 
+        /// <summary>
+        /// Gets the total number of queued outgoing messages.
+        /// </summary>
+        public int OutgoingQueueCount
+        {
+            get
+            {
+                return _sendingQueue.Count;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of current pending requests.
+        /// </summary>
+        public int PendingRequestsCount
+        {
+            get
+            {
+                return _pendingRequests.Count;
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -566,6 +588,42 @@ namespace Resonance
 
         #endregion
 
+        #region Send Object
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException"></exception>
+        public Task SendObject(object message, ResonanceRequestConfig config = null)
+        {
+            if (State != ResonanceComponentState.Connected)
+            {
+                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
+            }
+
+            config = config ?? new ResonanceRequestConfig();
+            config.Timeout = config.Timeout ?? DefaultRequestTimeout;
+
+            TaskCompletionSource<Object> completionSource = new TaskCompletionSource<object>();
+
+            ResonancePendingRequest pendingRequest = new ResonancePendingRequest();
+            pendingRequest.Request = new ResonanceRequest() { Message = message, Token = TokenGenerator.GenerateToken(message) };
+            pendingRequest.Config = config;
+            pendingRequest.IsWithoutResponse = true;
+            pendingRequest.CompletionSource = completionSource;
+
+            LogManager.Log($"{this}: Queuing request message: {message.GetType().Name} Token: {pendingRequest.Request.Token}", LogLevel.Debug);
+
+            _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
+
+            return completionSource.Task;
+        }
+
+        #endregion
+
         #region Push
 
         private void PushThreadMethod()
@@ -614,7 +672,10 @@ namespace Resonance
                     LogManager.Log($"{this}: Sending request '{pendingRequest.Request.Message.GetType()}'...\n{pendingRequest.Request.Message.ToJsonString()}", LogLevel.Info);
                 }
 
-                _pendingRequests.Add(pendingRequest);
+                if (!pendingRequest.IsWithoutResponse)
+                {
+                    _pendingRequests.Add(pendingRequest);
+                }
 
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingRequest.Request.Token;
@@ -634,7 +695,7 @@ namespace Resonance
                     info.Type = ResonanceTranscodingInformationType.Request;
                 }
 
-                if (pendingRequest.Config.CancellationToken != null)
+                if (pendingRequest.Config.CancellationToken != null && !pendingRequest.IsWithoutResponse)
                 {
                     Task.Factory.StartNew(() =>
                     {
@@ -653,17 +714,25 @@ namespace Resonance
 
                 OnEncodeAndWriteData(info);
 
-                Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
+                if (!pendingRequest.IsWithoutResponse)
                 {
-                    if (!pendingRequest.CompletionSource.Task.IsCompleted)
+                    Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
                     {
-                        _pendingRequests.Remove(pendingRequest);
-                        pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
-                    }
-                });
+                        if (!pendingRequest.CompletionSource.Task.IsCompleted)
+                        {
+                            _pendingRequests.Remove(pendingRequest);
+                            pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
+                        }
+                    });
+                }
 
                 Task.Factory.StartNew(() =>
                 {
+                    if (pendingRequest.IsWithoutResponse)
+                    {
+                        pendingRequest.CompletionSource.SetResult(true);
+                    }
+
                     OnRequestSent(pendingRequest.Request);
                 });
             }

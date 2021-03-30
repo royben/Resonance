@@ -75,6 +75,14 @@ namespace Resonance.Adapters.InMemory
         }
 
         /// <summary>
+        /// Unregisters all adapter.
+        /// </summary>
+        internal static void Reset()
+        {
+            _adapters.Clear();
+        }
+
+        /// <summary>
         /// Writes the specified data to a matching adapter by the specified adapter address.
         /// </summary>
         /// <param name="adapter">The adapter.</param>

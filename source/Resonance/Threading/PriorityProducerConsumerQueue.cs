@@ -57,5 +57,14 @@ namespace Resonance.Threading
             int index = BlockingCollection<T>.TakeFromAny(_collections, out item);
             return item;
         }
+
+        /// <summary>
+        /// Gets total number of queued items.
+        /// </summary>
+        public int Count
+        {
+            get { return _standardPriorityCollection.Count + _lowPriorityCollection.Count + _highPriorityCollection.Count; }
+        }
+
     }
 }

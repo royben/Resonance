@@ -78,7 +78,7 @@ namespace Resonance.Tests
 
             if (!IsRunningOnAzurePipelines)
             {
-                Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
             }
         }
 
@@ -128,7 +128,7 @@ namespace Resonance.Tests
 
             if (!IsRunningOnAzurePipelines)
             {
-                Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
             }
         }
 
@@ -191,7 +191,7 @@ namespace Resonance.Tests
 
             double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
 
-            Assert.IsTrue(percentageOfOutliers < 2, "Request/Response duration measurements contains too many outliers and is considered a performance issue.");
+            Assert.IsTrue(percentageOfOutliers < 10, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
         }
     }
 }

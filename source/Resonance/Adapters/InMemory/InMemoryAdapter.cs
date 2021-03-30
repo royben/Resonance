@@ -76,5 +76,13 @@ namespace Resonance.Adapters.InMemory
         {
             return $"{base.ToString()} ({Address})";
         }
+
+        /// <summary>
+        /// Detach all registered In-Memory adapters.
+        /// </summary>
+        public static void DisposeAll()
+        {
+            InMemoryAdaptersManager.Reset();
+        }
     }
 }
