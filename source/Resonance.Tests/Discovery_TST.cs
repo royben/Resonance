@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.Tcp;
 using Resonance.Discovery;
-using Resonance.Tcp;
 using Resonance.Tests.Common;
 using Resonance.Messages;
 using Resonance.Transcoding.Json;
@@ -10,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Resonance.Servers.Tcp;
 
 namespace Resonance.Tests
 {

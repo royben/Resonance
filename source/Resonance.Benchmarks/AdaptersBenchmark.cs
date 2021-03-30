@@ -3,7 +3,6 @@ using Resonance.Adapters.InMemory;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Messages;
-using Resonance.Tcp;
 using Resonance.Transporters;
 using System;
 using System.Collections.Generic;

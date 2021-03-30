@@ -1,6 +1,6 @@
 ﻿using Resonance.Adapters.Tcp;
 using Resonance.Messages;
-using Resonance.Tcp;
+using Resonance.Servers.Tcp;
 using Resonance.Transporters;
 using System;
 using System.Collections.Generic;

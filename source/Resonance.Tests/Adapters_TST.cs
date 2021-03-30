@@ -10,10 +10,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
-using Resonance.Tcp;
 using Resonance.Tests.Common;
 using Resonance.Messages;
 using Resonance.Transporters;
+using Resonance.Servers.Tcp;
 
 namespace Resonance.Tests
 {

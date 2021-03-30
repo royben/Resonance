@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Resonance.Tcp
+namespace Resonance.Servers.Tcp
 {
     /// <summary>
     /// Represents a <see cref="ResonanceTcpServer.ClientConnected"/> event arguments.

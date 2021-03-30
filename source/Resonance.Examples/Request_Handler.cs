@@ -1,5 +1,4 @@
 ﻿using Resonance.Messages;
-using Resonance.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Linq;

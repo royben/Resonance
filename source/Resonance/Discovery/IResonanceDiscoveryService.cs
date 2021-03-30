@@ -1,5 +1,4 @@
-﻿using Resonance.Tcp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Timers;
@@ -7,7 +6,7 @@ using System.Timers;
 namespace Resonance.Discovery
 {
     /// <summary>
-    /// Represents a discovery service that can broadcast information on another service existance.
+    /// Represents a discovery service that can broadcast information on another service existence.
     /// </summary>
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>
     /// <typeparam name="TEncoder">The type of the encoder that should be used to encode the packets.</typeparam>

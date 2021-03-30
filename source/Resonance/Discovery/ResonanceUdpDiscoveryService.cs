@@ -1,4 +1,4 @@
-﻿using Resonance.Tcp;
+﻿using Resonance.Servers.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Net;

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Resonance.Tcp
+namespace Resonance.Servers.Tcp
 {
     /// <summary>
     /// Represents a TCP/IP listener wrapper.
