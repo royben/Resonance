@@ -20,7 +20,7 @@ namespace Resonance.Transcoding.Auto
         protected override void OnTranscodingInformationDecoded(ResonanceDecodingInformation info)
         {
             base.OnTranscodingInformationDecoded(info);
-            _decoder = ResonanceDecodingFactory.Default.GetDecoder(info.Transcoding);
+            _decoder = ResonanceTranscodingFactory.Default.GetDecoder(info.Transcoding);
         }
 
         /// <summary>
