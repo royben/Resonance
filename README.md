@@ -10,13 +10,15 @@ This library provides an intuitive API for asynchronous communication between ma
 <br/>
 <br/>
 
-## How it Works
+## Overview
 Resonance is a request-response based communication framework.
 This means that for each request that is being sent, a matching response is expected.
 This is done by attaching a unique token to each request and expecting the same token from the response.
 Although the request-response pattern is the recommended approach, it is not enforced. Sending messages without expecting any response is possible.
 
 <br/>
+
+The following diagram provides a basic overview of a message being sent.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png)
 
