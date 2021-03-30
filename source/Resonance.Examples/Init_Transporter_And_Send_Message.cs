@@ -1,4 +1,6 @@
-﻿using Resonance.Messages;
+﻿using Resonance.Adapters.Tcp;
+using Resonance.Messages;
+using Resonance.Transcoding.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +11,28 @@ namespace Resonance.Examples
 {
     class Init_Transporter_And_Send_Message
     {
+        public async void Demo_Standard()
+        {
+            IResonanceTransporter transporter = new ResonanceTransporter();
+
+            transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
+            transporter.Encoder = new JsonEncoder();
+            transporter.Decoder = new JsonDecoder();
+            transporter.KeepAliveConfiguration.Enabled = true;
+            transporter.Encoder.EncryptionConfiguration.Enabled = false;
+            transporter.Encoder.CompressionConfiguration.Enabled = true;
+
+            await transporter.Connect();
+
+            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+
         public async void Demo()
         {
             IResonanceTransporter transporter = ResonanceTransporter.Builder
