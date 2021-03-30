@@ -25,7 +25,7 @@ The following diagram provides a basic overview of a message being sent.
 <br/>
 <br/>
 
-The resonance library might be described by the folowing layers:
+The resonance library might be described by these 3 basic layers:
 
 ### Transporting
 A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the necessary information to other components.
