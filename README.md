@@ -10,7 +10,7 @@ This library provides an intuitive API for asynchronous communication between ma
 <br/>
 <br/>
 
-## How it Works
+## Overview
 Resonance is a request-response based communication framework.
 This means that for each request that is being sent, a matching response is expected.
 This is done by attaching a unique token to each request and expecting the same token from the response.
@@ -18,12 +18,14 @@ Although the request-response pattern is the recommended approach, it is not enf
 
 <br/>
 
+The following diagram provides a basic overview of a message being sent.
+
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png)
 
 <br/>
 <br/>
 
-The resonance library might be described by the folowing layers:
+The resonance library might be described by these 3 basic layers:
 
 ### Transporting
 A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the necessary information to other components.
@@ -49,9 +51,13 @@ The following built-in adapters are currently supported by the library:
 *	Named Pipes
 *	Shared Memory
 
+<br/>
+
 The following diagram described a simple request-response scenario.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
+
+<br/>
 
 # Usage Examples
 
