@@ -257,8 +257,8 @@ Notice how both transporters are using the In-Memory adapter with the same addre
 
 <br/>
 
-# Continuous Request
-The Resonance library supports the concept of a continuous request where one transporter sends a single request
+# Continuous Response
+The Resonance library supports the concept of a continuous response where one transporter sends a single request
 while expecting multiple response messages. This method works best when you want to report about some progress being made,
 or to send large amount of data with less overhead.
 
