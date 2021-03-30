@@ -12,22 +12,9 @@ namespace Resonance.Servers.Tcp
     /// <summary>
     /// Represents a TCP/IP listener wrapper.
     /// </summary>
-    public class ResonanceTcpServer : ResonanceObject , IDisposable
+    public class ResonanceTcpServer : ResonanceObject, IDisposable
     {
-        /// <summary>
-        /// The TcpListener that is encapsulated behind this Server instance.
-        /// </summary>
-        public TcpListener Listener { get; set; }
-
-        /// <summary>
-        /// The Port that is used to listen to incoming connections.
-        /// </summary>
-        public int Port { get; set; }
-
-        /// <summary>
-        /// Returns true if the Server instance is running.
-        /// </summary>
-        public bool IsStarted { get; private set; }
+        private TcpListener _listener;
 
         #region Events
 
@@ -35,6 +22,20 @@ namespace Resonance.Servers.Tcp
         /// Occurs when a new <see cref="TcpClient"/> has connected.
         /// </summary>
         public event EventHandler<ResonanceTcpServerClientConnectedEventArgs> ClientConnected;
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// The Port that is used to listen to incoming connections.
+        /// </summary>
+        public int Port { get; private set; }
+
+        /// <summary>
+        /// Returns true if the Server instance is running.
+        /// </summary>
+        public bool IsStarted { get; private set; }
 
         #endregion
 
@@ -59,10 +60,10 @@ namespace Resonance.Servers.Tcp
         {
             if (!IsStarted)
             {
-                Listener = new TcpListener(System.Net.IPAddress.Any, Port);
-                Listener.ExclusiveAddressUse = false;
-                Listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                Listener.Start();
+                _listener = new TcpListener(System.Net.IPAddress.Any, Port);
+                _listener.ExclusiveAddressUse = false;
+                _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _listener.Start();
                 IsStarted = true;
                 LogManager.Log($"TCP server started on port {Port}.");
                 WaitForConnection();
@@ -75,7 +76,7 @@ namespace Resonance.Servers.Tcp
         {
             if (IsStarted)
             {
-                Listener.Stop();
+                _listener.Stop();
                 IsStarted = false;
                 LogManager.Log($"TCP server stopped on port {Port}.");
             }
@@ -87,7 +88,7 @@ namespace Resonance.Servers.Tcp
 
         private void WaitForConnection()
         {
-            Listener.BeginAcceptTcpClient(new AsyncCallback(ConnectionHandler), null);
+            _listener.BeginAcceptTcpClient(new AsyncCallback(ConnectionHandler), null);
         }
 
         private void ConnectionHandler(IAsyncResult ar)
@@ -96,7 +97,7 @@ namespace Resonance.Servers.Tcp
             {
                 try
                 {
-                    OnClientConnected(Listener.EndAcceptTcpClient(ar));
+                    OnClientConnected(_listener.EndAcceptTcpClient(ar));
                     WaitForConnection();
                 }
                 catch (ObjectDisposedException)

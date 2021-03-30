@@ -80,7 +80,7 @@ namespace Resonance.Adapters.Tcp
 
         #endregion
 
-        #region Pull Thread
+        #region Data Reading
 
         private void WaitForData()
         {

@@ -38,8 +38,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Adapters\NamedPipes\" />
-  </ItemGroup>
-
 </Project>
