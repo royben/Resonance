@@ -25,13 +25,6 @@ The following diagram provides a basic overview of a message being sent.
 <br/>
 <br/>
 
-The following diagram described a simple request-response scenario.
-
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
-
-<br/>
-<br/>
-
 The resonance library might be described by the folowing layers:
 
 ### Transporting
@@ -57,6 +50,12 @@ The following built-in adapters are currently supported by the library:
 *	WebRTC
 *	Named Pipes
 *	Shared Memory
+
+<br/>
+
+The following diagram described a simple request-response scenario.
+
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
 
 <br/>
 
