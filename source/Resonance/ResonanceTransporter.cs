@@ -22,16 +22,16 @@ namespace Resonance
     public class ResonanceTransporter : ResonanceObject, IResonanceTransporter
     {
         private static int _globalTransporterCounter = 1;
-        private int _transporterCounter;
+        private readonly int _transporterCounter;
         private DateTime _lastIncomingMessageTime;
 
-        private object _disposeLock = new object();
+        private readonly object _disposeLock = new object();
 
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
-        private List<ResonanceRequestHandler> _requestHandlers;
-        private List<IResonanceService> _services;
+        private readonly List<ResonanceRequestHandler> _requestHandlers;
+        private readonly List<IResonanceService> _services;
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;

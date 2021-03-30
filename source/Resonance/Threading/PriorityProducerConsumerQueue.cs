@@ -13,10 +13,10 @@ namespace Resonance.Threading
     /// <typeparam name="T"></typeparam>
     internal class PriorityProducerConsumerQueue<T>
     {
-        private ProducerConsumerQueue<T> _lowPriorityCollection;
-        private ProducerConsumerQueue<T> _standardPriorityCollection;
-        private ProducerConsumerQueue<T> _highPriorityCollection;
-        private ProducerConsumerQueue<T>[] _collections;
+        private readonly ProducerConsumerQueue<T> _lowPriorityCollection;
+        private readonly ProducerConsumerQueue<T> _standardPriorityCollection;
+        private readonly ProducerConsumerQueue<T> _highPriorityCollection;
+        private readonly ProducerConsumerQueue<T>[] _collections;
 
         public PriorityProducerConsumerQueue()
         {
@@ -53,8 +53,7 @@ namespace Resonance.Threading
         /// <returns></returns>
         public T BlockDequeue()
         {
-            T item;
-            int index = BlockingCollection<T>.TakeFromAny(_collections, out item);
+            int index = BlockingCollection<T>.TakeFromAny(_collections, out T item);
             return item;
         }
 

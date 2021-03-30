@@ -19,9 +19,8 @@ namespace Resonance.Discovery
     {
         private UdpClient _udpClient;
         private Thread _receiveThread;
-        private TimeSpan _receiveLoopInterval;
         private List<ResonanceUdpDiscoveredService<TDiscoveryInfo>> _discoveredServices;
-        private Func<ResonanceUdpDiscoveredService<TDiscoveryInfo>, ResonanceUdpDiscoveredService<TDiscoveryInfo>, bool> _discoveredServiceCompareFunc;
+        private readonly Func<ResonanceUdpDiscoveredService<TDiscoveryInfo>, ResonanceUdpDiscoveredService<TDiscoveryInfo>, bool> _discoveredServiceCompareFunc;
 
         /// <summary>
         /// Occurs when a matching service has been discovered.
@@ -61,7 +60,6 @@ namespace Resonance.Discovery
         public ResonanceUdpDiscoveryClient()
         {
             EnableTcpValidation = true;
-            _receiveLoopInterval = TimeSpan.FromSeconds(2);
             Port = 2021;
             Decoder = Activator.CreateInstance<TDecoder>();
             _discoveredServiceCompareFunc = (s1, s2) => s1.Address == s2.Address;
