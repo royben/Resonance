@@ -143,17 +143,19 @@ namespace Resonance.Tests
                 return;
             }
 
-            String com1 = "COM1";
-            String com2 = "COM5";
+            String virtualSerialDeviceName = "HHD Software Virtual Serial Port";
+            String errorMessage = "Could not locate any virtual serial port bridge. Please download from https://freevirtualserialports.com and create a local bridge.";
 
-            var names = SerialPort.GetPortNames().ToList();
+            var devices = UsbDevice.GetAvailableDevices().GetAwaiter().GetResult();
 
-            Assert.IsTrue(names.Contains(com1) && names.Contains(com2),
-$@"This test requires a bridges virtual serial ports.
-Please download from https://freevirtualserialports.com and create a bridge between {com1} <-> {com2}.");
+            var virtualPort1 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName));
+            Assert.IsNotNull(virtualPort1, errorMessage);
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UsbAdapter(com1, BaudRates.BR_19200));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UsbAdapter(com2, BaudRates.BR_19200));
+            var virtualPort2 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName) && x != virtualPort1);
+            Assert.IsNotNull(virtualPort2, errorMessage);
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort1, BaudRates.BR_19200));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort2, BaudRates.BR_19200));
 
             t1.Connect().Wait();
             t2.Connect().Wait();
