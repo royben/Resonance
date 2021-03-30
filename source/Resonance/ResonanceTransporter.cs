@@ -867,8 +867,11 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnEncodeAndWriteData(ResonanceEncodingInformation info)
         {
-            byte[] data = Encoder.Encode(info);
-            Adapter.Write(data);
+            if (Encoder != null && Adapter != null)
+            {
+                byte[] data = Encoder.Encode(info);
+                Adapter.Write(data);
+            }
         }
 
         #endregion
@@ -890,7 +893,14 @@ namespace Resonance
 
                         try
                         {
-                            Decoder.Decode(data, info);
+                            if (Decoder != null)
+                            {
+                                Decoder.Decode(data, info);
+                            }
+                            else
+                            {
+                                continue;
+                            }
                         }
                         catch (Exception ex)
                         {
