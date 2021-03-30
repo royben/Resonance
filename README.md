@@ -67,6 +67,32 @@ The following diagram described a simple request-response scenario.
 ```c#
         public async void Demo()
         {
+            IResonanceTransporter transporter = new ResonanceTransporter();
+
+            transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
+            transporter.Encoder = new JsonEncoder();
+            transporter.Decoder = new JsonDecoder();
+            transporter.KeepAliveConfiguration.Enabled = true;
+            transporter.Encoder.EncryptionConfiguration.Enabled = false;
+            transporter.Encoder.CompressionConfiguration.Enabled = true;
+
+            await transporter.Connect();
+
+            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+```
+<br/>
+
+#### Using Fluent Builder.
+```c#
+        public async void Demo()
+        {
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
                 .WithTcpAdapter()
