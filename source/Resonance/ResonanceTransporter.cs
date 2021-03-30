@@ -188,7 +188,7 @@ namespace Resonance
 
             _lastIncomingMessageTime = DateTime.Now;
 
-            KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
+            KeepAliveConfiguration = ResonanceGlobalSettings.Default.DefaultKeepAliveConfiguration.Clone();
             TokenGenerator = new ShortGuidGenerator();
 
             _sendingQueue = new PriorityProducerConsumerQueue<object>();

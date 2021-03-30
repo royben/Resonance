@@ -38,6 +38,8 @@ namespace Resonance.Adapters.Usb
         /// Gets the available USB serial devices.
         /// </summary>
         /// <returns></returns>
+        
+#pragma warning disable CA1416 //This method is supported only on Windows.
         public static Task<List<UsbDevice>> GetAvailableDevices()
         {
             return Task.Factory.StartNew<List<UsbDevice>>(() =>
@@ -86,5 +88,6 @@ namespace Resonance.Adapters.Usb
                 return devices;
             });
         }
+#pragma warning restore CA1416
     }
 }

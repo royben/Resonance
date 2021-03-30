@@ -30,8 +30,8 @@ namespace Resonance
         public ResonanceDecoder()
         {
             _headerTranscoder = OnCreateHeaderTranscoder();
-            CompressionConfiguration = new ResonanceCompressionConfiguration();
-            EncryptionConfiguration = new ResonanceEncryptionConfiguration();
+            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration.Clone();
+            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration.Clone();
         }
 
         /// <summary>

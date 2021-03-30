@@ -33,11 +33,26 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the default header transcoder for all <see cref="IResonanceEncoder"/> and <see cref="IResonanceDecoder"/>.
         /// </summary>
-        public IResonanceHeaderTranscoder DefaultHeaderTranscoder { get; set; } = new ResonanceDefaultHeaderTranscoder();
+        public IResonanceHeaderTranscoder DefaultHeaderTranscoder { get; } = new ResonanceDefaultHeaderTranscoder();
 
         /// <summary>
         /// Gets or sets the default request timeout for all <see cref="IResonanceTransporter"/>.
         /// </summary>
         public TimeSpan DefaultRequestTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// Gets or sets the default keep alive configuration.
+        /// </summary>
+        public ResonanceKeepAliveConfiguration DefaultKeepAliveConfiguration { get; } = new ResonanceKeepAliveConfiguration();
+
+        /// <summary>
+        /// Gets or sets the default compression configuration.
+        /// </summary>
+        public ResonanceCompressionConfiguration DefaultCompressionConfiguration { get; } = new ResonanceCompressionConfiguration();
+
+        /// <summary>
+        /// Gets or sets the encryption configuration.
+        /// </summary>
+        public ResonanceEncryptionConfiguration DefaultEncryptionConfiguration { get; } = new ResonanceEncryptionConfiguration();
     }
 }
