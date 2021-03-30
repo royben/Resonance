@@ -363,10 +363,9 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected) return;
 
-            if (Adapter != null)
-            {
-                await Adapter.Connect();
-            }
+            ValidateConnection();
+
+            await Adapter.Connect();
 
             State = ResonanceComponentState.Connected;
             StartThreads();
@@ -1527,14 +1526,41 @@ namespace Resonance
             if (message == null)
                 throw LogManager.Log(new NullReferenceException($"{this}: Error processing null message."));
 
-            if (State != ResonanceComponentState.Connected) 
+            if (State != ResonanceComponentState.Connected)
                 throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the transporter state is '{State}'."));
-
-            if (Adapter == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Could not send the message while transporter state is '{State}'."));
 
             if (Adapter.State != ResonanceComponentState.Connected)
                 throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the adapter state is '{Adapter.State}'."));
+
+            if (Adapter == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Adapter specified. Could not send a message."));
+
+            if (Encoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Encoder specified. Could not send a message."));
+
+            if (Decoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Decoder specified. Could not send a message."));
+
+            if (TokenGenerator == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Token Generator specified. Could not send a message."));
+        }
+
+        /// <summary>
+        /// Validates the state of the transporter for connection.
+        /// </summary>
+        private void ValidateConnection()
+        {
+            if (Adapter == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Adapter before attempting to connect."));
+
+            if (Encoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Encoder before attempting to connect."));
+
+            if (Decoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Decoder before attempting to connect."));
+
+            if (TokenGenerator == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Token Generator before attempting to connect."));
         }
 
         #endregion
