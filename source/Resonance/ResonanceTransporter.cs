@@ -22,16 +22,16 @@ namespace Resonance
     public class ResonanceTransporter : ResonanceObject, IResonanceTransporter
     {
         private static int _globalTransporterCounter = 1;
-        private int _transporterCounter;
+        private readonly int _transporterCounter;
         private DateTime _lastIncomingMessageTime;
 
-        private object _disposeLock = new object();
+        private readonly object _disposeLock = new object();
 
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
-        private List<ResonanceRequestHandler> _requestHandlers;
-        private List<IResonanceService> _services;
+        private readonly List<ResonanceRequestHandler> _requestHandlers;
+        private readonly List<IResonanceService> _services;
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
@@ -150,6 +150,28 @@ namespace Resonance
         /// </summary>
         public ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; private set; }
 
+        /// <summary>
+        /// Gets the total number of queued outgoing messages.
+        /// </summary>
+        public int OutgoingQueueCount
+        {
+            get
+            {
+                return _sendingQueue.Count;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of current pending requests.
+        /// </summary>
+        public int PendingRequestsCount
+        {
+            get
+            {
+                return _pendingRequests.Count;
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -166,7 +188,7 @@ namespace Resonance
 
             _lastIncomingMessageTime = DateTime.Now;
 
-            KeepAliveConfiguration = new ResonanceKeepAliveConfiguration();
+            KeepAliveConfiguration = ResonanceGlobalSettings.Default.DefaultKeepAliveConfiguration.Clone();
             TokenGenerator = new ShortGuidGenerator();
 
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
@@ -341,10 +363,9 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected) return;
 
-            if (Adapter != null)
-            {
-                await Adapter.Connect();
-            }
+            ValidateConnection();
+
+            await Adapter.Connect();
 
             State = ResonanceComponentState.Connected;
             StartThreads();
@@ -360,7 +381,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected)
             {
-                if (Adapter.State == ResonanceComponentState.Connected)
+                if (Adapter != null && Adapter.State == ResonanceComponentState.Connected)
                 {
                     try
                     {
@@ -419,10 +440,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task<Object> SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
-            }
+            ValidateMessagingState(request);
 
             config = config ?? new ResonanceRequestConfig();
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
@@ -452,10 +470,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public ResonanceObservable<Response> SendContinuousRequest<Request, Response>(Request request, ResonanceContinuousRequestConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
-            }
+            ValidateMessagingState(request);
 
             config = config ?? new ResonanceContinuousRequestConfig();
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
@@ -520,10 +535,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the response while transporter state is {State}."));
-            }
+            ValidateMessagingState(response);
 
             config = config ?? new ResonanceResponseConfig();
 
@@ -562,6 +574,39 @@ namespace Resonance
             config.ErrorMessage = message;
 
             return SendResponse(new ResonanceResponse() { Message = message, Token = token }, config);
+        }
+
+        #endregion
+
+        #region Send Object
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException"></exception>
+        public Task SendObject(object message, ResonanceRequestConfig config = null)
+        {
+            ValidateMessagingState(message);
+
+            config = config ?? new ResonanceRequestConfig();
+            config.Timeout = config.Timeout ?? DefaultRequestTimeout;
+
+            TaskCompletionSource<Object> completionSource = new TaskCompletionSource<object>();
+
+            ResonancePendingRequest pendingRequest = new ResonancePendingRequest();
+            pendingRequest.Request = new ResonanceRequest() { Message = message, Token = TokenGenerator.GenerateToken(message) };
+            pendingRequest.Config = config;
+            pendingRequest.IsWithoutResponse = true;
+            pendingRequest.CompletionSource = completionSource;
+
+            LogManager.Log($"{this}: Queuing request message: {message.GetType().Name} Token: {pendingRequest.Request.Token}", LogLevel.Debug);
+
+            _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
+
+            return completionSource.Task;
         }
 
         #endregion
@@ -614,7 +659,10 @@ namespace Resonance
                     LogManager.Log($"{this}: Sending request '{pendingRequest.Request.Message.GetType()}'...\n{pendingRequest.Request.Message.ToJsonString()}", LogLevel.Info);
                 }
 
-                _pendingRequests.Add(pendingRequest);
+                if (!pendingRequest.IsWithoutResponse)
+                {
+                    _pendingRequests.Add(pendingRequest);
+                }
 
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingRequest.Request.Token;
@@ -634,7 +682,7 @@ namespace Resonance
                     info.Type = ResonanceTranscodingInformationType.Request;
                 }
 
-                if (pendingRequest.Config.CancellationToken != null)
+                if (pendingRequest.Config.CancellationToken != null && !pendingRequest.IsWithoutResponse)
                 {
                     Task.Factory.StartNew(() =>
                     {
@@ -653,17 +701,25 @@ namespace Resonance
 
                 OnEncodeAndWriteData(info);
 
-                Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
+                if (!pendingRequest.IsWithoutResponse)
                 {
-                    if (!pendingRequest.CompletionSource.Task.IsCompleted)
+                    Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
                     {
-                        _pendingRequests.Remove(pendingRequest);
-                        pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
-                    }
-                });
+                        if (!pendingRequest.CompletionSource.Task.IsCompleted)
+                        {
+                            _pendingRequests.Remove(pendingRequest);
+                            pendingRequest.CompletionSource.SetException(new TimeoutException($"{pendingRequest.Request.Message.GetType()} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
+                        }
+                    });
+                }
 
                 Task.Factory.StartNew(() =>
                 {
+                    if (pendingRequest.IsWithoutResponse)
+                    {
+                        pendingRequest.CompletionSource.SetResult(true);
+                    }
+
                     OnRequestSent(pendingRequest.Request);
                 });
             }
@@ -1449,8 +1505,62 @@ namespace Resonance
 
             if (withAdapter)
             {
-                Adapter.Dispose();
+                Adapter?.Dispose();
             }
+        }
+
+        #endregion
+
+        #region Validation
+
+        /// <summary>
+        /// Validates the state of the messaging system.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <exception cref="System.NullReferenceException">
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        /// </exception>
+        private void ValidateMessagingState(Object message)
+        {
+            if (message == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Error processing null message."));
+
+            if (State != ResonanceComponentState.Connected)
+                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the transporter state is '{State}'."));
+
+            if (Adapter.State != ResonanceComponentState.Connected)
+                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the adapter state is '{Adapter.State}'."));
+
+            if (Adapter == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Adapter specified. Could not send a message."));
+
+            if (Encoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Encoder specified. Could not send a message."));
+
+            if (Decoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Decoder specified. Could not send a message."));
+
+            if (TokenGenerator == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: No Token Generator specified. Could not send a message."));
+        }
+
+        /// <summary>
+        /// Validates the state of the transporter for connection.
+        /// </summary>
+        private void ValidateConnection()
+        {
+            if (Adapter == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Adapter before attempting to connect."));
+
+            if (Encoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Encoder before attempting to connect."));
+
+            if (Decoder == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Decoder before attempting to connect."));
+
+            if (TokenGenerator == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Token Generator before attempting to connect."));
         }
 
         #endregion

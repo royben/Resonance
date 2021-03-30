@@ -9,7 +9,23 @@ This library provides an intuitive API for asynchronous communication between ma
 
 <br/>
 <br/>
-The resonance library might be described by the folowing layers:
+
+## Overview
+Resonance is a request-response based communication framework.
+This means that for each request that is being sent, a matching response is expected.
+This is done by attaching a unique token to each request and expecting the same token from the response.
+Although the request-response pattern is the recommended approach, it is not enforced. Sending messages without expecting any response is possible.
+
+<br/>
+
+The following diagram provides a basic overview of a message being sent.
+
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png)
+
+<br/>
+<br/>
+
+The resonance library might be described by these 3 basic layers:
 
 ### Transporting
 A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the necessary information to other components.
@@ -35,15 +51,45 @@ The following built-in adapters are currently supported by the library:
 *	Named Pipes
 *	Shared Memory
 
+<br/>
+
 The following diagram described a simple request-response scenario.
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
+
+<br/>
 
 # Usage Examples
 
 <br/>
 
 #### Create a Transporter and send a message.
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter = new ResonanceTransporter();
+
+            transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
+            transporter.Encoder = new JsonEncoder();
+            transporter.Decoder = new JsonDecoder();
+            transporter.KeepAliveConfiguration.Enabled = true;
+            transporter.Encoder.EncryptionConfiguration.Enabled = false;
+            transporter.Encoder.CompressionConfiguration.Enabled = true;
+
+            await transporter.Connect();
+
+            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+            {
+                A = 10,
+                B = 5
+            });
+
+            Console.WriteLine(response.Sum);
+        }
+```
+<br/>
+
+#### Using Fluent Builder.
 ```c#
         public async void Demo()
         {
@@ -121,7 +167,7 @@ The following diagram described a simple request-response scenario.
 ```
 <br/>
 
-#### Using a Request Handler.
+#### Registering a Request Handler.
 ```c#
         public async void Demo()
         {

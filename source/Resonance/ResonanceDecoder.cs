@@ -12,7 +12,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceDecoder" />
     public abstract class ResonanceDecoder : IResonanceDecoder
     {
-        private IResonanceHeaderTranscoder _headerTranscoder;
+        private readonly IResonanceHeaderTranscoder _headerTranscoder;
 
         /// <summary>
         /// Gets or sets the message compression configuration.
@@ -30,8 +30,8 @@ namespace Resonance
         public ResonanceDecoder()
         {
             _headerTranscoder = OnCreateHeaderTranscoder();
-            CompressionConfiguration = new ResonanceCompressionConfiguration();
-            EncryptionConfiguration = new ResonanceEncryptionConfiguration();
+            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration.Clone();
+            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration.Clone();
         }
 
         /// <summary>

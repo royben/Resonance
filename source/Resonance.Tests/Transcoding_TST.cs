@@ -9,6 +9,7 @@ using Resonance.Protobuf.Transcoding.Protobuf;
 using Resonance.Transcoding.Json;
 using Resonance.Transcoding.Auto;
 using Resonance.Transcoding.Bson;
+using System.IO;
 
 namespace Resonance.Tests
 {
@@ -30,9 +31,52 @@ namespace Resonance.Tests
         {
             public Type GetProtobufMessageType(string typeName)
             {
-                var type = Type.GetType($"Resonance.Tests.Common.Proto.{typeName}");
+                var type = typeof(CalculateRequest).Assembly.GetType($"Resonance.Messages.Proto.{typeName}");
                 Assert.IsNotNull(type);
                 return type;
+            }
+        }
+
+        [TestMethod]
+        public void Default_Header_Transcoding()
+        {
+            ResonanceEncodingInformation encodeInfo = new ResonanceEncodingInformation();
+            encodeInfo.Completed = true;
+            encodeInfo.ErrorMessage = "Test";
+            encodeInfo.HasError = true;
+            encodeInfo.IsCompressed = true;
+            encodeInfo.IsEncrypted = false;
+            encodeInfo.Token = Guid.NewGuid().ToString();
+            encodeInfo.Transcoding = "test";
+            encodeInfo.Type = ResonanceTranscodingInformationType.Response;
+
+            ResonanceDefaultHeaderTranscoder transcoder = new ResonanceDefaultHeaderTranscoder();
+
+            using (MemoryStream mWrite = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(mWrite))
+                {
+                    transcoder.Encode(writer, encodeInfo);
+                }
+
+                ResonanceDecodingInformation decodeInfo = new ResonanceDecodingInformation();
+
+                using (MemoryStream mRead = new MemoryStream(mWrite.ToArray()))
+                {
+                    using (BinaryReader reader = new BinaryReader(mRead))
+                    {
+                        transcoder.Decode(reader, decodeInfo);
+                    }
+                }
+
+                Assert.AreEqual(encodeInfo.Completed, decodeInfo.Completed);
+                Assert.AreEqual(encodeInfo.ErrorMessage, decodeInfo.ErrorMessage);
+                Assert.AreEqual(encodeInfo.HasError, decodeInfo.HasError);
+                Assert.AreEqual(encodeInfo.IsCompressed, decodeInfo.IsCompressed);
+                Assert.AreEqual(encodeInfo.IsEncrypted, decodeInfo.IsEncrypted);
+                Assert.AreEqual(encodeInfo.Token, decodeInfo.Token);
+                Assert.AreEqual(encodeInfo.Transcoding, decodeInfo.Transcoding);
+                Assert.AreEqual(encodeInfo.Type, decodeInfo.Type);
             }
         }
 
@@ -214,8 +258,6 @@ namespace Resonance.Tests
                 .WithMessageTypeHeaderMethod(MessageTypeHeaderMethod.Name)
                 .WithTypeResolver<ProtobufTypeResolver>()
                 .Build();
-
-            t1.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
 
             t1.Connect().Wait();
             t2.Connect().Wait();

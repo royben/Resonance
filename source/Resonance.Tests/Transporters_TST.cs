@@ -30,6 +30,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
+                Assert.IsTrue(t1.PendingRequestsCount == 1);
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
                 t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
@@ -594,6 +595,36 @@ namespace Resonance.Tests
 
             Assert.IsTrue(t1.State == ResonanceComponentState.Failed);
             Assert.IsTrue(t1.FailedStateException is ResonanceConnectionClosedException);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Object_Without_Expecting_Response()
+        {
+            Init();
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect().Wait();
+            t2.Connect().Wait();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                Assert.IsTrue(receivedRequest.A == 10);
+            };
+
+            var request = new CalculateRequest() { A = 10 };
+
+            for (int i = 0; i < 1000; i++)
+            {
+                t1.SendObject(new CalculateRequest() { A = 10 }).GetAwaiter().GetResult();
+            }
+
+            Assert.IsTrue(t1.PendingRequestsCount == 0);
 
             t1.Dispose(true);
             t2.Dispose(true);

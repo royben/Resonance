@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Resonance.Adapters.InMemory;
 using Resonance.Logging;
 using System;
 using System.Collections.Generic;
@@ -35,6 +36,7 @@ namespace Resonance.Tests.Common
 
         protected void Init()
         {
+            InMemoryAdapter.DisposeAll();
             IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
             LogManager.Default.NewLog += Default_NewLog;
         }

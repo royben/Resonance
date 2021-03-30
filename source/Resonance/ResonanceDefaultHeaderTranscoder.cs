@@ -29,9 +29,14 @@ namespace Resonance
             writer.Write(info.IsEncrypted);
             writer.Write(info.Token);
             writer.Write((byte)info.Type);
-            writer.Write(info.Completed);
-            writer.Write(info.HasError);
-            writer.Write(info.ErrorMessage ?? String.Empty);
+
+            if (info.Type == ResonanceTranscodingInformationType.Response)
+            {
+                writer.Write(info.Completed);
+                writer.Write(info.HasError);
+                writer.Write(info.ErrorMessage ?? String.Empty);
+            }
+
             writer.Write((uint)writer.BaseStream.Position + sizeof(uint)); //Increase size when adding fields.
             //Add new fields here...
         }
@@ -49,9 +54,14 @@ namespace Resonance
             info.IsEncrypted = reader.ReadBoolean();
             info.Token = reader.ReadString();
             info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
-            info.Completed = reader.ReadBoolean();
-            info.HasError = reader.ReadBoolean();
-            info.ErrorMessage = reader.ReadString();
+
+            if (info.Type == ResonanceTranscodingInformationType.Response)
+            {
+                info.Completed = reader.ReadBoolean();
+                info.HasError = reader.ReadBoolean();
+                info.ErrorMessage = reader.ReadString();
+            }
+
             info.ActualMessageStreamPosition = reader.ReadUInt32();
 
             if (info.ProtocolVersion >= ProtocolVersion)

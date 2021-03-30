@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -72,6 +73,26 @@ namespace Resonance.Adapters.Usb
         /// <param name="port">The COM port name (e.g COM1).</param>
         /// <param name="baudRate">The serial baud rate.</param>
         public UsbAdapter(String port, BaudRates baudRate) : this(port, (int)baudRate)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UsbAdapter"/> class.
+        /// </summary>
+        /// <param name="device">The USB serial device.</param>
+        /// <param name="baudRate">The serial baud rate.</param>
+        public UsbAdapter(UsbDevice device, int baudRate) : this(device.Port, baudRate)
+        {
+            
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UsbAdapter"/> class.
+        /// </summary>
+        /// <param name="device">The USB serial device.</param>
+        /// <param name="baudRate">The serial baud rate.</param>
+        public UsbAdapter(UsbDevice device, BaudRates baudRate) : this(device.Port, baudRate)
         {
 
         }
@@ -319,7 +340,7 @@ namespace Resonance.Adapters.Usb
                 }
                 catch { }
             }
-        } 
+        }
         #endregion
     }
 }

@@ -13,8 +13,8 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceEncoder" />
     public abstract class ResonanceEncoder : IResonanceEncoder
     {
-        private IResonanceHeaderTranscoder _headerTranscoder;
-        private String _transcodingName;
+        private readonly IResonanceHeaderTranscoder _headerTranscoder;
+        private readonly String _transcodingName;
 
         /// <summary>
         /// Gets or sets the message compression configuration.
@@ -32,10 +32,10 @@ namespace Resonance
         public ResonanceEncoder()
         {
             var att = this.GetType().GetCustomAttribute<ResonanceTranscodingAttribute>();
-            _transcodingName = att != null ? att.Name : null;
+            _transcodingName = att?.Name;
             _headerTranscoder = OnCreateHeaderTranscoder();
-            CompressionConfiguration = new ResonanceCompressionConfiguration();
-            EncryptionConfiguration = new ResonanceEncryptionConfiguration();
+            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration.Clone();
+            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration.Clone();
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace Resonance
         /// <returns></returns>
         protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
         {
-            return new ResonanceDefaultHeaderTranscoder();
+            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder;
         }
 
         /// <summary>

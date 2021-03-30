@@ -39,5 +39,14 @@ namespace Resonance
             SymmetricAlgorithm.Key = pdb.GetBytes(32);
             SymmetricAlgorithm.IV = pdb.GetBytes(16);
         }
+
+        /// <summary>
+        /// Clones this instance.
+        /// </summary>
+        /// <returns></returns>
+        public ResonanceEncryptionConfiguration Clone()
+        {
+            return this.MemberwiseClone() as ResonanceEncryptionConfiguration;
+        }
     }
 }

@@ -18,9 +18,10 @@ namespace Resonance.Adapters.Tcp
     /// </summary>
     public class TcpAdapter : ResonanceAdapter
     {
-        private bool _initializedFromConstructor;
+        private readonly bool _initializedFromConstructor;
         private TcpClient _socket;
         private byte[] _size_buffer;
+        private readonly bool _noDelay;
 
         /// <summary>
         /// The maximum socket buffer size.
@@ -57,10 +58,12 @@ namespace Resonance.Adapters.Tcp
         /// </summary>
         /// <param name="address">The host IP address.</param>
         /// <param name="port">The host port.</param>
-        public TcpAdapter(String address, int port) : this()
+        /// <param name="noDelay">Disable Nagle's algorithm.</param>
+        public TcpAdapter(String address, int port, bool noDelay = false) : this()
         {
             Address = address;
             Port = port;
+            _noDelay = noDelay;
         }
 
         /// <summary>
@@ -145,8 +148,8 @@ namespace Resonance.Adapters.Tcp
         {
             _socket.SendBufferSize = 1024;
             _socket.ReceiveBufferSize = 1024;
-            _socket.NoDelay = true;
-            _socket.Client.NoDelay = true;
+            _socket.NoDelay = _noDelay;
+            _socket.Client.NoDelay = _noDelay;
         }
 
         #endregion

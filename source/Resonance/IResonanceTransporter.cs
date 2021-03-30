@@ -92,6 +92,16 @@ namespace Resonance
         bool FailsWithAdapter { get; set; }
 
         /// <summary>
+        /// Gets the total number of queued outgoing messages.
+        /// </summary>
+        int OutgoingQueueCount { get; }
+
+        /// <summary>
+        /// Gets the number of current pending requests.
+        /// </summary>
+        int PendingRequestsCount { get; }
+
+        /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
@@ -166,6 +176,13 @@ namespace Resonance
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
         Task<Object> SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        Task SendObject(Object message, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends a request message while expecting multiple response messages with the same token.
