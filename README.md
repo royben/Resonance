@@ -167,7 +167,7 @@ The following diagram described a simple request-response scenario.
 ```
 <br/>
 
-#### Using a Request Handler.
+#### Registering a Request Handler.
 ```c#
         public async void Demo()
         {
