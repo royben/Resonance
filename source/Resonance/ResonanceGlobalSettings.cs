@@ -33,7 +33,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the default header transcoder for all <see cref="IResonanceEncoder"/> and <see cref="IResonanceDecoder"/>.
         /// </summary>
-        public IResonanceHeaderTranscoder DefaultHeaderTranscoder { get; } = new ResonanceDefaultHeaderTranscoder();
+        public IResonanceHeaderTranscoder DefaultHeaderTranscoder { get; set; } = new ResonanceDefaultHeaderTranscoder();
 
         /// <summary>
         /// Gets or sets the default request timeout for all <see cref="IResonanceTransporter"/>.

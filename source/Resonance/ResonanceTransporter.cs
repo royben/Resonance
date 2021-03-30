@@ -382,7 +382,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected)
             {
-                if (Adapter.State == ResonanceComponentState.Connected)
+                if (Adapter != null && Adapter.State == ResonanceComponentState.Connected)
                 {
                     try
                     {
@@ -441,10 +441,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task<Object> SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
-            }
+            ValidateMessagingState(request);
 
             config = config ?? new ResonanceRequestConfig();
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
@@ -474,10 +471,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public ResonanceObservable<Response> SendContinuousRequest<Request, Response>(Request request, ResonanceContinuousRequestConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
-            }
+            ValidateMessagingState(request);
 
             config = config ?? new ResonanceContinuousRequestConfig();
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
@@ -542,10 +536,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the response while transporter state is {State}."));
-            }
+            ValidateMessagingState(response);
 
             config = config ?? new ResonanceResponseConfig();
 
@@ -599,10 +590,7 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task SendObject(object message, ResonanceRequestConfig config = null)
         {
-            if (State != ResonanceComponentState.Connected)
-            {
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send the request while transporter state is {State}."));
-            }
+            ValidateMessagingState(message);
 
             config = config ?? new ResonanceRequestConfig();
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
@@ -1518,8 +1506,35 @@ namespace Resonance
 
             if (withAdapter)
             {
-                Adapter.Dispose();
+                Adapter?.Dispose();
             }
+        }
+
+        #endregion
+
+        #region Validation
+
+        /// <summary>
+        /// Validates the state of the messaging system.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <exception cref="System.NullReferenceException">
+        /// </exception>
+        /// <exception cref="System.InvalidOperationException">
+        /// </exception>
+        private void ValidateMessagingState(Object message)
+        {
+            if (message == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Error processing null message."));
+
+            if (State != ResonanceComponentState.Connected) 
+                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the transporter state is '{State}'."));
+
+            if (Adapter == null)
+                throw LogManager.Log(new NullReferenceException($"{this}: Could not send the message while transporter state is '{State}'."));
+
+            if (Adapter.State != ResonanceComponentState.Connected)
+                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the adapter state is '{Adapter.State}'."));
         }
 
         #endregion
