@@ -70,8 +70,6 @@ namespace Resonance.Tests
         {
             Init();
 
-            ResonanceGlobalSettings.Default.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 

@@ -202,6 +202,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -240,6 +242,8 @@ namespace Resonance.Tests
         public void Protobuf_Transcoding_Type_Resolver()
         {
             Init();
+
+            if (IsRunningOnAzurePipelines) return;
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
