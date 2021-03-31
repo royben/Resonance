@@ -38,7 +38,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Proto", "Proto", "{6DD9C767
 		Messages\Proto\CalculateResponse.cs = Messages\Proto\CalculateResponse.cs
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Messages", "Resonance.Messages\Resonance.Messages.csproj", "{09262234-5E6B-4769-97A4-4101090D6B20}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.Messages", "Resonance.Messages\Resonance.Messages.csproj", "{09262234-5E6B-4769-97A4-4101090D6B20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.SignalR", "Resonance.SignalR\Resonance.SignalR.csproj", "{57FF56E2-CAF0-4C70-8539-19747BC3C893}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -98,6 +100,12 @@ Global
 		{09262234-5E6B-4769-97A4-4101090D6B20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09262234-5E6B-4769-97A4-4101090D6B20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09262234-5E6B-4769-97A4-4101090D6B20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.AzureBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.AzureBuild|Any CPU.Build.0 = Debug|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

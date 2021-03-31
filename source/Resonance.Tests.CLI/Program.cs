@@ -1,4 +1,6 @@
-﻿using System;
+﻿//using Resonance.SignalR;
+using Resonance.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,14 +13,32 @@ namespace Resonance.Tests.CLI
     {
         static void Main(string[] args)
         {
-            ResonancePerformanceTester tester = new ResonancePerformanceTester();
-            tester.TestTcpAdapterPerformance();
 
-            if (Debugger.IsAttached)
+
+            //ResonancePerformanceTester tester = new ResonancePerformanceTester();
+            //tester.TestTcpAdapterPerformance();
+
+            //if (Debugger.IsAttached)
+            //{
+            //    Console.WriteLine("Press enter to continue...");
+            //    Console.ReadLine();
+            //}
+
+            ResonanceSignalRClient client = new ResonanceSignalRClient("http://localhost:5515/hubs/resonance");
+            client.Start();
+
+            String txt = String.Empty;
+
+            while (txt != "exit")
             {
-                Console.WriteLine("Press enter to continue...");
-                Console.ReadLine();
+                txt = Console.ReadLine();
+                String output = client.GetString(txt);
+                Console.WriteLine(output);
+                Console.WriteLine();
             }
+
+            Console.WriteLine("Press any key to exit.");
+            Console.ReadLine();
         }
     }
 }
