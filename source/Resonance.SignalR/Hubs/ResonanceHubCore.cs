@@ -75,10 +75,10 @@ namespace Resonance.SignalR.Hubs
             return Context.ConnectionId;
         }
 
-        private void InvokeClient(string methodName, string connectionId, object[] args)
+        private async void InvokeClient(string methodName, string connectionId, object[] args)
         {
             IClientProxy proxy = _context.Clients.Client(connectionId);
-            proxy.SendAsync(methodName, args).GetAwaiter().GetResult();
+            await proxy.SendCoreAsync(methodName, args);
         }
     }
 }

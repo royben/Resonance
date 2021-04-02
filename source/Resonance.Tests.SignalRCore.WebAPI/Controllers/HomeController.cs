@@ -21,7 +21,7 @@ namespace Resonance.Tests.SignalRCore.WebAPI.Controllers
         [HttpGet]
         public String Get()
         {
-            return "Resonance SignalR Core Test";
+            return "Resonance SignalR Core Unit Test Feedback Service";
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Resonance.Threading;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,9 +15,9 @@ namespace Resonance.SignalR.Hubs
         where TServiceInformation : IResonanceServiceInformation
         where TReportedServiceInformation : IResonanceServiceInformation
     {
-        private static List<ResonanceHubRegisteredService<TServiceInformation>> _services = new List<ResonanceHubRegisteredService<TServiceInformation>>();
-        private static List<ResonanceHubSession<TServiceInformation>> _sessions = new List<ResonanceHubSession<TServiceInformation>>();
-        private static Dictionary<String, TCredentials> _loggedInClients = new Dictionary<string, TCredentials>();
+        private static ConcurrentList<ResonanceHubRegisteredService<TServiceInformation>> _services = new ConcurrentList<ResonanceHubRegisteredService<TServiceInformation>>();
+        private static ConcurrentList<ResonanceHubSession<TServiceInformation>> _sessions = new ConcurrentList<ResonanceHubSession<TServiceInformation>>();
+        private static ConcurrentDictionary<String, TCredentials> _loggedInClients = new ConcurrentDictionary<string, TCredentials>();
 
         protected override void AddService(ResonanceHubRegisteredService<TServiceInformation> service)
         {
@@ -40,7 +42,7 @@ namespace Resonance.SignalR.Hubs
         protected override void Login(TCredentials credentials, string connectionId)
         {
             OnLogin(credentials);
-            _loggedInClients.Add(connectionId, credentials);
+            _loggedInClients[connectionId] = credentials;
         }
 
         protected abstract void OnLogin(TCredentials credentials);

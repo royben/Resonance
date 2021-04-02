@@ -52,7 +52,7 @@ namespace Resonance.Adapters.SignalR
 
         public SignalRAdapter()
         {
-            ConnectionTimeout = TimeSpan.FromSeconds(60);
+            ConnectionTimeout = TimeSpan.FromSeconds(10);
         }
 
         public SignalRAdapter(TCredentials credentials, String url, String serviceId, SignalRMode mode) : this()

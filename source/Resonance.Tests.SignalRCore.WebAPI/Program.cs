@@ -21,6 +21,7 @@ namespace Resonance.Tests.SignalRCore.WebAPI
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                    webBuilder.UseUrls("http://localhost:27210/");
                 });
     }
 }

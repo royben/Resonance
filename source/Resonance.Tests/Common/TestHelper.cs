@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,12 @@ namespace Resonance.Tests.Common
             }
 
             return outLierNumbers;
+        }
+
+        public static String GetSolutionFolder()
+        {
+            var path = Path.GetFullPath("../../../");
+            return path;
         }
     }
 }

@@ -50,13 +50,22 @@ namespace Resonance.SignalR.Hubs
 
             if (serviceInformation == null) throw new NullReferenceException("Error registering null service information.");
 
-            if (GetServices(x => x.ServiceInformation.ServiceId == serviceInformation.ServiceId).Count() == 0)
+            var service = GetServices(x => x.ServiceInformation.ServiceId == serviceInformation.ServiceId).FirstOrDefault();
+
+            if (service == null)
             {
-                AddService(new ResonanceHubRegisteredService<TServiceInformation>()
+                service = new ResonanceHubRegisteredService<TServiceInformation>()
                 {
                     ConnectionId = _getConnectionId(),
                     ServiceInformation = serviceInformation
-                });
+                };
+
+                AddService(service);
+            }
+            else
+            {
+                service.ConnectionId = _getConnectionId();
+                service.ServiceInformation = serviceInformation;
             }
         }
 
