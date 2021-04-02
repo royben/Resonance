@@ -7,66 +7,86 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Xml.Linq;
 
-namespace Resonance.PostBuild
+namespace Resonance.NugetDependencyCleaner
 {
     class Program
     {
+        private static Mutex mutex = new Mutex(true, "{8F6F0AC4-B9A1-45fd-A8CF-72F0DEPCLEAN}");
+
         static void Main(string[] args)
         {
+            if (mutex.WaitOne(TimeSpan.Zero, true))
+            {
+                mutex.ReleaseMutex();
+            }
+            else
+            {
+                Environment.Exit(0);
+                return;
+            }
+
             Thread.Sleep(1000);
 
             try
             {
-                String configuration = args[0];
-                String output = Path.GetFullPath($@"../Resonance\bin\{configuration}");
-                String usbOutput = Path.GetFullPath($@"../Resonance.USB\bin\{configuration}");
+                String projectPath = args[0];
+                String configuration = args[1];
 
-                RemoveNugetDependency(usbOutput, "System.IO.Ports");
-                //AddNugetReadMeMarkup(output); //Not supported ?
+                Console.WriteLine($"Executing nuget dependency cleaner for '{Path.GetFileNameWithoutExtension(projectPath)}'...");
 
-                Thread.Sleep(2000);
+                String projectOutput = Path.Combine(projectPath, "bin", configuration);
+
+                List<KeyValuePair<String, String>> dependencies = new List<KeyValuePair<string, string>>();
+
+                for (int i = 2; i < args.Length; i++)
+                {
+                    dependencies.Add(new KeyValuePair<string, string>(args[i], args[++i]));
+                }
+
+                foreach (var dep in dependencies)
+                {
+                    String targetFramework = String.Empty;
+
+                    if (dep.Key == "net")
+                    {
+                        targetFramework = ".NETFramework4.6.1";
+                    }
+                    else if (dep.Key == "core")
+                    {
+                        targetFramework = "net5.0";
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Error processing dependency with target framework '{dep.Key}'.");
+                    }
+
+                    RemoveNugetDependency(projectOutput, targetFramework, dep.Value);
+
+                    Console.WriteLine();
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Nuget package modified successfully.");
+
+                Thread.Sleep(5000);
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Error on post build action:\n{ex.ToString()}");
+                Console.WriteLine(ex);
                 Console.ReadLine();
             }
         }
 
-        private static void AddNugetReadMeMarkup(params String[] outputs)
+        private static void RemoveNugetDependency(String projectOutput, String targetFramework, String dependency)
         {
-            Console.WriteLine("Adding README.md file as nuget documentation.");
-
-            foreach (var output in outputs)
-            {
-                var nuget = new NugetPackage(output);
-                nuget.ZipFile.AddFile("../../README.md", "/");
-
-                var documentationElement = new XElement("documentation");
-                documentationElement.SetAttributeValue("xmlns", null);
-
-                documentationElement.SetAttributeValue("src", "README.md");
-
-                nuget.Document.Descendants().First(x => x.Name.LocalName == "metadata")
-                    .Add(documentationElement);
-
-                nuget.Commit();
-            }
-
-            //< documentation src = "documentation.md" />
-        }
-
-        private static void RemoveNugetDependency(String projectOutput, String dependency)
-        {
-            Console.WriteLine($"Removing {dependency} from .NET Framework nuget dependencies for {GetNugetFileFromProjectOutput(projectOutput)}.");
+            Console.WriteLine($"Removing '{targetFramework} => {dependency}' from nuget dependencies for '{Path.GetFileName(GetNugetFileFromProjectOutput(projectOutput))}'...");
 
             var nuget = new NugetPackage(projectOutput);
 
-            var node = nuget.Document.Descendants().Where(x => x.Name.LocalName == "group").First(x => x.Attribute("targetFramework").Value == ".NETFramework4.6.1")
+            var node = nuget.Document.Descendants().Where(x => x.Name.LocalName == "group").First(x => x.Attribute("targetFramework").Value == targetFramework)
                                      .Descendants().Where(x => x.Name.LocalName == "dependency")
                                      .FirstOrDefault(x => x.Attribute("id").Value == dependency);
 
@@ -74,7 +94,7 @@ namespace Resonance.PostBuild
             {
                 node.Remove();
                 nuget.Commit();
-                Console.WriteLine("Nuget package modified successfully.");
+                Console.WriteLine("Dependency removed successfully.");
             }
             else
             {

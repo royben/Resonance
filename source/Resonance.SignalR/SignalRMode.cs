@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR
 {
-    public enum SignalRMode
+    public enum SignalRMode   
     {
         Legacy,
         Core

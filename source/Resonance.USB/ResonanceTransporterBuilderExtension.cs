@@ -5,10 +5,10 @@ using System;
 using System.Reflection;
 using static Resonance.ResonanceTransporterBuilder;
 
-public static class ResonanceTransporterBuilderExtension
+public static class ResonanceTransporterBuilderExtension      
 {
-    /// <summary>
-    /// Sets the transporter adapter to <see cref="UsbAdapter"/>.
+    /// <summary> 
+    /// Sets the transporter adapter to <see cref="UsbAdapter"/>.   
     /// </summary>
     /// <param name="adapterBuilder">The adapter builder.</param>
     /// <returns></returns>
@@ -18,7 +18,7 @@ public static class ResonanceTransporterBuilderExtension
     }
 }
 
-namespace Resonance.USB.BuilderExtension   
+namespace Resonance.USB.BuilderExtension    
 {
     public class UsbAdapterBuilderBase
     {
@@ -40,7 +40,7 @@ namespace Resonance.USB.BuilderExtension
         /// Sets the USB adapter serial port.
         /// </summary>
         /// <param name="port">The port.</param>
-        public UsbAdapterBaudRateBuilder WithPort(String port)
+        public UsbAdapterBaudRateBuilder WithPort(String port) 
         {
             return new UsbAdapterBaudRateBuilder(_builder, port);
         }

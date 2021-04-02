@@ -17,5 +17,9 @@
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if $(ConfigurationName) == Release powershell start-process $(SolutionDir)Resonance.NugetDependencyCleaner\bin\$(ConfigurationName)\Resonance.NugetDependencyCleaner.exe '$(ProjectDir) $(ConfigurationName) core Microsoft.AspNet.SignalR.Core core Microsoft.AspNet.SignalR.Client net Microsoft.AspNetCore.SignalR.Core net Microsoft.AspNetCore.SignalR.Client'" />
+  </Target>
+
 
 </Project>
