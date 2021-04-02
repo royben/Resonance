@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,8 +34,13 @@ namespace Resonance.Adapters.SignalR
         TimeSpan ConnectionTimeout { get; set; }
 
         /// <summary>
-        /// Gets the adapter mode.
+        /// Gets the adapter role.
         /// </summary>
         SignalRAdapterRole Role { get; }
+
+        /// <summary>
+        /// Gets or sets the SignalR mode (legacy/core).
+        /// </summary>
+        SignalRMode Mode { get; }
     }
 }

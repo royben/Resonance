@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNet.SignalR.Client;
 using Resonance.Adapters.SignalR;
+using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
@@ -9,37 +10,52 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Services
 {
-    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : ResonanceRegisteredServiceBase<TCredentials, TResonanceServiceInformation, TAdapterInformation> where TResonanceServiceInformation : IResonanceServiceInformation
+    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : IDisposable where TResonanceServiceInformation : IResonanceServiceInformation
     {
-        private HubConnection _connection;
-        private IHubProxy _proxy;
+        private ISignalRClient _client;
 
-        public String Hub { get; private set; }
+        public event EventHandler<ConnectionRequestEventArgs<TCredentials, TAdapterInformation>> ConnectionRequest;
 
-        public ResonanceRegisteredService(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, String hub, HubConnection hubConnection, IHubProxy proxy) : base(credentials, serviceInformation, url)
+        public TResonanceServiceInformation ServiceInformation { get; private set; }
+
+        public TCredentials Credentials { get; private set; }
+
+        public SignalRMode Mode { get; private set; }
+
+        internal ResonanceRegisteredService(TCredentials credentials, TResonanceServiceInformation serviceInformation, SignalRMode mode, ISignalRClient signalRClient)
         {
-            _connection = hubConnection;
-            _proxy = proxy;
-            Hub = hub;
-            _proxy.On<String, TAdapterInformation>(ResonanceHubMethods.ConnectionRequest, OnConnectionRequest);
+            Mode = mode;
+            Credentials = credentials;
+            ServiceInformation = serviceInformation;
+            _client = signalRClient;
+            _client.On<String, TAdapterInformation>(ResonanceHubMethods.ConnectionRequest, OnConnectionRequest);
         }
 
-        protected override Task<ISignalRAdapter<TCredentials>> AcceptConnection(string sessionId)
+        protected Task<ISignalRAdapter<TCredentials>> AcceptConnection(string sessionId)
         {
-            return Task.FromResult((ISignalRAdapter<TCredentials>)SignalRAdapter<TCredentials>.AcceptConnection(Url, Hub, ServiceInformation.ServiceId, sessionId, Credentials));
+            return Task.FromResult((ISignalRAdapter<TCredentials>)SignalRAdapter<TCredentials>.AcceptConnection(Credentials, _client.Url, ServiceInformation.ServiceId, sessionId, Mode));
         }
 
-        protected override Task DeclineConnection(string sessionId)
+        protected virtual void OnConnectionRequest(string sessionId, TAdapterInformation adapterInformation)
         {
-            return _proxy.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
+            ConnectionRequest?.Invoke(this, new ConnectionRequestEventArgs<TCredentials, TAdapterInformation>(AcceptConnection, DeclineConnection)
+            {
+                SessionId = sessionId,
+                RemoteAdapterInformation = adapterInformation
+            });
         }
 
-        public override void Dispose()
+        protected Task DeclineConnection(string sessionId)
         {
-            _proxy.Invoke(ResonanceHubMethods.UnregisterService).GetAwaiter().GetResult();
-            _connection?.Stop();
-            _connection?.Dispose();
-            _connection = null;
+            return _client.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
+        }
+
+        public void Dispose()
+        {
+            _client.Invoke(ResonanceHubMethods.UnregisterService).GetAwaiter().GetResult();
+            _client?.Stop();
+            _client?.Dispose();
+            _client = null;
         }
     }
 }

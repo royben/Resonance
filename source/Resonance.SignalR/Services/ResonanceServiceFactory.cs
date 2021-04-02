@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.SignalR.Client;
+using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
 using System;
@@ -23,71 +24,26 @@ namespace Resonance.SignalR.Services
 
         }
 
-        public async Task<List<TReportedServiceInformation>> GetAvailableServices<TCredentials, TReportedServiceInformation>(TCredentials credentials, String url, String hub) where TReportedServiceInformation : IResonanceServiceInformation
+        public async Task<List<TReportedServiceInformation>> GetAvailableServices<TCredentials, TReportedServiceInformation>(TCredentials credentials, String url, SignalRMode mode) where TReportedServiceInformation : IResonanceServiceInformation
         {
-            var connection = new HubConnection(url);
-            var proxy = connection.CreateHubProxy(hub);
-            await connection.Start();
-            await proxy.Invoke(ResonanceHubMethods.Login, credentials);
-            var services = await proxy.Invoke<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices);
+            ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
-            await Task.Factory.StartNew(() =>
-            {
-                connection.Stop();
-                connection.Dispose();
-            });
+            await client.Start();
+            await client.Invoke(ResonanceHubMethods.Login, credentials);
+            var services = await client.Invoke<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices);
+            await client.DisposeAsync();
 
             return services;
         }
 
-        public Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, String hub) where TResonanceServiceInformation : IResonanceServiceInformation
+        public async Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
         {
-            TaskCompletionSource<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> completionSource = new TaskCompletionSource<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>>();
+            ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
-            bool completed = false;
-
-            Task.Factory.StartNew(() =>
-            {
-                var connection = new HubConnection(url);
-                var proxy = connection.CreateHubProxy(hub);
-                connection.StateChanged += (x) =>
-                {
-                    if (x.NewState == ConnectionState.Connected)
-                    {
-                        if (completed) return;
-                        completed = true;
-
-                        Task.Factory.StartNew(() =>
-                        {
-                            try
-                            {
-                                proxy.Invoke(ResonanceHubMethods.Login, credentials).GetAwaiter().GetResult();
-                                proxy.Invoke(ResonanceHubMethods.RegisterService, serviceInformation).GetAwaiter().GetResult();
-                                completionSource.SetResult(new ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, url, hub, connection, proxy));
-                            }
-                            catch (Exception ex)
-                            {
-                                completionSource.SetException(ex);
-                            }
-                        });
-                    }
-                };
-
-                connection.Start().GetAwaiter().GetResult();
-            });
-
-            TimeoutTask.StartNew(() =>
-            {
-                if (!completed)
-                {
-                    completed = true;
-                    completionSource.SetException(new TimeoutException("Could not complete the request within the given timeout."));
-                }
-
-            }, TimeSpan.FromSeconds(10));
-
-
-            return completionSource.Task;
+            await client.Start();
+            await client.Invoke(ResonanceHubMethods.Login, credentials);
+            await client.Invoke(ResonanceHubMethods.RegisterService, serviceInformation);
+            return new ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, mode, client);
         }
     }
 }

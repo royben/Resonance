@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNet.SignalR.Client;
-using Resonance.SignalR;
+﻿using Resonance.SignalR;
+using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
 using System;
@@ -17,14 +17,8 @@ namespace Resonance.Adapters.SignalR
     /// <seealso cref="Resonance.Adapters.SignalR.SignalRAdapterBase{T}" />
     public class SignalRAdapter<TCredentials> : ResonanceAdapter, ISignalRAdapter<TCredentials>
     {
-        private IHubProxy _proxy;
-        private HubConnection _connection;
+        private ISignalRClient _client;
         private TCredentials _credentials;
-
-        /// <summary>
-        /// Gets or sets the hub.
-        /// </summary>
-        public string Hub { get; protected set; }
 
         /// <summary>
         /// Gets the URL of the SignalR service.
@@ -51,25 +45,31 @@ namespace Resonance.Adapters.SignalR
         /// </summary>
         public SignalRAdapterRole Role { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the SignalR mode (legacy/core).
+        /// </summary>
+        public SignalRMode Mode { get; private set; }
+
         public SignalRAdapter()
         {
             ConnectionTimeout = TimeSpan.FromSeconds(60);
         }
 
-        public SignalRAdapter(String url, String hub, String serviceId, TCredentials credentials) : this()
+        public SignalRAdapter(TCredentials credentials, String url, String serviceId, SignalRMode mode) : this()
         {
+            Mode = mode;
             Url = url;
-            Hub = hub;
             ServiceId = serviceId;
             _credentials = credentials;
             Role = SignalRAdapterRole.Connect;
         }
 
-        public static SignalRAdapter<TCredentials> AcceptConnection(String url, String hub, String serviceId, String sessionId, TCredentials credentials)
+        public static SignalRAdapter<TCredentials> AcceptConnection(TCredentials credentials, String url, String serviceId, String sessionId, SignalRMode mode)
         {
             SignalRAdapter<TCredentials> adapter = new SignalRAdapter<TCredentials>();
+
+            adapter.Mode = mode;
             adapter.Url = url;
-            adapter.Hub = hub;
             adapter.ServiceId = serviceId;
             adapter.SessionId = sessionId;
             adapter._credentials = credentials;
@@ -92,12 +92,12 @@ namespace Resonance.Adapters.SignalR
                 {
                     try
                     {
-                        _connection = new HubConnection(Url);
-                        _proxy = _connection.CreateHubProxy(Hub);
+                        _client = SignalRClientFactory.Default.Create(Mode, Url);
+                        _client.Start().GetAwaiter().GetResult();
 
                         if (Role == SignalRAdapterRole.Connect)
                         {
-                            _proxy.On(ResonanceHubMethods.Connected, () =>
+                            _client.On(ResonanceHubMethods.Connected, () =>
                             {
                                 try
                                 {
@@ -122,7 +122,7 @@ namespace Resonance.Adapters.SignalR
                                 }
                             });
 
-                            _proxy.On(ResonanceHubMethods.Declined, () =>
+                            _client.On(ResonanceHubMethods.Declined, () =>
                             {
                                 try
                                 {
@@ -148,54 +148,35 @@ namespace Resonance.Adapters.SignalR
                             });
                         }
 
-                        _proxy.On(ResonanceHubMethods.Disconnected, () =>
+                        _client.On(ResonanceHubMethods.Disconnected, () =>
                         {
                             //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
                             //Maybe just raise an event..
                         });
 
-                        _connection.StateChanged += async (x) =>
+                        LogManager.Log($"{this}: Logging in...");
+                        _client.Invoke(ResonanceHubMethods.Login, _credentials).GetAwaiter().GetResult();
+
+                        if (Role == SignalRAdapterRole.Connect)
                         {
-                            try
+                            LogManager.Log($"{this}: Connecting service ({ServiceId})...");
+                            SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            LogManager.Log($"{this}: Accepting connection ({SessionId})...");
+                            _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
+                            LogManager.Log($"{this}: Connected.");
+
+                            if (!completed)
                             {
-                                if (x.NewState == ConnectionState.Connected)
-                                {
-                                    LogManager.Log($"{this}: Logging in...");
-                                    await _proxy.Invoke(ResonanceHubMethods.Login, _credentials);
-
-                                    if (Role == SignalRAdapterRole.Connect)
-                                    {
-                                        LogManager.Log($"{this}: Connecting service ({ServiceId})...");
-                                        SessionId = await _proxy.Invoke<String>(ResonanceHubMethods.Connect, ServiceId);
-                                    }
-                                    else
-                                    {
-                                        LogManager.Log($"{this}: Accepting connection ({SessionId})...");
-                                        await _proxy.Invoke(ResonanceHubMethods.AcceptConnection, SessionId);
-                                        LogManager.Log($"{this}: Connected.");
-
-                                        if (!completed)
-                                        {
-                                            completed = true;
-                                            State = ResonanceComponentState.Connected;
-                                            completionSource.SetResult(true);
-                                        }
-                                    }
-                                }
+                                completed = true;
+                                State = ResonanceComponentState.Connected;
+                                completionSource.SetResult(true);
                             }
-                            catch (Exception ex)
-                            {
-                                if (!completed)
-                                {
-                                    completed = true;
-                                    LogManager.Log(ex, $"{this}: Error occurred on connection state changed event.");
-                                    completionSource.SetException(ex);
-                                }
-                            }
-                        };
+                        }
 
-                        _proxy.On<byte[]>(ResonanceHubMethods.DataAvailable, (data) => { OnDataAvailable(data); });
-                        _connection.Start();
+                        _client.On<byte[]>(ResonanceHubMethods.DataAvailable, (data) => { OnDataAvailable(data); });
                     }
                     catch (Exception ex)
                     {
@@ -238,10 +219,10 @@ namespace Resonance.Adapters.SignalR
                     {
                         if (notify)
                         {
-                            _proxy.Invoke(ResonanceHubMethods.Disconnect).GetAwaiter().GetResult();
+                            _client.Invoke(ResonanceHubMethods.Disconnect).GetAwaiter().GetResult();
                         }
-                        _connection.Stop();
-                        _connection.Dispose();
+                        _client.Stop();
+                        _client.Dispose();
                     }
                     catch (Exception ex)
                     {
@@ -261,7 +242,7 @@ namespace Resonance.Adapters.SignalR
 
         protected override void OnWrite(byte[] data)
         {
-            _proxy.Invoke(ResonanceHubMethods.Write, data).GetAwaiter().GetResult();
+            _client.Invoke(ResonanceHubMethods.Write, data).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -272,7 +253,7 @@ namespace Resonance.Adapters.SignalR
         /// </returns>
         public override string ToString()
         {
-            return $"{base.ToString()} ({Url}/{Hub})";
+            return $"{base.ToString()} ({Url})";
         }
     }
 }

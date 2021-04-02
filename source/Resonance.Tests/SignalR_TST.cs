@@ -21,24 +21,27 @@ namespace Resonance.Tests
     public class SignalR_TST : ResonanceTest
     {
         [TestMethod]
-        public void SignalR_Legacy()
+        public void SignalR_Legacy_Reading_Writing()
         {
             Init();
 
             if (IsRunningOnAzurePipelines) return;
 
-            String url = "http://localhost:8080";
-            String hubName = "TestHub";
+            String hostUrl = "http://localhost:8080";
+            String hubUrl = $"{hostUrl}/TestHub";
+            SignalRMode mode = SignalRMode.Legacy;
 
-            SignalRServer server = new SignalRServer(url);
+            SignalRServer server = new SignalRServer(hostUrl);
             server.Start();
-
-            Thread.Sleep(2000);
 
             TestCredentials credentials = new TestCredentials() { Name = "Test" };
             TestServiceInformation serviceInfo = new TestServiceInformation() { ServiceId = "My Test Service" };
 
-            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, url, hubName).GetAwaiter().GetResult();
+            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, hubUrl, mode).GetAwaiter().GetResult();
+
+            Assert.AreSame(registeredService.Credentials, credentials);
+            Assert.AreSame(registeredService.ServiceInformation, serviceInfo);
+            Assert.AreEqual(registeredService.Mode, mode);
 
             bool connected = false;
 
@@ -46,18 +49,22 @@ namespace Resonance.Tests
 
             registeredService.ConnectionRequest += (_, e) =>
             {
-                var remoteAdapterInfo = e.RemoteAdapterInformation;
+                Assert.IsTrue(e.RemoteAdapterInformation.Information == "No information on the remote adapter");
                 var adapter = e.Accept().GetAwaiter().GetResult();
                 serviceTransporter.Adapter = adapter;
                 serviceTransporter.Connect().GetAwaiter().GetResult();
                 connected = true;
             };
 
-            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, hubName).GetAwaiter().GetResult();
+            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, hubUrl, mode).GetAwaiter().GetResult();
+
+            Assert.IsTrue(remoteServices.Count == 1);
 
             var remoteService = remoteServices.First();
 
-            ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(url, hubName, remoteService.ServiceId, credentials));
+            Assert.AreEqual(remoteService.ServiceId, registeredService.ServiceInformation.ServiceId);
+
+            ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, hubUrl, remoteService.ServiceId, mode));
 
             clientTransporter.Connect().GetAwaiter().GetResult();
 
