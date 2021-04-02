@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,179 +8,77 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
-    public abstract class ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
+    public abstract class ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
         : Hub,
         IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
         where TServiceInformation : IResonanceServiceInformation
         where TReportedServiceInformation : IResonanceServiceInformation
+        where THub : ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
+        where THubProxy : ResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>, new()
     {
-        private static List<ResonanceHubRegisteredService<TServiceInformation>> _services = new List<ResonanceHubRegisteredService<TServiceInformation>>();
-        private static List<ResonanceHubSession<TServiceInformation>> _sessions = new List<ResonanceHubSession<TServiceInformation>>();
+        private THubProxy _proxy;
+
+        public ResonanceHub()
+        {
+            _proxy = new THubProxy();
+            _proxy.Init(InvokeClient, GetConnectionId);
+        }
 
         public void Login(TCredentials credentials)
         {
-            Login(credentials, Context.ConnectionId);
+            _proxy.Login(credentials);
         }
-
-        protected abstract void Login(TCredentials credentials, String connectionId);
-
-        protected abstract void Validate(String connectionId);
 
         public void RegisterService(TServiceInformation serviceInformation)
         {
-            Validate(Context.ConnectionId);
-
-            if (serviceInformation == null) throw new NullReferenceException("Error registering null service information.");
-
-            if (!_services.Exists(x => x.ServiceInformation.ServiceId == serviceInformation.ServiceId))
-            {
-                _services.Add(new ResonanceHubRegisteredService<TServiceInformation>()
-                {
-                    ConnectionId = Context.ConnectionId,
-                    ServiceInformation = serviceInformation
-                });
-            }
+            _proxy.RegisterService(serviceInformation);
         }
 
         public void UnregisterService()
         {
-            Validate(Context.ConnectionId);
-
-            var service = _services.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId);
-
-            if (service == null) throw new InvalidOperationException("The current client is not registered as a service.");
-
-            _services.Remove(service);
-
-            _sessions.ForEach(session => 
-            {
-                if (session.ConnectedConnectionId != null)
-                {
-                    Clients.Client(session.ConnectedConnectionId).ServiceDown();
-                }
-
-                if (session.AcceptedConnectionId != null)
-                {
-                    Clients.Client(session.AcceptedConnectionId).ServiceDown();
-                }
-            });
-
-            _sessions.RemoveAll(x => x.Service == service);
+            _proxy.UnregisterService();
         }
 
         public List<TReportedServiceInformation> GetAvailableServices()
         {
-            Validate(Context.ConnectionId);
-            return FilterServicesInformation(_services.Select(x => x.ServiceInformation).ToList());
+            return _proxy.GetAvailableServices();
         }
-
-        protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services);
 
         public string Connect(string serviceId)
         {
-            Validate(Context.ConnectionId);
-
-            var service = _services.FirstOrDefault(x => x.ServiceInformation.ServiceId == serviceId);
-
-            if (service == null) throw new KeyNotFoundException("The specified resonance service was not found.");
-
-            var newPendingSession = new ResonanceHubSession<TServiceInformation>()
-            {
-                ConnectedConnectionId = Context.ConnectionId,
-                Service = service,
-            };
-
-            _sessions.Add(newPendingSession);
-
-            TAdapterInformation adapterInformation = GetAdapterInformation(Context.ConnectionId);
-
-            Clients.Client(service.ConnectionId).ConnectionRequest(newPendingSession.SessionId, adapterInformation);
-
-            return newPendingSession.SessionId;
-        }
-
-        protected virtual TAdapterInformation GetAdapterInformation(String connectionId)
-        {
-            return default(TAdapterInformation);
+            return _proxy.Connect(serviceId);
         }
 
         public void AcceptConnection(string sessionId)
         {
-            Validate(Context.ConnectionId);
-
-            var pendingSession = _sessions.FirstOrDefault(x => x.SessionId == sessionId);
-
-            if (pendingSession == null) throw new KeyNotFoundException("The specified session id was not found.");
-
-            pendingSession.AcceptedConnectionId = Context.ConnectionId;
-
-            Clients.Client(pendingSession.ConnectedConnectionId).Connected();
+            _proxy.AcceptConnection(sessionId);
         }
 
         public void DeclineConnection(string sessionId)
         {
-            Validate(Context.ConnectionId);
-
-            var pendingSession = _sessions.FirstOrDefault(x => x.SessionId == sessionId);
-
-            if (pendingSession == null) throw new KeyNotFoundException("The specified session id was not found.");
-
-            _sessions.Remove(pendingSession);
-
-            Clients.Client(pendingSession.ConnectedConnectionId).Declined();
+            _proxy.DeclineConnection(sessionId);
         }
 
         public void Disconnect()
         {
-            Validate(Context.ConnectionId);
-
-            var session = GetContextSession();
-
-            if (session == null) return;
-
-            String otherSideConnectionId = GetOtherSideConnectionId();
-
-            _sessions.Remove(session);
-
-            if (otherSideConnectionId != null)
-            {
-                Clients.Client(otherSideConnectionId).Disconnected();
-            }
+            _proxy.Disconnect();
         }
 
         public void Write(byte[] data)
         {
-            String otherSideConnectionId = GetOtherSideConnectionId();
-
-            if (otherSideConnectionId != null)
-            {
-                Clients.Client(otherSideConnectionId).DataAvailable(data);
-            }
+            _proxy.Write(data);
         }
 
-        protected String GetOtherSideConnectionId()
+        private string GetConnectionId()
         {
-            var session = GetContextSession();
-
-            if (session == null)
-            {
-                return null;
-            }
-
-            if (session.ConnectedConnectionId == Context.ConnectionId)
-            {
-                return session.AcceptedConnectionId;
-            }
-            else
-            {
-                return session.ConnectedConnectionId;
-            }
+            return Context.ConnectionId;
         }
 
-        protected ResonanceHubSession<TServiceInformation> GetContextSession()
+        private void InvokeClient(string methodName, string connectionId, object[] args)
         {
-            var session = _sessions.FirstOrDefault(x => x.ConnectedConnectionId == Context.ConnectionId || x.AcceptedConnectionId == Context.ConnectionId);
-            return session;
+            var ctx = GlobalHost.ConnectionManager.GetHubContext<THub>();
+            IClientProxy proxy = ctx.Clients.Client(connectionId);
+            proxy.Invoke(methodName, args);
         }
     }
 }

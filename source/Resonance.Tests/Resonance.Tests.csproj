@@ -62,6 +62,7 @@
     <Compile Include="SignalR\TestAdapterInformation.cs" />
     <Compile Include="SignalR\TestCredentials.cs" />
     <Compile Include="SignalR\TestHub.cs" />
+    <Compile Include="SignalR\TestHubProxy.cs" />
     <Compile Include="SignalR\TestServiceInformation.cs" />
     <Compile Include="SignalR_TST.cs" />
     <Compile Include="Tokens_TST.cs" />
