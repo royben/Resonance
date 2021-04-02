@@ -29,15 +29,27 @@ namespace Resonance.Tests
 
             String hostUrl = "http://localhost:8080";
             String hubUrl = $"{hostUrl}/TestHub";
-            SignalRMode mode = SignalRMode.Legacy;
 
             SignalRServer server = new SignalRServer(hostUrl);
             server.Start();
 
+            Execute_Test(hubUrl, SignalRMode.Legacy);
+        }
+
+        [TestMethod]
+        public void SignalR_Core_Reading_Writing()
+        {
+            Init();
+
+            Execute_Test("http://localhost:27210/hubs/TestHub", SignalRMode.Legacy);
+        }
+
+        private void Execute_Test(String url, SignalRMode mode)
+        {
             TestCredentials credentials = new TestCredentials() { Name = "Test" };
             TestServiceInformation serviceInfo = new TestServiceInformation() { ServiceId = "My Test Service" };
 
-            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, hubUrl, mode).GetAwaiter().GetResult();
+            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, url, mode).GetAwaiter().GetResult();
 
             Assert.AreSame(registeredService.Credentials, credentials);
             Assert.AreSame(registeredService.ServiceInformation, serviceInfo);
@@ -56,7 +68,7 @@ namespace Resonance.Tests
                 connected = true;
             };
 
-            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, hubUrl, mode).GetAwaiter().GetResult();
+            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode).GetAwaiter().GetResult();
 
             Assert.IsTrue(remoteServices.Count == 1);
 
@@ -64,7 +76,7 @@ namespace Resonance.Tests
 
             Assert.AreEqual(remoteService.ServiceId, registeredService.ServiceInformation.ServiceId);
 
-            ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, hubUrl, remoteService.ServiceId, mode));
+            ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
 
             clientTransporter.Connect().GetAwaiter().GetResult();
 

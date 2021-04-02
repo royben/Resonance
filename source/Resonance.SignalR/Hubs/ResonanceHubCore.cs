@@ -7,56 +7,78 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
-    public abstract class ResonanceHubCore<TInterface, TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
-        : Hub<TInterface>,
-        IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
-        where TInterface : class
-        where TServiceInformation : IResonanceServiceInformation
-        where TReportedServiceInformation : IResonanceServiceInformation
+    public abstract class ResonanceHubCore<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
+           : Hub,
+           IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
+           where TServiceInformation : IResonanceServiceInformation
+           where TReportedServiceInformation : IResonanceServiceInformation
+           where THub : ResonanceHubCore<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
+           where THubProxy : ResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>, new()
     {
-        public void AcceptConnection(string sessionId)
-        {
-            throw new NotImplementedException();
-        }
+        private THubProxy _proxy;
+        private IHubContext<THub> _context;
 
-        public string Connect(string serviceId)
+        public ResonanceHubCore(IHubContext<THub> context)
         {
-            throw new NotImplementedException();
-        }
-
-        public void DeclineConnection(string sessionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Disconnect()
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<TReportedServiceInformation> GetAvailableServices()
-        {
-            throw new NotImplementedException();
+            _context = context;
+            _proxy = new THubProxy();
+            _proxy.Init(InvokeClient, GetConnectionId);
         }
 
         public void Login(TCredentials credentials)
         {
-            throw new NotImplementedException();
+            _proxy.Login(credentials);
         }
 
         public void RegisterService(TServiceInformation serviceInformation)
         {
-            throw new NotImplementedException();
+            _proxy.RegisterService(serviceInformation);
         }
 
         public void UnregisterService()
         {
-            throw new NotImplementedException();
+            _proxy.UnregisterService();
+        }
+
+        public List<TReportedServiceInformation> GetAvailableServices()
+        {
+            return _proxy.GetAvailableServices();
+        }
+
+        public string Connect(string serviceId)
+        {
+            return _proxy.Connect(serviceId);
+        }
+
+        public void AcceptConnection(string sessionId)
+        {
+            _proxy.AcceptConnection(sessionId);
+        }
+
+        public void DeclineConnection(string sessionId)
+        {
+            _proxy.DeclineConnection(sessionId);
+        }
+
+        public void Disconnect()
+        {
+            _proxy.Disconnect();
         }
 
         public void Write(byte[] data)
         {
-            throw new NotImplementedException();
+            _proxy.Write(data);
+        }
+
+        private string GetConnectionId()
+        {
+            return Context.ConnectionId;
+        }
+
+        private void InvokeClient(string methodName, string connectionId, object[] args)
+        {
+            IClientProxy proxy = _context.Clients.Client(connectionId);
+            proxy.SendAsync(methodName, args).GetAwaiter().GetResult();
         }
     }
 }

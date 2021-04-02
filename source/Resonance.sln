@@ -42,6 +42,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.Messages", "Reson
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.SignalR", "Resonance.SignalR\Resonance.SignalR.csproj", "{57FF56E2-CAF0-4C70-8539-19747BC3C893}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Tests.SignalRCore.WebAPI", "Resonance.Tests.SignalRCore.WebAPI\Resonance.Tests.SignalRCore.WebAPI.csproj", "{51605A04-4DD9-453B-87D8-49F63EB382B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		AzureBuild|Any CPU = AzureBuild|Any CPU
@@ -106,6 +108,12 @@ Global
 		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57FF56E2-CAF0-4C70-8539-19747BC3C893}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.AzureBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.AzureBuild|Any CPU.Build.0 = Debug|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51605A04-4DD9-453B-87D8-49F63EB382B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
