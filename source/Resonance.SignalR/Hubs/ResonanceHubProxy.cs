@@ -7,15 +7,20 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
-    public delegate void InvokeClientMethodDelegate(String methodName, String connectionId, params object[] args);
-
     public abstract class ResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation> :
-        IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
+        IResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
         where TServiceInformation : IResonanceServiceInformation
         where TReportedServiceInformation : IResonanceServiceInformation
     {
         private InvokeClientMethodDelegate _invoke;
         private Func<String> _getConnectionId;
+
+        protected IResonanceHubRepository<TServiceInformation> Repository { get; }
+
+        public ResonanceHubProxy(IResonanceHubRepository<TServiceInformation> repository)
+        {
+            Repository = repository;
+        }
 
         public void Init(InvokeClientMethodDelegate invokeClient, Func<String> getConnectionId)
         {
@@ -32,25 +37,13 @@ namespace Resonance.SignalR.Hubs
 
         protected abstract void Validate(String connectionId);
 
-        protected abstract IEnumerable<ResonanceHubRegisteredService<TServiceInformation>> GetServices(Expression<Func<ResonanceHubRegisteredService<TServiceInformation>, bool>> expression);
-
-        protected abstract IEnumerable<ResonanceHubSession<TServiceInformation>> GetSessions(Expression<Func<ResonanceHubSession<TServiceInformation>, bool>> expression);
-
-        protected abstract void AddService(ResonanceHubRegisteredService<TServiceInformation> service);
-
-        protected abstract void RemoveService(ResonanceHubRegisteredService<TServiceInformation> service);
-
-        protected abstract void AddSession(ResonanceHubSession<TServiceInformation> session);
-
-        protected abstract void RemoveSession(ResonanceHubSession<TServiceInformation> session);
-
         public void RegisterService(TServiceInformation serviceInformation)
         {
             Validate(_getConnectionId());
 
             if (serviceInformation == null) throw new NullReferenceException("Error registering null service information.");
 
-            var service = GetServices(x => x.ServiceInformation.ServiceId == serviceInformation.ServiceId).FirstOrDefault();
+            var service = Repository.GetService(serviceInformation.ServiceId);
 
             if (service == null)
             {
@@ -60,7 +53,7 @@ namespace Resonance.SignalR.Hubs
                     ServiceInformation = serviceInformation
                 };
 
-                AddService(service);
+                Repository.AddService(service);
             }
             else
             {
@@ -73,13 +66,13 @@ namespace Resonance.SignalR.Hubs
         {
             Validate(_getConnectionId());
 
-            var service = GetServices(x => x.ConnectionId == _getConnectionId()).FirstOrDefault();
+            var service = Repository.GetService(x => x.ConnectionId == _getConnectionId());
 
             if (service == null) throw new InvalidOperationException("The current client is not registered as a service.");
 
-            RemoveService(service);
+            Repository.RemoveService(service);
 
-            var serviceSessions = GetSessions(x => x.Service == service).ToList();
+            var serviceSessions = Repository.GetSessions(x => x.Service == service).ToList();
 
             serviceSessions.ForEach(session =>
             {
@@ -93,14 +86,14 @@ namespace Resonance.SignalR.Hubs
                     _invoke(ResonanceHubMethods.ServiceDown, session.AcceptedConnectionId);
                 }
 
-                RemoveSession(session);
+                Repository.RemoveSession(session);
             });
         }
 
         public List<TReportedServiceInformation> GetAvailableServices()
         {
             Validate(_getConnectionId());
-            return FilterServicesInformation(GetServices(x => true).Select(x => x.ServiceInformation).ToList());
+            return FilterServicesInformation(Repository.GetServices(x => true).Select(x => x.ServiceInformation).ToList());
         }
 
         protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services);
@@ -109,7 +102,7 @@ namespace Resonance.SignalR.Hubs
         {
             Validate(_getConnectionId());
 
-            var service = GetServices(x => x.ServiceInformation.ServiceId == serviceId).FirstOrDefault();
+            var service = Repository.GetService(serviceId);
 
             if (service == null) throw new KeyNotFoundException("The specified resonance service was not found.");
 
@@ -119,7 +112,7 @@ namespace Resonance.SignalR.Hubs
                 Service = service,
             };
 
-            AddSession(newPendingSession);
+            Repository.AddSession(newPendingSession);
 
             TAdapterInformation adapterInformation = GetAdapterInformation(_getConnectionId());
 
@@ -134,7 +127,7 @@ namespace Resonance.SignalR.Hubs
         {
             Validate(_getConnectionId());
 
-            var pendingSession = GetSessions(x => x.SessionId == sessionId).FirstOrDefault();
+            var pendingSession = Repository.GetSession(sessionId);
 
             if (pendingSession == null) throw new KeyNotFoundException("The specified session id was not found.");
 
@@ -147,11 +140,11 @@ namespace Resonance.SignalR.Hubs
         {
             Validate(_getConnectionId());
 
-            var pendingSession = GetSessions(x => x.SessionId == sessionId).FirstOrDefault();
+            var pendingSession = Repository.GetSession(sessionId);
 
             if (pendingSession == null) throw new KeyNotFoundException("The specified session id was not found.");
 
-            RemoveSession(pendingSession);
+            Repository.RemoveSession(pendingSession);
 
             _invoke(ResonanceHubMethods.Declined, pendingSession.ConnectedConnectionId);
         }
@@ -166,7 +159,7 @@ namespace Resonance.SignalR.Hubs
 
             String otherSideConnectionId = GetOtherSideConnectionId();
 
-            RemoveSession(session);
+            Repository.RemoveSession(session);
 
             if (otherSideConnectionId != null)
             {
@@ -205,7 +198,7 @@ namespace Resonance.SignalR.Hubs
 
         protected ResonanceHubSession<TServiceInformation> GetContextSession()
         {
-            var session = GetSessions(x => x.ConnectedConnectionId == _getConnectionId() || x.AcceptedConnectionId == _getConnectionId()).FirstOrDefault();
+            var session = Repository.GetSession(x => x.ConnectedConnectionId == _getConnectionId() || x.AcceptedConnectionId == _getConnectionId());
             return session;
         }
     }

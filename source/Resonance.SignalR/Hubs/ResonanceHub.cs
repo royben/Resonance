@@ -8,19 +8,18 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
-    public abstract class ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
+    public abstract class ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub>
         : Hub,
         IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
         where TServiceInformation : IResonanceServiceInformation
         where TReportedServiceInformation : IResonanceServiceInformation
-        where THub : ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub, THubProxy>
-        where THubProxy : ResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>, new()
+        where THub : ResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation, THub>
     {
-        private THubProxy _proxy;
+        private IResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation> _proxy;
 
-        public ResonanceHub()
+        public ResonanceHub(IResonanceHubProxy<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation> proxy)
         {
-            _proxy = new THubProxy();
+            _proxy = proxy;
             _proxy.Init(InvokeClient, GetConnectionId);
         }
 

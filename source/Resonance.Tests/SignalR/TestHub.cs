@@ -8,8 +8,15 @@ using System.Threading.Tasks;
 
 namespace Resonance.Tests.SignalR
 {
-    public class TestHub : ResonanceHub<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation, TestHub, TestHubProxy>
+    public class TestHub :
+        ResonanceHub<TestCredentials,
+            TestServiceInformation,
+            TestServiceInformation,
+            TestAdapterInformation,
+            TestHub>
     {
-
+        public TestHub(IResonanceHubProxy<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation> proxy) : base(proxy)
+        {
+        }
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Resonance.SignalR.Hubs;
 using Resonance.Tests.SignalRCore.WebAPI.Hub;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,8 @@ namespace Resonance.Tests.SignalRCore.WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddTransient<IResonanceHubRepository<TestServiceInformation>, ResonanceHubMemoryRepository<TestServiceInformation>>();
+            services.AddTransient<IResonanceHubProxy<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation>, TestHubProxy>();
             services.AddControllers();
             services.AddSignalR((x) => x.EnableDetailedErrors = true);
         }

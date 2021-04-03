@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 
 namespace Resonance.Tests.SignalRCore.WebAPI.Hub
 {
-    public class TestHub : ResonanceHubCore<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation, TestHub, TestHubProxy>
+    public class TestHub : ResonanceHubCore<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation, TestHub>
     {
-        public TestHub(IHubContext<TestHub> context) : base(context)
+        public TestHub(IHubContext<TestHub> context, IResonanceHubProxy<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation> proxy) : base(context, proxy)
         {
-
         }
     }
 }
