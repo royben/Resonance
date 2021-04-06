@@ -36,7 +36,7 @@ namespace Resonance.Tests.SignalR
             }
         }
 
-        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services)
+        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, String connectionId)
         {
             return services.ToList();
         }

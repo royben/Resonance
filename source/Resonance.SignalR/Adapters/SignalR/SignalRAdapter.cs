@@ -10,23 +10,26 @@ using System.Threading.Tasks;
 
 namespace Resonance.Adapters.SignalR
 {
+
     /// <summary>
-    /// Represents a Resonance (legacy) SignalR adapter.
+    /// Represents a Resonance SignalR adapter with support for both SignalR and SignalR Core.
+    /// This adapter is designed to communicate with an <see cref="IResonanceHub{TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation}"/> implementation.
     /// </summary>
-    /// <typeparam name="TLocalIdentity">Type of client identity.</typeparam>
-    /// <seealso cref="Resonance.Adapters.SignalR.SignalRAdapterBase{T}" />
-    public class SignalRAdapter<TCredentials> : ResonanceAdapter, ISignalRAdapter<TCredentials>
+    /// <typeparam name="TCredentials">A type that determined the object that will be used to authenticate this adapter with the remote ResonanceHub.</typeparam>
+    /// <seealso cref="Resonance.ResonanceAdapter" />
+    public class SignalRAdapter<TCredentials> : ResonanceAdapter
     {
         private ISignalRClient _client;
         private TCredentials _credentials;
 
         /// <summary>
         /// Gets the URL of the SignalR service.
+        /// When using <see cref="F:Resonance.SignalR.SignalRMode.Legacy" />, this should be url/hub.
         /// </summary>
         public string Url { get; private set; }
 
         /// <summary>
-        /// Gets the service identifier.
+        /// Gets the remote <see cref="T:Resonance.SignalR.IResonanceServiceInformation" /> id.
         /// </summary>
         public string ServiceId { get; private set; }
 
@@ -41,20 +44,33 @@ namespace Resonance.Adapters.SignalR
         public TimeSpan ConnectionTimeout { get; set; }
 
         /// <summary>
-        /// Gets the adapter mode.
+        /// Gets the adapter role.
+        /// Meaning, whether this adapter has requested or accepted the session.
         /// </summary>
         public SignalRAdapterRole Role { get; private set; }
 
         /// <summary>
         /// Gets or sets the SignalR mode (legacy/core).
+        /// Legacy: The remote SignalR hub is implemented using .NET Framework.
+        /// Core: The remote SignalR hub is implemented using .NET Core.
         /// </summary>
         public SignalRMode Mode { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SignalRAdapter{TCredentials}"/> class.
+        /// </summary>
         public SignalRAdapter()
         {
             ConnectionTimeout = TimeSpan.FromSeconds(10);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SignalRAdapter{TCredentials}"/> class.
+        /// </summary>
+        /// <param name="credentials">The credentials that will be used to authenticate with the remote hub.</param>
+        /// <param name="url">The hub URL.</param>
+        /// <param name="serviceId">The remote service identifier.</param>
+        /// <param name="mode">The SignalR mode.</param>
         public SignalRAdapter(TCredentials credentials, String url, String serviceId, SignalRMode mode) : this()
         {
             Mode = mode;
@@ -64,6 +80,15 @@ namespace Resonance.Adapters.SignalR
             Role = SignalRAdapterRole.Connect;
         }
 
+        /// <summary>
+        /// Returns an initialized adapter based on parameters that should be provided by a <see cref="Resonance.SignalR.Services.ResonanceRegisteredService{TCredentials, TResonanceServiceInformation, TAdapterInformation}.ConnectionRequest"/> event arguments.
+        /// </summary>
+        /// <param name="credentials">The credentials used to authenticate this adapter with the remote service.</param>
+        /// <param name="url">The hub URL.</param>
+        /// <param name="serviceId">The service identifier.</param>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="mode">The SignalR mode.</param>
+        /// <returns></returns>
         public static SignalRAdapter<TCredentials> AcceptConnection(TCredentials credentials, String url, String serviceId, String sessionId, SignalRMode mode)
         {
             SignalRAdapter<TCredentials> adapter = new SignalRAdapter<TCredentials>();
@@ -246,7 +271,7 @@ namespace Resonance.Adapters.SignalR
         }
 
         /// <summary>
-        /// Converts to string.
+        /// Returns the string representation of this adapter.
         /// </summary>
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.

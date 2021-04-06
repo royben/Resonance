@@ -7,26 +7,51 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Services
 {
+    /// <summary>
+    /// Represents a SignalR service ConnectionRequest event arguments.
+    /// </summary>
+    /// <typeparam name="TCredentials">The type of the credentials.</typeparam>
+    /// <typeparam name="TAdapterInformation">The type of the adapter information.</typeparam>
+    /// <seealso cref="System.EventArgs" />
     public class ConnectionRequestEventArgs<TCredentials, TAdapterInformation> : EventArgs
     {
-        private Func<String, Task<ISignalRAdapter<TCredentials>>> _accept;
+        private Func<String, Task<SignalRAdapter<TCredentials>>> _accept;
         private Func<String, Task> _decline;
 
+        /// <summary>
+        /// Gets or sets the remote session identifier.
+        /// </summary>
         public String SessionId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the requesting adapter information.
+        /// </summary>
         public TAdapterInformation RemoteAdapterInformation { get; set; }
 
-        public ConnectionRequestEventArgs(Func<String, Task<ISignalRAdapter<TCredentials>>> accept, Func<String, Task> decline)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionRequestEventArgs{TCredentials, TAdapterInformation}"/> class.
+        /// </summary>
+        /// <param name="accept">The accept callback.</param>
+        /// <param name="decline">The decline callback.</param>
+        public ConnectionRequestEventArgs(Func<String, Task<SignalRAdapter<TCredentials>>> accept, Func<String, Task> decline)
         {
             _accept = accept;
             _decline = decline;
         }
 
-        public Task<ISignalRAdapter<TCredentials>> Accept()
+        /// <summary>
+        /// Accepts the SignalR connection and return an adapter.
+        /// </summary>
+        /// <returns></returns>
+        public Task<SignalRAdapter<TCredentials>> Accept()
         {
             return _accept?.Invoke(SessionId);
         }
 
+        /// <summary>
+        /// Declines the SignalR connection.
+        /// </summary>
+        /// <returns></returns>
         public Task Decline()
         {
             return _decline?.Invoke(SessionId);

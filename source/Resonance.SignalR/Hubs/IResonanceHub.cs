@@ -5,6 +5,13 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
+    /// <summary>
+    /// Represents the basic Resonance SignalR hub interface.
+    /// </summary>
+    /// <typeparam name="TCredentials">The type of the credentials used to authenticate adapters and services.</typeparam>
+    /// <typeparam name="TServiceInformation">The type of the service information used to register a remote service.</typeparam>
+    /// <typeparam name="TReportedServiceInformation">The type of the reported service information that will be provided to remote adapters.</typeparam>
+    /// <typeparam name="TAdapterInformation">The type of the adapter information that will be provided in the connection request to remote services.</typeparam>
     public interface IResonanceHub<TCredentials, TServiceInformation, TReportedServiceInformation, TAdapterInformation>
         where TServiceInformation : IResonanceServiceInformation
         where TReportedServiceInformation : IResonanceServiceInformation
