@@ -26,7 +26,6 @@ namespace Resonance
             writer.Write(ProtocolVersion);
             writer.Write(info.Transcoding ?? String.Empty);
             writer.Write(info.IsCompressed);
-            writer.Write(info.IsEncrypted);
             writer.Write(info.Token);
             writer.Write((byte)info.Type);
 
@@ -51,7 +50,6 @@ namespace Resonance
             info.ProtocolVersion = reader.ReadByte();
             info.Transcoding = reader.ReadString();
             info.IsCompressed = reader.ReadBoolean();
-            info.IsEncrypted = reader.ReadBoolean();
             info.Token = reader.ReadString();
             info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
 

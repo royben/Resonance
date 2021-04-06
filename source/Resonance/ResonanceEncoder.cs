@@ -46,7 +46,6 @@ namespace Resonance
         public virtual byte[] Encode(ResonanceEncodingInformation info)
         {
             info.IsCompressed = CompressionConfiguration.Enabled;
-            info.IsEncrypted = EncryptionConfiguration.Enabled;
             info.Transcoding = _transcodingName;
 
             using (MemoryStream ms = new MemoryStream())
