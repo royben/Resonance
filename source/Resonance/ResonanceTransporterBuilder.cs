@@ -180,8 +180,7 @@ namespace Resonance
             /// <summary>
             /// Specify that the transporter encoding/decoding should be encrypted.
             /// </summary>
-            /// <param name="password">The encryption password.</param>
-            ICompressionBuilder WithEncryption(String password);
+            ICompressionBuilder WithEncryption();
 
             /// <summary>
             /// No encoding/decoding encryption.
@@ -348,19 +347,15 @@ namespace Resonance
             return this;
         }
 
-        public ICompressionBuilder WithEncryption(string password)
+        public ICompressionBuilder WithEncryption()
         {
-            Transporter.Encoder.EncryptionConfiguration.Enabled = true;
-            Transporter.Encoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword(password);
-            Transporter.Decoder.EncryptionConfiguration.Enabled = true;
-            Transporter.Decoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword(password);
+            Transporter.CryptographyConfiguration.Enabled = true;
             return this;
         }
 
         public ICompressionBuilder NoEncryption()
         {
-            Transporter.Encoder.EncryptionConfiguration.Enabled = false;
-            Transporter.Decoder.EncryptionConfiguration.Enabled = false;
+            Transporter.CryptographyConfiguration.Enabled = false;
             return this;
         }
 

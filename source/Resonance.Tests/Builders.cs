@@ -26,7 +26,7 @@ namespace Resonance.Tests
                 .WithPort(1111)
                 .WithTranscoding<JsonEncoder, JsonDecoder>()
                 .WithKeepAlive(TimeSpan.FromSeconds(5), 10)
-                .WithEncryption("pass")
+                .WithEncryption()
                 .WithCompression()
                 .Build();
 
@@ -39,8 +39,7 @@ namespace Resonance.Tests
             Assert.IsTrue(transporter.KeepAliveConfiguration.Enabled);
             Assert.IsTrue(transporter.KeepAliveConfiguration.Interval == TimeSpan.FromSeconds(5));
             Assert.IsTrue(transporter.KeepAliveConfiguration.Retries == 10);
-            Assert.IsTrue(transporter.Encoder.EncryptionConfiguration.Enabled);
-            Assert.IsTrue(transporter.Decoder.EncryptionConfiguration.Enabled);
+            Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
 
@@ -62,8 +61,7 @@ namespace Resonance.Tests
             Assert.IsInstanceOfType(transporter.Encoder, typeof(JsonEncoder));
             Assert.IsInstanceOfType(transporter.Decoder, typeof(JsonDecoder));
             Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
-            Assert.IsFalse(transporter.Encoder.EncryptionConfiguration.Enabled);
-            Assert.IsFalse(transporter.Decoder.EncryptionConfiguration.Enabled);
+            Assert.IsFalse(transporter.CryptographyConfiguration.Enabled);
             Assert.IsFalse(transporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsFalse(transporter.Decoder.CompressionConfiguration.Enabled);
 
@@ -87,7 +85,7 @@ namespace Resonance.Tests
                .WithBaudRate(Adapters.Usb.BaudRates.BR_115200)
                .WithTranscoding<JsonEncoder, JsonDecoder>()
                .NoKeepAlive()
-               .WithEncryption("pass")
+               .WithEncryption()
                .WithCompression()
                .Build();
 
@@ -98,8 +96,7 @@ namespace Resonance.Tests
             Assert.IsInstanceOfType(usbTransporter.Encoder, typeof(JsonEncoder));
             Assert.IsInstanceOfType(usbTransporter.Decoder, typeof(JsonDecoder));
             Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
-            Assert.IsTrue(usbTransporter.Encoder.EncryptionConfiguration.Enabled);
-            Assert.IsTrue(usbTransporter.Decoder.EncryptionConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
         }

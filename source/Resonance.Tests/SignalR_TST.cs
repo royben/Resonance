@@ -43,6 +43,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines) return;
+
             String webApiProjectPath = Path.Combine(TestHelper.GetSolutionFolder(), "Resonance.Tests.SignalRCore.WebAPI");
 
             Process cmd = new Process();

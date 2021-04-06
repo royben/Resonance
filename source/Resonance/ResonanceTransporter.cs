@@ -1,11 +1,14 @@
 ﻿using Resonance.Exceptions;
 using Resonance.ExtensionMethods;
+using Resonance.HandShake;
 using Resonance.Logging;
 using Resonance.Reactive;
 using Resonance.Threading;
 using Resonance.Tokens;
+using Resonance.Transcoding.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -35,6 +38,8 @@ namespace Resonance
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
+        private bool _gotChannelSecure;
+        private bool _clearedQueues;
 
         #region Events
 
@@ -131,6 +136,17 @@ namespace Resonance
         public IResonanceTokenGenerator TokenGenerator { get; set; }
 
         /// <summary>
+        /// Gets or sets the hand shake negotiator.
+        /// </summary>
+        public IResonanceHandShakeNegotiator HandShakeNegotiator { get; set; }
+
+        /// <summary>
+        /// Disable the startup handshake.
+        /// This will prevent any encryption from happening, and will fail to communicate with Handshake enabled transporters.
+        /// </summary>
+        public bool DisableHandShake { get; set; }
+
+        /// <summary>
         /// Gets the last failed state exception of this component.
         /// </summary>
         public Exception FailedStateException { get; private set; }
@@ -149,6 +165,16 @@ namespace Resonance
         /// Gets or sets the keep alive configuration.
         /// </summary>
         public ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; private set; }
+
+        /// <summary>
+        /// Gets the cryptography configuration.
+        /// </summary>
+        public ResonanceCryptographyConfiguration CryptographyConfiguration { get; }
+
+        /// <summary>
+        /// Returns true if communication is currently encrypted.
+        /// </summary>
+        public bool IsChannelSecure { get; private set; }
 
         /// <summary>
         /// Gets the total number of queued outgoing messages.
@@ -183,14 +209,23 @@ namespace Resonance
         {
             _transporterCounter = _globalTransporterCounter++;
 
+            _sendingQueue = new PriorityProducerConsumerQueue<object>();
+            _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
+            _arrivedMessages = new ProducerConsumerQueue<byte[]>();
+            _clearedQueues = true;
+
+            HandShakeNegotiator = new ResonanceDefaultHandShakeNegotiator();
+
             _requestHandlers = new List<ResonanceRequestHandler>();
             _services = new List<IResonanceService>();
 
             _lastIncomingMessageTime = DateTime.Now;
 
-            KeepAliveConfiguration = ResonanceGlobalSettings.Default.DefaultKeepAliveConfiguration.Clone();
-            TokenGenerator = new ShortGuidGenerator();
+            DisableHandShake = ResonanceGlobalSettings.Default.DisableHandShake;
 
+            KeepAliveConfiguration = ResonanceGlobalSettings.Default.DefaultKeepAliveConfiguration.Clone();
+            CryptographyConfiguration = new ResonanceCryptographyConfiguration(); //Should be set by GlobalSettings.
+            TokenGenerator = new ShortGuidGenerator();
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
             _arrivedMessages = new ProducerConsumerQueue<byte[]>();
@@ -365,6 +400,14 @@ namespace Resonance
 
             ValidateConnection();
 
+            _gotChannelSecure = false;
+
+            HandShakeNegotiator.WriteHandShake -= HandShakeNegotiator_WriteHandShake;
+            HandShakeNegotiator.SymmetricPasswordAvailable -= HandShakeNegotiator_SymmetricPasswordAvailable;
+            HandShakeNegotiator.WriteHandShake += HandShakeNegotiator_WriteHandShake;
+            HandShakeNegotiator.SymmetricPasswordAvailable += HandShakeNegotiator_SymmetricPasswordAvailable;
+            HandShakeNegotiator.Reset(CryptographyConfiguration.Enabled, CryptographyConfiguration.CryptographyProvider);
+
             await Adapter.Connect();
 
             State = ResonanceComponentState.Connected;
@@ -388,6 +431,21 @@ namespace Resonance
                         var response = await SendRequest(new ResonanceDisconnectRequest());
                     }
                     catch { }
+
+                    if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                    {
+                        bool cancel = false;
+
+                        TimeoutTask.StartNew(() =>
+                        {
+                            cancel = true;
+                        }, TimeSpan.FromSeconds(5));
+
+                        while (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake && !cancel)
+                        {
+                            Thread.Sleep(2);
+                        }
+                    }
                 }
 
                 State = ResonanceComponentState.Disconnected;
@@ -715,7 +773,7 @@ namespace Resonance
 
                 Task.Factory.StartNew(() =>
                 {
-                    if (pendingRequest.IsWithoutResponse)
+                    if (pendingRequest.IsWithoutResponse && !pendingRequest.CompletionSource.Task.IsCompleted)
                     {
                         pendingRequest.CompletionSource.SetResult(true);
                     }
@@ -725,7 +783,10 @@ namespace Resonance
             }
             catch (Exception ex)
             {
-                pendingRequest.CompletionSource.SetException(ex);
+                if (!pendingRequest.CompletionSource.Task.IsCompleted)
+                {
+                    pendingRequest.CompletionSource.SetException(ex);
+                }
             }
         }
 
@@ -869,7 +930,25 @@ namespace Resonance
         {
             if (Encoder != null && Adapter != null)
             {
+                if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                {
+                    HandShakeNegotiator.BeginHandShake();
+                }
+
+                if (!_gotChannelSecure)
+                {
+                    _gotChannelSecure = true;
+
+                    IsChannelSecure = HandShakeNegotiator.State == ResonanceHandShakeState.Completed && Encoder.EncryptionConfiguration.Enabled && Decoder.EncryptionConfiguration.Enabled;
+
+                    if (IsChannelSecure)
+                    {
+                        LogManager.Log($"{this}: Channel is now secured!");
+                    }
+                }
+
                 byte[] data = Encoder.Encode(info);
+
                 Adapter.Write(data);
             }
         }
@@ -889,6 +968,19 @@ namespace Resonance
 
                     try
                     {
+                        if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                        {
+                            try
+                            {
+                                HandShakeNegotiator.HandShakeMessageDataReceived(data);
+                                continue;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception("Could not initiate a proper handshake.", ex);
+                            }
+                        }
+
                         ResonanceDecodingInformation info = new ResonanceDecodingInformation();
 
                         try
@@ -1138,7 +1230,11 @@ namespace Resonance
 
         private void KeepAliveThreadMethod()
         {
+            _lastIncomingMessageTime = DateTime.Now;
+
             int retryCounter = 0;
+
+            Thread.Sleep(KeepAliveConfiguration.Delay);
 
             while (State == ResonanceComponentState.Connected)
             {
@@ -1201,13 +1297,32 @@ namespace Resonance
 
         #endregion
 
+        #region HandShake Negotiator Event Handlers
+
+        private void HandShakeNegotiator_WriteHandShake(object sender, ResonanceHandShakeWriteEventArgs e)
+        {
+            Adapter.Write(e.Data);
+        }
+
+        private void HandShakeNegotiator_SymmetricPasswordAvailable(object sender, ResonanceHandShakeSymmetricPasswordAvailableEventArgs e)
+        {
+            LogManager.Log($"{this}: Set Symmetric Password: {e.SymmetricPassword}");
+            Encoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
+            Decoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
+        }
+
+        #endregion
+
         #region Start/Stop Threads
 
         private void StartThreads()
         {
-            _sendingQueue = new PriorityProducerConsumerQueue<object>();
-            _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
-            _arrivedMessages = new ProducerConsumerQueue<byte[]>();
+            if (!_clearedQueues)
+            {
+                _sendingQueue = new PriorityProducerConsumerQueue<object>();
+                _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
+                _arrivedMessages = new ProducerConsumerQueue<byte[]>();
+            }
 
             _pullThread = new Thread(PullThreadMethod);
             _pullThread.Name = $"{this} Pull Thread";
@@ -1233,6 +1348,11 @@ namespace Resonance
                 _arrivedMessages.BlockEnqueue(null);
                 _pushThread.Join();
                 _pullThread.Join();
+
+                _sendingQueue = new PriorityProducerConsumerQueue<object>();
+                _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
+                _arrivedMessages = new ProducerConsumerQueue<byte[]>();
+                _clearedQueues = true;
             });
         }
 

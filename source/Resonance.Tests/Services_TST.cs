@@ -20,6 +20,9 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
             t1.Connect().Wait();
             t2.Connect().Wait();
 

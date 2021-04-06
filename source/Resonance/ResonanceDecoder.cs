@@ -59,7 +59,7 @@ namespace Resonance
                             msgData = DecompressMessageData(msgData);
                         }
 
-                        if (info.IsEncrypted)
+                        if (EncryptionConfiguration.Enabled)
                         {
                             msgData = DecryptMessageData(msgData);
                         }

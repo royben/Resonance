@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using Resonance.Reactive;
 using static Resonance.ResonanceTransporterBuilder;
+using Resonance.HandShake;
 
 namespace Resonance
 {
@@ -85,6 +86,27 @@ namespace Resonance
         /// Gets or sets the keep alive configuration.
         /// </summary>
         ResonanceKeepAliveConfiguration KeepAliveConfiguration { get; }
+
+        /// <summary>
+        /// Gets the cryptography configuration.
+        /// </summary>
+        ResonanceCryptographyConfiguration CryptographyConfiguration { get; }
+
+        /// <summary>
+        /// Gets or sets the hand shake negotiator.
+        /// </summary>
+        IResonanceHandShakeNegotiator HandShakeNegotiator { get; set; }
+
+        /// <summary>
+        /// Returns true if communication is currently encrypted.
+        /// </summary>
+        bool IsChannelSecure { get; }
+
+        /// <summary>
+        /// Disable the startup handshake.
+        /// This will prevent any encryption from happening, and will fail to communicate with Handshake enabled transporters.
+        /// </summary>
+        bool DisableHandShake { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the transporter will get in to a failed state if the <see cref="Adapter"/> fails.

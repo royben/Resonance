@@ -19,8 +19,8 @@ namespace Resonance.Examples
             transporter.Encoder = new JsonEncoder();
             transporter.Decoder = new JsonDecoder();
             transporter.KeepAliveConfiguration.Enabled = true;
-            transporter.Encoder.EncryptionConfiguration.Enabled = false;
             transporter.Encoder.CompressionConfiguration.Enabled = true;
+            transporter.CryptographyConfiguration.Enabled = true;
 
             await transporter.Connect();
 

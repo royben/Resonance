@@ -15,6 +15,11 @@ namespace Resonance
         public bool Enabled { get; set; }
 
         /// <summary>
+        /// Gets or sets the delay before starting to send keep alive requests after transporter has connected.
+        /// </summary>
+        public TimeSpan Delay { get; set; }
+
+        /// <summary>
         /// Gets or sets the KeepAlive request interval.
         /// </summary>
         public TimeSpan Interval { get; set; }
@@ -40,6 +45,7 @@ namespace Resonance
         public ResonanceKeepAliveConfiguration()
         {
             EnableAutoResponse = true;
+            Delay = TimeSpan.FromSeconds(2);
             Interval = TimeSpan.FromSeconds(2);
             FailTransporterOnTimeout = true;
             Retries = 5;

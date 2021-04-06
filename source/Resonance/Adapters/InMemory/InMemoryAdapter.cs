@@ -24,6 +24,7 @@ namespace Resonance.Adapters.InMemory
         public InMemoryAdapter(String address) : base()
         {
             Address = address;
+            InMemoryAdaptersManager.RegisterAdapter(this);
         }
 
         /// <summary>
@@ -41,7 +42,6 @@ namespace Resonance.Adapters.InMemory
         /// <returns></returns>
         protected override Task OnConnect()
         {
-            InMemoryAdaptersManager.RegisterAdapter(this);
             State = ResonanceComponentState.Connected;
             return Task.FromResult(new object());
         }

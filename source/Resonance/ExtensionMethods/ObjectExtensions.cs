@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Resonance.ExtensionMethods
 {
-    internal static class ObjectExtensions
+    public static class ObjectExtensions
     {
         private static JsonSerializerSettings _jsonSettings = new JsonSerializerSettings();
 

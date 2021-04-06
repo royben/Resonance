@@ -82,8 +82,8 @@ namespace Resonance.Benchmarks
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Encoder.EncryptionConfiguration.Enabled = true;
-            t2.Encoder.EncryptionConfiguration.Enabled = true;
+            t1.CryptographyConfiguration.Enabled = true;
+            t2.CryptographyConfiguration.Enabled = true;
 
             t1.Connect().Wait();
             t2.Connect().Wait();
@@ -110,11 +110,10 @@ namespace Resonance.Benchmarks
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.CryptographyConfiguration.Enabled = true;
+            t2.CryptographyConfiguration.Enabled = true;
             t1.Encoder.CompressionConfiguration.Enabled = true;
             t2.Encoder.CompressionConfiguration.Enabled = true;
-
-            t1.Encoder.EncryptionConfiguration.Enabled = true;
-            t2.Encoder.EncryptionConfiguration.Enabled = true;
 
             t1.Connect().Wait();
             t2.Connect().Wait();

@@ -16,6 +16,7 @@ using Resonance.Transporters;
 using Resonance.Servers.Tcp;
 using Resonance.Servers.NamedPipes;
 using Resonance.Adapters.NamedPipes;
+using Resonance.Adapters.InMemory;
 
 namespace Resonance.Tests
 {
@@ -24,12 +25,72 @@ namespace Resonance.Tests
     public class Adapters_TST : ResonanceTest
     {
         [TestMethod]
+        public void InMemory_Adapter_Writing_Reading()
+        {
+            Init();
+
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
+            t1.CryptographyConfiguration.Enabled = true;
+            t2.CryptographyConfiguration.Enabled = true;
+
+            t2.Connect().Wait();
+            t1.Connect().Wait();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+            };
+
+            Stopwatch watch = new Stopwatch();
+
+            List<double> measurements = new List<double>();
+
+            for (int i = 0; i < 1000; i++)
+            {
+                watch.Restart();
+
+                var request = new CalculateRequest() { A = 10, B = i };
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+
+                measurements.Add(watch.ElapsedMilliseconds);
+
+                Assert.AreEqual(response.Sum, request.A + request.B);
+            }
+
+            watch.Stop();
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            var outliers = TestHelper.GetOutliers(measurements);
+
+            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
+
+            if (!IsRunningOnAzurePipelines)
+            {
+                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+            }
+        }
+
+        [TestMethod]
         public void Tcp_Adapter_Writing_Reading()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
+
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
+            t1.CryptographyConfiguration.Enabled = false;
+            t2.CryptographyConfiguration.Enabled = true;
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
             server.Start();
@@ -80,7 +141,7 @@ namespace Resonance.Tests
 
             if (!IsRunningOnAzurePipelines)
             {
-                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
             }
         }
 
@@ -93,6 +154,9 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)));
+
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
 
             t1.Connect().Wait();
             t2.Connect().Wait();
@@ -130,7 +194,7 @@ namespace Resonance.Tests
 
             if (!IsRunningOnAzurePipelines)
             {
-                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
             }
         }
 
@@ -158,6 +222,9 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort1, BaudRates.BR_19200));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort2, BaudRates.BR_19200));
+
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
 
             t1.Connect().Wait();
             t2.Connect().Wait();
@@ -203,6 +270,9 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new NamedPipesAdapter("Resonance"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
+
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
             server.Start();
@@ -253,7 +323,7 @@ namespace Resonance.Tests
 
             if (!IsRunningOnAzurePipelines)
             {
-                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
             }
         }
     }

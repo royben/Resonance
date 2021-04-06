@@ -167,16 +167,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Encoder.EncryptionConfiguration.Enabled = true;
-            t2.Encoder.EncryptionConfiguration.Enabled = true;
-
-            t1.Encoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
-            t1.Decoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
-            t2.Encoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
-            t2.Decoder.EncryptionConfiguration.SetSymmetricAlgorithmPassword("Roy");
-
-            t1.Encoder.CompressionConfiguration.Enabled = true;
-            t2.Encoder.CompressionConfiguration.Enabled = true;
+            t1.CryptographyConfiguration.Enabled = true;
+            t2.CryptographyConfiguration.Enabled = true;
 
             t1.Connect().Wait();
             t2.Connect().Wait();
@@ -187,13 +179,38 @@ namespace Resonance.Tests
                 t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
+            t1.RequestReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+            };
+
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+
+            CalculateResponse response1 = null;
+            CalculateResponse response2 = null;
+
+            Task.Factory.StartNew(async () =>
+            {
+                response1 = await t2.SendRequest<CalculateRequest, CalculateResponse>(request);
+                response1 = await t2.SendRequest<CalculateRequest, CalculateResponse>(request);
+            }).GetAwaiter().GetResult();
+
+            Task.Factory.StartNew(async () =>
+            {
+                response2 = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+                response2 = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+            }).GetAwaiter().GetResult();
+
+
+            Thread.Sleep(4000);
+
 
             t1.Dispose(true);
             t2.Dispose(true);
 
-            Assert.AreEqual(response.Sum, request.A + request.B);
+            Assert.AreEqual(response1.Sum, request.A + request.B);
+            Assert.AreEqual(response2.Sum, request.A + request.B);
         }
 
         [TestMethod]
@@ -227,7 +244,6 @@ namespace Resonance.Tests
                     {
                         Completed = true
                     });
-
                 });
             };
 
@@ -350,6 +366,8 @@ namespace Resonance.Tests
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            t1.DisableHandShake = true;
+
             t1.Connect().Wait();
             t1.Dispose(true);
 
@@ -452,6 +470,9 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
             t1.KeepAliveConfiguration.Enabled = true;
@@ -464,6 +485,8 @@ namespace Resonance.Tests
 
             t1.Connect().Wait();
             t2.Connect().Wait();
+
+            Thread.Sleep(t1.KeepAliveConfiguration.Delay);
 
             Thread.Sleep((int)(t1.DefaultRequestTimeout.Add(t1.KeepAliveConfiguration.Interval).TotalMilliseconds * t1.KeepAliveConfiguration.Retries));
 
@@ -484,12 +507,16 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
             bool keepAliveFailed = false;
 
             t1.KeepAliveConfiguration.Enabled = true;
             t1.KeepAliveConfiguration.Retries = 1;
+            t1.KeepAliveConfiguration.Delay = TimeSpan.Zero;
             t1.KeepAliveConfiguration.FailTransporterOnTimeout = false;
             t1.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(0.5);
 
@@ -522,10 +549,14 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
             t1.KeepAliveConfiguration.Enabled = true;
             t1.KeepAliveConfiguration.Retries = 1;
+            t1.KeepAliveConfiguration.Delay = TimeSpan.Zero;
             t1.KeepAliveConfiguration.FailTransporterOnTimeout = true;
             t1.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(0.5);
 
@@ -540,6 +571,8 @@ namespace Resonance.Tests
 
             t1.Dispose(true);
             t2.Dispose(true);
+
+            Thread.Sleep(1000);
         }
 
         [TestMethod]
@@ -552,10 +585,14 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
+            t1.DisableHandShake = true;
+            t2.DisableHandShake = true;
+
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
             t1.KeepAliveConfiguration.Enabled = true;
             t1.KeepAliveConfiguration.Retries = 4;
+            t1.KeepAliveConfiguration.Delay = TimeSpan.Zero;
             t1.KeepAliveConfiguration.FailTransporterOnTimeout = true;
             t1.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(0.5);
 
@@ -570,6 +607,8 @@ namespace Resonance.Tests
             Assert.IsTrue(t1.State == ResonanceComponentState.Connected);
 
             Thread.Sleep((int)(t1.DefaultRequestTimeout.Add(t1.KeepAliveConfiguration.Interval).TotalMilliseconds * (t1.KeepAliveConfiguration.Retries / 2)));
+
+            Thread.Sleep(2000);
 
             Assert.IsTrue(t1.State == ResonanceComponentState.Failed);
             Assert.IsTrue(t1.FailedStateException is ResonanceKeepAliveException);
@@ -588,6 +627,13 @@ namespace Resonance.Tests
 
             t1.Connect().Wait();
             t2.Connect().Wait();
+
+            t2.RequestReceived += (x, e) =>
+            {
+                t2.SendResponse(new CalculateResponse(), e.Request.Token);
+            };
+
+            t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()).GetAwaiter().GetResult();
 
             t2.Disconnect().Wait();
 
