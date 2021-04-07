@@ -75,6 +75,7 @@
     <Compile Include="Services_TST.cs" />
     <Compile Include="Transcoding_TST.cs" />
     <Compile Include="HandShake_TST.cs" />
+    <Compile Include="ComponentCounter_TST.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -86,13 +86,5 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
 
             return parser;
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-
-        }
     }
 }

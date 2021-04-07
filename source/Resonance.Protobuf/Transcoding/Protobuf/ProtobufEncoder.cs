@@ -54,13 +54,5 @@ namespace Resonance.Protobuf.Transcoding.Protobuf
 
             writer.Write((message as IMessage).ToByteArray());
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-
-        }
     }
 }

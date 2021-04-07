@@ -13,7 +13,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceComponent" />
     /// <seealso cref="Resonance.IResonanceStateComponent" />
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
-    public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent , IResonanceAsyncDisposableComponent
+    public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent , IDisposable, IResonanceAsyncDisposableComponent
     {
         /// <summary>
         /// Gets the total bytes received.

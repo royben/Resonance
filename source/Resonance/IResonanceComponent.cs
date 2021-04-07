@@ -9,7 +9,7 @@ namespace Resonance
     /// <summary>
     /// Represents a Resonance component.
     /// </summary>
-    public interface IResonanceComponent : IDisposable
+    public interface IResonanceComponent
     {
 
     }

@@ -20,7 +20,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceComponent" />
     /// <seealso cref="Resonance.IResonanceStateComponent" />
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
-    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IResonanceAsyncDisposableComponent
+    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IDisposable, IResonanceAsyncDisposableComponent
     {
         /// <summary>
         /// Occurs when a new request message has been received.

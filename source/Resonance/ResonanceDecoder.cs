@@ -146,10 +146,5 @@ namespace Resonance
         {
             return this != null ? GetType().Name : "No Decoder";
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public abstract void Dispose();
     }
 }

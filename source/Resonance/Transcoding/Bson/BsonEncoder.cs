@@ -41,13 +41,5 @@ namespace Resonance.Transcoding.Bson
                 }
             }
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            
-        }
     }
 }

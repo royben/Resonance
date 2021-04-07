@@ -37,13 +37,5 @@ namespace Resonance.Transcoding.Bson
                 return _serializer.Deserialize(reader);
             }
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-
-        }
     }
 }

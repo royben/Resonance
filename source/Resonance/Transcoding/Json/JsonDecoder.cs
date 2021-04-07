@@ -40,13 +40,5 @@ namespace Resonance.Transcoding.Json
                 return JsonConvert.DeserializeObject(json, Settings);
             }
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            //throw new NotImplementedException();
-        }
     }
 }

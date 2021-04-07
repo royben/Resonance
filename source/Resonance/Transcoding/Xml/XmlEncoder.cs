@@ -29,13 +29,5 @@ namespace Resonance.Transcoding.Xml
                 writer.Write(ms.ToArray());
             }
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            
-        }
     }
 }

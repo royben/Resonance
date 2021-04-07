@@ -32,13 +32,5 @@ namespace Resonance.Transcoding.Auto
         {
             return _decoder.Decode(stream);
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            _decoder?.Dispose();
-        }
     }
 }

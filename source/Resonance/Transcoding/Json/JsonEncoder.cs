@@ -37,13 +37,5 @@ namespace Resonance.Transcoding.Json
             String json = JsonConvert.SerializeObject(message, Settings);
             writer.Write(json);
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            //throw new NotImplementedException();
-        }
     }
 }

@@ -26,7 +26,7 @@ namespace Resonance
         {
             lock (_lock)
             {
-                int counter = 1;
+                int counter = 0;
                 Type type = component.GetType();
 
                 if (_counters.TryGetValue(type, out counter))
@@ -35,8 +35,8 @@ namespace Resonance
                 }
                 else
                 {
-                    _counters[type] = counter;
-                    return counter;
+                    _counters[type] = 1;
+                    return 1;
                 }
             }
         }

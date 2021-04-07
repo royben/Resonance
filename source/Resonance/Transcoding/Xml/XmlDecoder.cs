@@ -28,13 +28,5 @@ namespace Resonance.Transcoding.Xml
                 return f.Deserialize(stream);
             }
         }
-
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
-        /// </summary>
-        public override void Dispose()
-        {
-            
-        }
     }
 }
