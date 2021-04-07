@@ -24,11 +24,8 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceTransporter" />
     public class ResonanceTransporter : ResonanceObject, IResonanceTransporter
     {
-        private static int _globalTransporterCounter = 1;
-        private readonly int _transporterCounter;
+        private readonly int _componentCounter;
         private DateTime _lastIncomingMessageTime;
-
-        private readonly object _disposeLock = new object();
 
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
@@ -40,6 +37,7 @@ namespace Resonance
         private Thread _keepAliveThread;
         private bool _gotChannelSecure;
         private bool _clearedQueues;
+        private bool _isDisposing;
 
         #region Events
 
@@ -207,7 +205,7 @@ namespace Resonance
         /// </summary>
         public ResonanceTransporter()
         {
-            _transporterCounter = _globalTransporterCounter++;
+            _componentCounter = ResonanceComponentCounterManager.Default.GetIncrement(this);
 
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
@@ -244,6 +242,8 @@ namespace Resonance
         /// <param name="callback">The callback method to register.</param>
         public void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
         {
+            LogManager.Debug($"{this}: Registering request handler for '{typeof(Request).Name}' on '{callback.Method.DeclaringType}.{callback.Method.Name}'...");
+
             ResonanceRequestHandler handler = new ResonanceRequestHandler();
             handler.RequestType = typeof(Request);
             handler.RegisteredCallback = callback;
@@ -262,6 +262,8 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
         {
+            LogManager.Debug($"{this}: Unregistering request handler for '{typeof(Request).Name}' on '{callback.Method.DeclaringType}.{callback.Method.Name}'...");
+
             var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request>) == callback);
             if (handler != null)
             {
@@ -277,6 +279,8 @@ namespace Resonance
         /// <param name="callback">The callback method to register.</param>
         public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
         {
+            LogManager.Debug($"{this}: Registering request handler for '{typeof(Request).Name}' on '{callback.Method.DeclaringType}.{callback.Method.Name}', Response: '{typeof(Response).Name}'...");
+
             ResonanceRequestHandler handler = new ResonanceRequestHandler();
             handler.HasResponse = true;
             handler.RequestType = typeof(Request);
@@ -297,6 +301,8 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
         {
+            LogManager.Debug($"{this}: Unregistering request handler for '{typeof(Request).Name}' on '{callback.Method.DeclaringType}.{callback.Method.Name}', Response: '{typeof(Response).Name}'...");
+
             var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
             if (handler != null)
             {
@@ -413,7 +419,7 @@ namespace Resonance
             State = ResonanceComponentState.Connected;
             StartThreads();
 
-            LogManager.Log($"{this}: Transporter Connected...");
+            LogManager.Info($"{this}: Transporter Connected...");
         }
 
         /// <summary>
@@ -452,7 +458,7 @@ namespace Resonance
 
                 await FinalizeDisconnection();
 
-                LogManager.Log($"{this}: Transporter Disconnected...");
+                LogManager.Info($"{this}: Transporter Disconnected...");
             }
         }
 
@@ -510,7 +516,7 @@ namespace Resonance
             pendingRequest.Config = config;
             pendingRequest.CompletionSource = completionSource;
 
-            LogManager.Log($"{this}: Queuing request message: {request.Message.GetType().Name} Token: {request.Token}", LogLevel.Debug);
+            LogManager.Debug($"{this}: Queuing request message: {request.Message.GetType().Name} Token: {request.Token}");
 
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
@@ -545,7 +551,7 @@ namespace Resonance
             pendingContinuousRequest.Config = config;
             pendingContinuousRequest.ContinuousObservable = observable;
 
-            LogManager.Log($"{this}: Queuing continuous request message: {request.GetType().Name} Token: {resonanceRequest.Token}", LogLevel.Debug);
+            LogManager.Debug($"{this}: Queuing continuous request message: {request.GetType().Name} Token: {resonanceRequest.Token}");
 
             _sendingQueue.BlockEnqueue(pendingContinuousRequest, config.Priority);
 
@@ -660,7 +666,7 @@ namespace Resonance
             pendingRequest.IsWithoutResponse = true;
             pendingRequest.CompletionSource = completionSource;
 
-            LogManager.Log($"{this}: Queuing request message: {message.GetType().Name} Token: {pendingRequest.Request.Token}", LogLevel.Debug);
+            LogManager.Debug($"{this}: Queuing request message: {message.GetType().Name} Token: {pendingRequest.Request.Token}");
 
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
@@ -696,7 +702,7 @@ namespace Resonance
             }
             catch (ThreadAbortException)
             {
-                LogManager.Log($"{this}: Push thread has been aborted.");
+                LogManager.Info($"{this}: Push thread has been aborted.");
             }
             catch (Exception ex)
             {
@@ -714,7 +720,7 @@ namespace Resonance
             {
                 if (pendingRequest.Config.ShouldLog)
                 {
-                    LogManager.Log($"{this}: Sending request '{pendingRequest.Request.Message.GetType()}'...\n{pendingRequest.Request.Message.ToJsonString()}", LogLevel.Info);
+                    LogManager.Info($"{this}: Sending request '{pendingRequest.Request.Message.GetType()}'...\n{pendingRequest.Request.Message.ToJsonString()}");
                 }
 
                 if (!pendingRequest.IsWithoutResponse)
@@ -800,7 +806,7 @@ namespace Resonance
             {
                 if (pendingContinuousRequest.Config.ShouldLog)
                 {
-                    LogManager.Log($"{this}: Sending continuous request '{pendingContinuousRequest.Request.Message.GetType()}'...\n{pendingContinuousRequest.Request.Message.ToJsonString()}", LogLevel.Info);
+                    LogManager.Info($"{this}: Sending continuous request '{pendingContinuousRequest.Request.Message.GetType()}'...\n{pendingContinuousRequest.Request.Message.ToJsonString()}");
                 }
 
                 _pendingRequests.Add(pendingContinuousRequest);
@@ -887,7 +893,7 @@ namespace Resonance
             {
                 if (pendingResponse.Config.ShouldLog)
                 {
-                    LogManager.Log($"{this}: Sending request '{pendingResponse.Response.Message.GetType()}'...\n{pendingResponse.Response.Message.ToJsonString()}", LogLevel.Info);
+                    LogManager.Info($"{this}: Sending request '{pendingResponse.Response.Message.GetType()}'...\n{pendingResponse.Response.Message.ToJsonString()}");
                 }
 
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
@@ -943,7 +949,7 @@ namespace Resonance
 
                     if (IsChannelSecure)
                     {
-                        LogManager.Log($"{this}: Channel is now secured!");
+                        LogManager.Info($"{this}: Channel is now secured!");
                     }
                 }
 
@@ -996,7 +1002,7 @@ namespace Resonance
                         }
                         catch (Exception ex)
                         {
-                            LogManager.Log(ex, $"{this}: Error decoding incoming message.");
+                            LogManager.Error(ex, $"{this}: Error decoding incoming message.");
                             info.DecoderException = ex;
                         }
 
@@ -1032,19 +1038,19 @@ namespace Resonance
                             }
                             else
                             {
-                                LogManager.Log($"{this}: A response message with no awaiting request was identified. Token: {info.Token}. Message ignored.", LogLevel.Warning);
+                                LogManager.Warning($"{this}: A response message with no awaiting request was identified. Token: {info.Token}. Message ignored.");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        LogManager.Log(ex, "Unexpected error has occurred while handling an incoming message.");
+                        LogManager.Error(ex, "Unexpected error has occurred while handling an incoming message.");
                     }
                 }
             }
             catch (ThreadAbortException)
             {
-                LogManager.Log($"{this}: Pull thread has been aborted.");
+                LogManager.Info($"{this}: Pull thread has been aborted.");
             }
             catch (Exception ex)
             {
@@ -1103,13 +1109,13 @@ namespace Resonance
                             }
                             catch (Exception ex)
                             {
-                                LogManager.Log(ex, "Unexpected error occurred on a request handler.");
+                                LogManager.Error(ex, "Unexpected error occurred on a request handler.");
                             }
                         });
                     }
                     catch (Exception ex)
                     {
-                        LogManager.Log(ex, $"{this}: Error occurred on request handler.");
+                        LogManager.Error(ex, $"{this}: Error occurred on request handler.");
                     }
                 }
             });
@@ -1209,7 +1215,7 @@ namespace Resonance
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Log(ex, "Error sending keep alive auto response.");
+                    LogManager.Error(ex, "Error sending keep alive auto response.");
                 }
             }
         }
@@ -1260,7 +1266,7 @@ namespace Resonance
                                 if (retryCounter >= KeepAliveConfiguration.Retries)
                                 {
                                     var keepAliveException = new ResonanceKeepAliveException("The transporter has not received a KeepAlive response within the given time.");
-                                    LogManager.Log(keepAliveException);
+                                    LogManager.Error(keepAliveException);
                                     OnKeepAliveFailed();
 
                                     if (KeepAliveConfiguration.FailTransporterOnTimeout)
@@ -1275,19 +1281,19 @@ namespace Resonance
                                 }
                                 else
                                 {
-                                    LogManager.Log($"{this}: The transporter has not received a KeepAlive response within the given time. Retrying ({retryCounter}/{KeepAliveConfiguration.Retries})...", LogLevel.Warning);
+                                    LogManager.Warning($"{this}: The transporter has not received a KeepAlive response within the given time. Retrying ({retryCounter}/{KeepAliveConfiguration.Retries})...");
                                 }
                             }
                             else
                             {
                                 retryCounter = 0;
-                                LogManager.Log($"{this}: The transporter has not received a KeepAlive response within the given time, but was rescued due to other message received within the given time.", LogLevel.Warning);
+                                LogManager.Warning($"{this}: The transporter has not received a KeepAlive response within the given time, but was rescued due to other message received within the given time.");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        LogManager.Log(ex, $"{this}: Error occurred on keep alive mechanism.");
+                        LogManager.Error(ex, $"{this}: Error occurred on keep alive mechanism.");
                     }
                 }
 
@@ -1306,7 +1312,7 @@ namespace Resonance
 
         private void HandShakeNegotiator_SymmetricPasswordAvailable(object sender, ResonanceHandShakeSymmetricPasswordAvailableEventArgs e)
         {
-            LogManager.Log($"{this}: Set Symmetric Password: {e.SymmetricPassword}");
+            LogManager.Info($"{this}: Set Symmetric Password: {e.SymmetricPassword}");
             Encoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
             Decoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
         }
@@ -1369,14 +1375,14 @@ namespace Resonance
             if (State != ResonanceComponentState.Failed)
             {
                 FailedStateException = exception;
-                LogManager.Log(exception, $"{this}: Transporter failed.");
+                LogManager.Error(exception, $"{this}: Transporter failed.");
                 State = ResonanceComponentState.Failed;
 
                 await FinalizeDisconnection();
             }
             else
             {
-                LogManager.Log(exception, LogLevel.Warning, $"{this}: OnFailed called while state is already failed!");
+                LogManager.Warning(exception, $"{this}: OnFailed called while state is already failed!");
             }
         }
 
@@ -1401,13 +1407,13 @@ namespace Resonance
         /// </summary>
         protected virtual void NotifyActiveMessagesAboutDisconnection()
         {
-            LogManager.Log("Notifying all continuous request messages about disconnection...");
+            LogManager.Info("Notifying all continuous request messages about disconnection...");
             foreach (var pending in _pendingRequests.ToList())
             {
                 try
                 {
                     _pendingRequests.Remove(pending);
-                    LogManager.Log($"Notifying continuous request '{pending.Request.GetType().Name}'...");
+                    LogManager.Info($"Notifying continuous request '{pending.Request.GetType().Name}'...");
                     var exception = new ResonanceTransporterDisconnectedException("Transporter disconnected.");
                     OnRequestFailed(pending.Request, exception);
 
@@ -1548,7 +1554,7 @@ namespace Resonance
                 previousAdapter.DataAvailable -= OnAdapterDataAvailable;
             }
 
-            LogManager.Log($"{this}: Adapter Changed: {newAdapter}");
+            LogManager.Info($"{this}: Adapter Changed: {newAdapter}");
 
             if (newAdapter != null)
             {
@@ -1603,7 +1609,7 @@ namespace Resonance
             String decoder = Decoder != null ? Decoder.ToString() : "No Decoder";
             String adapter = Adapter != null ? Adapter.ToString() : "No Adapter";
 
-            return $"Transporter {_transporterCounter} => {encoder} / {decoder} => {adapter}";
+            return $"Transporter {_componentCounter} => {encoder} / {decoder} => {adapter}";
         }
 
         #endregion
@@ -1615,14 +1621,7 @@ namespace Resonance
         /// </summary>
         public void Dispose()
         {
-            lock (_disposeLock)
-            {
-                if (State != ResonanceComponentState.Disposed)
-                {
-                    Disconnect().Wait();
-                    State = ResonanceComponentState.Disposed;
-                }
-            }
+            Dispose(false);
         }
 
         /// <summary>
@@ -1631,11 +1630,47 @@ namespace Resonance
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
         public void Dispose(bool withAdapter = false)
         {
-            Dispose();
+            DisposeAsync(withAdapter).GetAwaiter().GetResult();
+        }
 
-            if (withAdapter)
+        /// <summary>
+        /// Disconnects and disposes this transporter.
+        /// </summary>
+        public Task DisposeAsync()
+        {
+            return DisposeAsync(false);
+        }
+
+        /// <summary>
+        /// Disconnects and disposes this transporter.
+        /// </summary>
+        /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter" /> along with this transporter.</param>
+        public async Task DisposeAsync(bool withAdapter)
+        {
+            if (State != ResonanceComponentState.Disposed && !_isDisposing)
             {
-                Adapter?.Dispose();
+                try
+                {
+                    LogManager.Info($"{this}: Disposing...");
+                    _isDisposing = true;
+                    await Disconnect();
+
+                    if (withAdapter)
+                    {
+                        await Adapter?.DisposeAsync();
+                    }
+
+                    LogManager.Info($"{this}: Disposed.");
+                    State = ResonanceComponentState.Disposed;
+                }
+                catch (Exception ex)
+                {
+                    throw LogManager.Error(ex, $"{this}: Error occurred while trying to dispose the transporter.");
+                }
+                finally
+                {
+                    _isDisposing = false;
+                }
             }
         }
 
@@ -1654,25 +1689,25 @@ namespace Resonance
         private void ValidateMessagingState(Object message)
         {
             if (message == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Error processing null message."));
+                throw LogManager.Error(new NullReferenceException($"{this}: Error processing null message."));
 
             if (State != ResonanceComponentState.Connected)
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the transporter state is '{State}'."));
+                throw LogManager.Error(new InvalidOperationException($"{this}: Could not send a message while the transporter state is '{State}'."));
 
             if (Adapter.State != ResonanceComponentState.Connected)
-                throw LogManager.Log(new InvalidOperationException($"{this}: Could not send a message while the adapter state is '{Adapter.State}'."));
+                throw LogManager.Error(new InvalidOperationException($"{this}: Could not send a message while the adapter state is '{Adapter.State}'."));
 
             if (Adapter == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: No Adapter specified. Could not send a message."));
+                throw LogManager.Error(new NullReferenceException($"{this}: No Adapter specified. Could not send a message."));
 
             if (Encoder == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: No Encoder specified. Could not send a message."));
+                throw LogManager.Error(new NullReferenceException($"{this}: No Encoder specified. Could not send a message."));
 
             if (Decoder == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: No Decoder specified. Could not send a message."));
+                throw LogManager.Error(new NullReferenceException($"{this}: No Decoder specified. Could not send a message."));
 
             if (TokenGenerator == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: No Token Generator specified. Could not send a message."));
+                throw LogManager.Error(new NullReferenceException($"{this}: No Token Generator specified. Could not send a message."));
         }
 
         /// <summary>
@@ -1681,16 +1716,16 @@ namespace Resonance
         private void ValidateConnection()
         {
             if (Adapter == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Adapter before attempting to connect."));
+                throw LogManager.Error(new NullReferenceException($"{this}: Please specify an Adapter before attempting to connect."));
 
             if (Encoder == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Please specify an Encoder before attempting to connect."));
+                throw LogManager.Error(new NullReferenceException($"{this}: Please specify an Encoder before attempting to connect."));
 
             if (Decoder == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Decoder before attempting to connect."));
+                throw LogManager.Error(new NullReferenceException($"{this}: Please specify a Decoder before attempting to connect."));
 
             if (TokenGenerator == null)
-                throw LogManager.Log(new NullReferenceException($"{this}: Please specify a Token Generator before attempting to connect."));
+                throw LogManager.Error(new NullReferenceException($"{this}: Please specify a Token Generator before attempting to connect."));
         }
 
         #endregion

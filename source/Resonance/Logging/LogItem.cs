@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Resonance.Logging
 {
     /// <summary>
-    /// Represents a Resonance log item base class.
+    /// Represents a Resonance information log item.
     /// </summary>
-    public abstract class LogItemBase
+    public class LogItem
     {
         /// <summary>
         /// Gets or sets the caller method.
@@ -44,24 +42,9 @@ namespace Resonance.Logging
         /// </summary>
         public String Message { get; set; }
 
-        /// <summary>
-        /// Gets the <see cref="ToString"/> message.
-        /// </summary>
-        /// <returns></returns>
-        protected virtual String GetToStringMessage()
-        {
-            return Message;
-        }
-
-        /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
-        /// </returns>
         public override string ToString()
         {
-            return $"[{TimeStamp.ToString("HH:mm:ss.ff")}] [{Level}] [{CallerFile}] [{CallerMethodName}] [{CallerLineNumber}]: {GetToStringMessage()}";
+            return $"[{TimeStamp.ToString("HH:mm:ss.ff")}] [{Level}] [{CallerFile}] [{CallerMethodName}] [{CallerLineNumber}]: {Message}";
         }
     }
 }

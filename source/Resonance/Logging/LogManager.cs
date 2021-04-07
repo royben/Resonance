@@ -1,4 +1,5 @@
-﻿using Resonance.Threading;
+﻿using Resonance.ExtensionMethods;
+using Resonance.Threading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Resonance.Logging
 #pragma warning disable CS1573
     public class LogManager
     {
-        private readonly ProducerConsumerQueue<LogItemBase> _logs;
+        private readonly ProducerConsumerQueue<LogItem> _logs;
         private Thread _loggingThread;
         private bool _isStarted;
         private static readonly Lazy<LogManager> _default = new Lazy<LogManager>(() => new LogManager());
@@ -28,7 +29,7 @@ namespace Resonance.Logging
         /// <summary>
         /// Occurs when a new log as been received.
         /// </summary>
-        public event EventHandler<LogItemBase> NewLog;
+        public event EventHandler<LogItem> NewLog;
 
         /// <summary>
         /// Gets the default log manager instance.
@@ -46,73 +47,75 @@ namespace Resonance.Logging
         /// </summary>
         private LogManager()
         {
-            _logs = new ProducerConsumerQueue<LogItemBase>();
+            _logs = new ProducerConsumerQueue<LogItem>();
         }
 
-        /// <summary>
-        /// Add new exception log item.
-        /// </summary>
-        /// <param name="e">Exception.</param>
-        /// <param name="description">Error description.</param>
-        public Exception Log(Exception e, String description = null, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        public String Debug(String message, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
         {
-            return Log(e, LogLevel.Error, description, caller, file, lineNumber);
+            Log(message, LogLevel.Debug, caller, file, lineNumber);
+            return message;
         }
 
-        /// <summary>
-        /// Add new exception log item.
-        /// </summary>
-        /// <param name="e">Exception.</param>
-        /// <param name="description">Error description.</param>
-        public Exception Log(Exception e, LogLevel level, String description = null, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        public String Info(String message, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
         {
-            ExceptionLogItem log = new ExceptionLogItem();
-            log.CallerMethodName = caller;
+            Log(message, LogLevel.Info, caller, file, lineNumber);
+            return message;
+        }
+
+        public String Warning(String message, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        {
+            Log(message, LogLevel.Warning, caller, file, lineNumber);
+            return message;
+        }
+
+        public Exception Warning(Exception exception, String description = null, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        {
+            return LogException(exception, LogLevel.Warning, description, caller, file, lineNumber);
+        }
+
+        public Exception Error(Exception exception, String description = null, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        {
+            return LogException(exception, LogLevel.Error, description, caller, file, lineNumber);
+        }
+
+        public Exception Fatal(Exception exception, String description = null, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
+        {
+            return LogException(exception, LogLevel.Fatal, description, caller, file, lineNumber);
+        }
+
+        private Exception LogException(Exception exception, LogLevel level, String description, string caller, string file, int lineNumber)
+        {
+            String message = String.Empty;
+
+            if (description != null)
+            {
+                message += description + "\n";
+            }
+
+            message += exception.FlattenMessage();
+
+            Log(message, level, caller, file, lineNumber);
+
+            return exception;
+        }
+
+        private void Log(String message, LogLevel level, String caller, String file, int lineNumber)
+        {
+            LogItem log = new LogItem();
             log.CallerFile = Path.GetFileNameWithoutExtension(file);
-            log.CallerLineNumber = lineNumber;
-            log.TimeStamp = DateTime.Now;
-            log.Exception = e;
-            log.Level = level;
-            log.Message = description;
-
-            AppendLog(log);
-
-            return e;
-        }
-
-        /// <summary>
-        /// Add new message log item.
-        /// </summary>
-        /// <param name="message">Message.</param>
-        public String Log(String message, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
-        {
-            return Log(message, LogLevel.Info, caller, file, lineNumber);
-        }
-
-        /// <summary>
-        /// Add new message log item.
-        /// </summary>
-        /// <param name="message">Message.</param>
-        public String Log(String message, LogLevel level, [CallerMemberName] string caller = null, [CallerFilePath] string file = null, [CallerLineNumber] int lineNumber = 0)
-        {
-            MessageLogItem log = new MessageLogItem();
             log.CallerMethodName = caller;
-            log.CallerFile = Path.GetFileNameWithoutExtension(file);
             log.CallerLineNumber = lineNumber;
             log.TimeStamp = DateTime.Now;
             log.Level = level;
             log.Message = message;
-
             AppendLog(log);
-
-            return message;
         }
 
         /// <summary>
         /// Appends the log.
         /// </summary>
         /// <param name="log">The log.</param>
-        private void AppendLog(LogItemBase log)
+        private void AppendLog(LogItem log)
         {
             _logs.BlockEnqueue(log);
             StartLoggingThread();
@@ -139,7 +142,7 @@ namespace Resonance.Logging
         {
             while (_isStarted)
             {
-                LogItemBase log = _logs.BlockDequeue();
+                LogItem log = _logs.BlockDequeue();
                 NewLog?.Invoke(this, log);
             }
         }

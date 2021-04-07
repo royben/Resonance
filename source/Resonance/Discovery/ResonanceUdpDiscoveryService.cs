@@ -140,7 +140,7 @@ namespace Resonance.Discovery
             }
             catch (Exception ex)
             {
-                LogManager.Log(ex, "Error broadcasting discovery packet.");
+                LogManager.Error(ex, "Error broadcasting discovery packet.");
             }
         }
 

@@ -107,8 +107,6 @@ namespace Resonance.Adapters.SignalR
         {
             if (State != ResonanceComponentState.Connected)
             {
-                LogManager.Log($"{this}: Connecting SignalR adapter...");
-
                 bool completed = false;
 
                 TaskCompletionSource<object> completionSource = new TaskCompletionSource<object>();
@@ -130,9 +128,7 @@ namespace Resonance.Adapters.SignalR
                                     {
                                         completed = true;
 
-                                        LogManager.Log($"{this}: Connected.");
                                         State = ResonanceComponentState.Connected;
-
                                         completionSource.SetResult(true);
                                     }
                                 }
@@ -140,7 +136,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        LogManager.Log(ex, $"{this}: Error occurred after successful connection.");
+                                        LogManager.Error(ex, $"{this}: Error occurred after successful connection.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -157,7 +153,7 @@ namespace Resonance.Adapters.SignalR
 
                                         var ex = new ConnectionDeclinedException();
 
-                                        LogManager.Log(ex, $"{this}: Error occurred after session created.");
+                                        LogManager.Error(ex, $"{this}: Error occurred after session created.");
                                         completionSource.SetException(ex);
                                     }
                                 }
@@ -165,7 +161,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        LogManager.Log(ex, $"{this}: Error occurred after session created.");
+                                        LogManager.Error(ex, $"{this}: Error occurred after session created.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -179,19 +175,18 @@ namespace Resonance.Adapters.SignalR
                             //Maybe just raise an event..
                         });
 
-                        LogManager.Log($"{this}: Logging in...");
+                        LogManager.Info($"{this}: Authenticating with the remote hub...");
                         _client.Invoke(ResonanceHubMethods.Login, _credentials).GetAwaiter().GetResult();
 
                         if (Role == SignalRAdapterRole.Connect)
                         {
-                            LogManager.Log($"{this}: Connecting service ({ServiceId})...");
+                            LogManager.Info($"{this}: Connecting to service ({ServiceId})...");
                             SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                         }
                         else
                         {
-                            LogManager.Log($"{this}: Accepting connection ({SessionId})...");
+                            LogManager.Info($"{this}: Accepting connection ({SessionId})...");
                             _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
-                            LogManager.Log($"{this}: Connected.");
 
                             if (!completed)
                             {
@@ -206,7 +201,7 @@ namespace Resonance.Adapters.SignalR
                     catch (Exception ex)
                     {
                         completed = true;
-                        LogManager.Log(ex, $"{this}: Error occurred while trying to connect.");
+                        LogManager.Error(ex, $"{this}: Error occurred while trying to connect.");
                         completionSource.SetException(ex);
                     }
                 });
@@ -236,31 +231,26 @@ namespace Resonance.Adapters.SignalR
         {
             return Task.Factory.StartNew(() =>
             {
-                if (State == ResonanceComponentState.Connected)
+                try
                 {
-                    LogManager.Log($"{this}: Disconnecting...");
-
-                    try
+                    if (notify)
                     {
-                        if (notify)
-                        {
-                            _client.Invoke(ResonanceHubMethods.Disconnect).GetAwaiter().GetResult();
-                        }
-                        _client.Stop();
-                        _client.Dispose();
+                        _client.Invoke(ResonanceHubMethods.Disconnect).GetAwaiter().GetResult();
                     }
-                    catch (Exception ex)
-                    {
-                        LogManager.Log(ex, $"{this}: Error occurred while disconnecting.");
-                    }
+                    _client.Stop();
+                    _client.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Error(ex, $"{this}: Error occurred while disconnecting.");
+                }
 
-                    LogManager.Log($"{this}: Disconnected.");
-                    State = ResonanceComponentState.Disconnected;
+                LogManager.Info($"{this}: Disconnected.");
+                State = ResonanceComponentState.Disconnected;
 
-                    if (!notify)
-                    {
-                        OnFailed(new RemoteAdapterDisconnectedException());
-                    }
+                if (!notify)
+                {
+                    OnFailed(new RemoteAdapterDisconnectedException(), "The remote SignalR adapter has disconnected.");
                 }
             });
         }

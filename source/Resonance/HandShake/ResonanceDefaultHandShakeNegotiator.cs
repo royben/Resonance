@@ -95,7 +95,7 @@ namespace Resonance.HandShake
             if (State == ResonanceHandShakeState.Idle)
             {
                 State = ResonanceHandShakeState.InProgress;
-                LogManager.Log($"{this}: Sending Handshake Request...");
+                LogManager.Info($"{this}: Sending Handshake Request...");
                 ResonanceHandShakeMessage request = new ResonanceHandShakeMessage();
                 request.Type = ResonanceHandShakeMessageType.Request;
                 request.ClientId = ClientID;
@@ -156,7 +156,7 @@ namespace Resonance.HandShake
                 {
                     if (shouldSendRequest)
                     {
-                        LogManager.Log($"{this}: Sending Handshake Request...");
+                        LogManager.Info($"{this}: Sending Handshake Request...");
                         ResonanceHandShakeMessage r = new ResonanceHandShakeMessage();
                         r.Type = ResonanceHandShakeMessageType.Request;
                         r.ClientId = ClientID;
@@ -173,7 +173,7 @@ namespace Resonance.HandShake
 
                     var request = message;
 
-                    LogManager.Log($"{this}: Handshake Request Received...");
+                    LogManager.Info($"{this}: Handshake Request Received...");
 
                     ResonanceHandShakeMessage response = new ResonanceHandShakeMessage();
                     response.Type = ResonanceHandShakeMessageType.Response;
@@ -190,7 +190,7 @@ namespace Resonance.HandShake
                             OnSymmetricPasswordAvailable(_symmetricPassword);
                             response.SymmetricPassword = _cryptographyProvider.Encrypt(_symmetricPassword, request.EncryptionPublicKey);
                             OnWriteHandShake(HandShakeTranscoder.Encode(response));
-                            LogManager.Log($"{this}: Handshake Response Sent...");
+                            LogManager.Info($"{this}: Handshake Response Sent...");
                         }
                     }
                     else
@@ -198,7 +198,7 @@ namespace Resonance.HandShake
                         if (ClientID > request.ClientId && State != ResonanceHandShakeState.Completed)
                         {
                             OnWriteHandShake(HandShakeTranscoder.Encode(response));
-                            LogManager.Log($"{this}: Handshake Response Sent...");
+                            LogManager.Info($"{this}: Handshake Response Sent...");
                         }
                     }
                 }
@@ -206,7 +206,7 @@ namespace Resonance.HandShake
                 {
                     var response = message;
 
-                    LogManager.Log($"{this}: Handshake Response Received...");
+                    LogManager.Info($"{this}: Handshake Response Received...");
 
                     if (response.RequireEncryption && EncryptionEnabled)
                     {
@@ -221,13 +221,13 @@ namespace Resonance.HandShake
                     {
                         State = ResonanceHandShakeState.Completed;
                         OnWriteHandShake(HandShakeTranscoder.Encode(new ResonanceHandShakeMessage() { Type = ResonanceHandShakeMessageType.Complete, ClientId = ClientID }));
-                        LogManager.Log($"{this}: Handshake completed.");
+                        LogManager.Info($"{this}: Handshake completed.");
                     }
                 }
                 else
                 {
                     State = ResonanceHandShakeState.Completed;
-                    LogManager.Log($"{this}: Handshake completed.");
+                    LogManager.Info($"{this}: Handshake completed.");
                 }
             }
         }

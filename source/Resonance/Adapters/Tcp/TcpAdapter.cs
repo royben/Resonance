@@ -95,7 +95,7 @@ namespace Resonance.Adapters.Tcp
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error occurred while trying to read from network stream.");
             }
         }
 
@@ -136,7 +136,7 @@ namespace Resonance.Adapters.Tcp
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error occurred while trying to read from network stream.");
             }
         }
 
@@ -160,39 +160,27 @@ namespace Resonance.Adapters.Tcp
         {
             return Task.Factory.StartNew(() =>
             {
-                try
+                if (!_initializedFromConstructor)
                 {
-                    if (State != ResonanceComponentState.Connected)
-                    {
-                        if (!_initializedFromConstructor)
-                        {
-                            _socket = new TcpClient(Address, Port);
-                            SetSocketProperties();
-                        }
-                        else if (!_socket.Connected)
-                        {
-                            _socket.Connect(Address, Port);
-                        }
-                        else
-                        {
-                            Address = _socket.GetIPAddress().ToStringOrEmpty();
-                            Port = _socket.GetPort();
-                        }
-
-                        LogManager.Log($"{this}: Connected.");
-
-                        State = ResonanceComponentState.Connected;
-
-                        Task.Factory.StartNew(() =>
-                        {
-                            WaitForData();
-                        }, TaskCreationOptions.LongRunning);
-                    }
+                    _socket = new TcpClient(Address, Port);
+                    SetSocketProperties();
                 }
-                catch (Exception ex)
+                else if (!_socket.Connected)
                 {
-                    throw LogManager.Log(ex, $"{this}: Could not connect the adapter.");
+                    _socket.Connect(Address, Port);
                 }
+                else
+                {
+                    Address = _socket.GetIPAddress().ToStringOrEmpty();
+                    Port = _socket.GetPort();
+                }
+
+                State = ResonanceComponentState.Connected;
+
+                Task.Factory.StartNew(() =>
+                {
+                    WaitForData();
+                }, TaskCreationOptions.LongRunning);
             });
         }
 
@@ -200,33 +188,15 @@ namespace Resonance.Adapters.Tcp
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                try
-                {
-                    if (State == ResonanceComponentState.Connected)
-                    {
-                        State = ResonanceComponentState.Disconnected;
-                        _socket.Close();
-                        LogManager.Log($"{this} Disconnected.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(ex, $"{this} Could not disconnect the adapter.");
-                }
+                State = ResonanceComponentState.Disconnected;
+                _socket.Close();
             }));
         }
 
         protected override void OnWrite(byte[] data)
         {
-            try
-            {
-                data = PrependDataSize(data);
-                _socket.GetStream().Write(data, 0, data.Length);
-            }
-            catch (Exception ex)
-            {
-                OnFailed(LogManager.Log(ex, $"{this}: Error writing to socket stream."));
-            }
+            data = PrependDataSize(data);
+            _socket.GetStream().Write(data, 0, data.Length);
         }
 
         #endregion

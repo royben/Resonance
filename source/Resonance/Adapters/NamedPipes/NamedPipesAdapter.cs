@@ -68,74 +68,44 @@ namespace Resonance.Adapters.NamedPipes
 
         protected override Task OnConnect()
         {
-            ThrowIfDisposed();
-
             return Task.Factory.StartNew(() =>
             {
-                try
+                if (State != ResonanceComponentState.Connected)
                 {
-                    if (State != ResonanceComponentState.Connected)
+                    if (_pipeStream == null)
                     {
-                        if (_pipeStream == null)
-                        {
-                            _client = new NamedPipeClientStream(ServerName, PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-                            _pipeStream = _client;
-                            _client.Connect(5000);
-                        }
-
-                        LogManager.Log($"{this}: Connected.");
-
-                        State = ResonanceComponentState.Connected;
-
-                        Task.Factory.StartNew(() =>
-                        {
-                            WaitForData();
-                        }, TaskCreationOptions.LongRunning);
+                        _client = new NamedPipeClientStream(ServerName, PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                        _pipeStream = _client;
+                        _client.Connect(5000);
                     }
-                }
-                catch (Exception ex)
-                {
-                    throw LogManager.Log(ex, $"{this}: Could not connect the adapter.");
+
+                    State = ResonanceComponentState.Connected;
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        WaitForData();
+                    }, TaskCreationOptions.LongRunning);
                 }
             });
         }
 
         protected override Task OnDisconnect()
         {
-            ThrowIfDisposed();
-
             return Task.Factory.StartNew((Action)(() =>
             {
-                try
+                if (State == ResonanceComponentState.Connected)
                 {
-                    if (State == ResonanceComponentState.Connected)
-                    {
-                        State = ResonanceComponentState.Disconnected;
-                        _pipeStream.WaitForPipeDrain();
-                        _pipeStream.Close();
-                        LogManager.Log($"{this} Disconnected.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(ex, $"{this} Could not disconnect the adapter.");
+                    State = ResonanceComponentState.Disconnected;
+                    _pipeStream.WaitForPipeDrain();
+                    _pipeStream.Close();
                 }
             }));
         }
 
         protected override void OnWrite(byte[] data)
         {
-            ThrowIfDisposed();
-
-            try
-            {
-                data = PrependDataSize(data);
-                _pipeStream?.Write(data, 0, data.Length);
-            }
-            catch (Exception ex)
-            {
-                OnFailed(LogManager.Log(ex, $"{this}: Error writing to named pipes stream."));
-            }
+            data = PrependDataSize(data);
+            _pipeStream?.Write(data, 0, data.Length);
         }
 
         #endregion
@@ -155,7 +125,7 @@ namespace Resonance.Adapters.NamedPipes
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error occurred while trying to read from the pipe stream.");
             }
         }
 
@@ -196,7 +166,7 @@ namespace Resonance.Adapters.NamedPipes
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error occurred while trying to read from the pipe stream.");
             }
         }
 

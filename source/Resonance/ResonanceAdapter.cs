@@ -14,13 +14,12 @@ namespace Resonance
     /// </summary>
     public abstract class ResonanceAdapter : ResonanceObject, IResonanceAdapter
     {
-        private static int _component_counter = 1;
+        private readonly int _componentCounter;
         private long _transferRateTotalBytes;
         private Timer _transferRateTimer;
-        private object _disposeLock = new object();
         private System.Threading.Thread _pushThread;
         private ProducerConsumerQueue<byte[]> _pushQueue;
-        protected int _adapterCounter;
+        private bool _isDisposing;
 
         #region Events
 
@@ -120,7 +119,7 @@ namespace Resonance
         /// </summary>
         public ResonanceAdapter()
         {
-            _adapterCounter = _component_counter++;
+            _componentCounter = ResonanceComponentCounterManager.Default.GetIncrement(this);
             WriteMode = ResonanceAdapterWriteMode.Direct;
             QueueWriteModeInterval = TimeSpan.FromMilliseconds(10);
         }
@@ -133,10 +132,11 @@ namespace Resonance
         /// Called when the adapter has failed.
         /// </summary>
         /// <param name="ex">The exception.</param>
-        protected virtual void OnFailed(Exception ex)
+        /// <param name="message">Logging message.</param>
+        protected virtual void OnFailed(Exception ex, String message)
         {
             FailedStateException = ex;
-            LogManager.Log(ex, $"{this}: Adapter failed.");
+            LogManager.Error(ex, $"{this}: {message}");
             Disconnect().Wait();
             State = ResonanceComponentState.Failed;
         }
@@ -159,6 +159,8 @@ namespace Resonance
         /// <param name="newState">The new component state.</param>
         protected virtual void OnStateChanged(ResonanceComponentState previousState, ResonanceComponentState newState)
         {
+            LogManager.Debug($"{this}: State changed '{previousState}' => '{newState}'.");
+
             StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
 
             if (newState == ResonanceComponentState.Connected)
@@ -192,7 +194,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Disposed)
             {
-                throw LogManager.Log(new ObjectDisposedException($"{this}: The adapter is in a " + State + " state."));
+                throw LogManager.Error(new ObjectDisposedException($"{this}: The adapter is in a '{State}' state."));
             }
         }
 
@@ -228,12 +230,31 @@ namespace Resonance
         /// </summary>
         public virtual void Dispose()
         {
-            lock (_disposeLock)
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes the adapter resources.
+        /// </summary>
+        public virtual async Task DisposeAsync()
+        {
+            if (State != ResonanceComponentState.Disposed && !_isDisposing)
             {
-                if (State != ResonanceComponentState.Disposed)
+                try
                 {
-                    Disconnect().Wait();
+                    LogManager.Info($"{this}: Disposing...");
+                    _isDisposing = true;
+                    await Disconnect();
+                    LogManager.Info($"{this}: Disposed.");
                     State = ResonanceComponentState.Disposed;
+                }
+                catch (Exception ex)
+                {
+                    throw LogManager.Error(ex, $"{this}: Error occurred while trying to dispose the adapter.");
+                }
+                finally
+                {
+                    _isDisposing = false;
                 }
             }
         }
@@ -243,35 +264,66 @@ namespace Resonance
         #region Connect / Disconnect /Write
 
         /// <summary>
-        /// Connects this component.
+        /// Connects the adapter.
         /// </summary>
         /// <returns></returns>
         public async Task Connect()
         {
             ThrowIfDisposed();
-            await OnConnect();
 
-            if (WriteMode == ResonanceAdapterWriteMode.Queue)
+            if (State != ResonanceComponentState.Connected)
             {
-                _pushQueue = new ProducerConsumerQueue<byte[]>();
-                _pushThread = new System.Threading.Thread(PushThreadMethod);
-                _pushThread.IsBackground = true;
-                _pushThread.Name = $"{this} Push Thread";
-                _pushThread.Start();
+                LogManager.Info($"{this}: Connecting...");
+
+                try
+                {
+                    await OnConnect();
+
+                    LogManager.Info($"{this}: Connected.");
+
+                    if (WriteMode == ResonanceAdapterWriteMode.Queue)
+                    {
+                        _pushQueue = new ProducerConsumerQueue<byte[]>();
+                        _pushThread = new System.Threading.Thread(PushThreadMethod);
+                        _pushThread.IsBackground = true;
+                        _pushThread.Name = $"{this} Push Thread";
+                        _pushThread.Start();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Error(ex, $"{this}: Adapter connection error occurred.");
+                    throw ex;
+                }
             }
         }
 
         /// <summary>
-        /// Disconnects this component.
+        /// Disconnects the adapter.
         /// </summary>
         /// <returns></returns>
         public async Task Disconnect()
         {
-            await OnDisconnect();
-
-            if (WriteMode == ResonanceAdapterWriteMode.Queue)
+            if (State == ResonanceComponentState.Connected)
             {
-                _pushQueue.BlockEnqueue(null); //Will terminate the push thread.
+                try
+                {
+                    LogManager.Info($"{this}: Disconnecting...");
+
+                    await OnDisconnect();
+
+                    LogManager.Info($"{this}: Disconnected...");
+
+                    if (WriteMode == ResonanceAdapterWriteMode.Queue)
+                    {
+                        _pushQueue.BlockEnqueue(null); //Will terminate the push thread.
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Error(ex, "Adapter disconnection error occurred.");
+                    throw ex;
+                }
             }
         }
 
@@ -299,7 +351,7 @@ namespace Resonance
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error writing to adapter stream.");
                 throw;
             }
         }
@@ -338,7 +390,7 @@ namespace Resonance
         /// </returns>
         public override string ToString()
         {
-            return this != null ? $"{this.GetType().Name} {_adapterCounter}" : "No Adapter";
+            return this != null ? $"{this.GetType().Name} {_componentCounter}" : "No Adapter";
         }
 
         #endregion
@@ -375,13 +427,28 @@ namespace Resonance
                     if (dataCollection.Count > 0)
                     {
                         byte[] allData = dataCollection.SelectMany(a => a).ToArray();
-                        OnWrite(allData);
+
+                        try
+                        {
+                            OnWrite(allData);
+                        }
+                        catch
+                        {
+                            return;
+                        }
                     }
 
                     System.Threading.Thread.Sleep(QueueWriteModeInterval);
                 }
             }
-            catch (System.Threading.ThreadAbortException) { }
+            catch (System.Threading.ThreadAbortException)
+            {
+                //Ignore
+            }
+            catch (Exception ex)
+            {
+                OnFailed(ex, "Unexpected occurred on adapter write queue.");
+            }
         }
 
         #endregion

@@ -84,7 +84,7 @@ namespace Resonance.Adapters.Usb
         /// <param name="baudRate">The serial baud rate.</param>
         public UsbAdapter(UsbDevice device, int baudRate) : this(device.Port, baudRate)
         {
-            
+
         }
 
         /// <summary>
@@ -115,8 +115,6 @@ namespace Resonance.Adapters.Usb
                 {
                     try
                     {
-                        LogManager.Log($"{this}: Connecting adapter on {Port}...");
-
                         if (_serialPort != null)
                         {
                             _serialPort.DataReceived -= OnSerialPortDataReceived;
@@ -134,8 +132,6 @@ namespace Resonance.Adapters.Usb
 
                         _serialPort.DataReceived += OnSerialPortDataReceived;
 
-                        LogManager.Log($"{this}: Connected.");
-
                         State = ResonanceComponentState.Connected;
 
                         if (!source.Task.IsCompleted)
@@ -147,17 +143,16 @@ namespace Resonance.Adapters.Usb
                     {
                         if (!source.Task.IsCompleted)
                         {
-                            source.SetException(LogManager.Log(ex, $"{this}: Error connecting on {Port}."));
+                            source.SetException(ex);
                         }
                     }
                 });
 
                 TimeoutTask.StartNew(() =>
                 {
-
                     if (!source.Task.IsCompleted)
                     {
-                        source.SetException(LogManager.Log(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again.")));
+                        source.SetException(LogManager.Error(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again.")));
                     }
 
                 }, TimeSpan.FromSeconds(5));
@@ -184,37 +179,27 @@ namespace Resonance.Adapters.Usb
                 {
                     try
                     {
-                        LogManager.Log($"{this}: Disconnecting...");
-
                         if (_serialPort != null)
                         {
                             _serialPort.DataReceived -= OnSerialPortDataReceived;
                         }
 
-                        try
+                        _serialPort.Close();
+                        _serialPort.Dispose();
+                        _serialPort.DataReceived -= OnSerialPortDataReceived;
+                        State = ResonanceComponentState.Disconnected;
+
+                        if (!source.Task.IsCompleted)
                         {
-                            _serialPort.Close();
-                            _serialPort.Dispose();
-                            _serialPort.DataReceived -= OnSerialPortDataReceived;
-
-                            LogManager.Log($"{this}: Disconnected.");
-
-                            State = ResonanceComponentState.Disconnected;
+                            source.SetResult(true);
                         }
-                        catch (Exception ex)
-                        {
-                            LogManager.Log(ex, $"{this}: Error disconnecting.");
-                        }
-
                     }
                     catch (Exception ex)
                     {
-                        LogManager.Log(ex, $"{this}: Error disconnecting.");
-                    }
-
-                    if (!source.Task.IsCompleted)
-                    {
-                        source.SetResult(true);
+                        if (!source.Task.IsCompleted)
+                        {
+                            source.SetException(ex);
+                        }
                     }
                 });
 
@@ -223,7 +208,7 @@ namespace Resonance.Adapters.Usb
 
                     if (!source.Task.IsCompleted)
                     {
-                        LogManager.Log(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again."));
+                        LogManager.Fatal(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again."));
                         State = ResonanceComponentState.Disconnected;
                         source.SetResult(true);
                     }
@@ -244,15 +229,8 @@ namespace Resonance.Adapters.Usb
         /// <param name="data">The data.</param>
         protected override void OnWrite(byte[] data)
         {
-            try
-            {
-                data = PrependDataSize(data);
-                _serialPort.Write(data, 0, data.Length);
-            }
-            catch (Exception ex)
-            {
-                OnFailed(LogManager.Log(ex, $"{this}: Error writing to serial port."));
-            }
+            data = PrependDataSize(data);
+            _serialPort.Write(data, 0, data.Length);
         }
 
         #endregion
@@ -281,7 +259,7 @@ namespace Resonance.Adapters.Usb
 
                     if (expectedSize > MaxExpectedSize || expectedSize < 1)
                     {
-                        LogManager.Log($"Invalid expected size received on USB adapter ({expectedSize} bytes). Discarding buffers...", LogLevel.Warning);
+                        LogManager.Warning($"Invalid expected size received on USB adapter ({expectedSize} bytes). Discarding buffers...");
 
                         byte[] falseData = new byte[_serialPort.BytesToRead];
                         _serialPort.Read(falseData, 0, falseData.Length);
@@ -318,7 +296,7 @@ namespace Resonance.Adapters.Usb
             }
             catch (Exception ex)
             {
-                LogManager.Log(ex, $"{this}: Error occurred while trying to read from the serial port.");
+                LogManager.Error(ex, $"{this}: Error occurred while trying to read from the serial port.");
             }
         }
 

@@ -81,32 +81,18 @@ namespace Resonance.Adapters.Udp
         {
             return Task.Factory.StartNew(() =>
             {
-                try
-                {
-                    if (State != ResonanceComponentState.Connected)
-                    {
-                        _socket.EnableBroadcast = true;
-                        _socket.ExclusiveAddressUse = false;
-                        _socket.MulticastLoopback = false;
-                        _socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                        _socket.Client.Bind(LocalEndPoint);
+                _socket.EnableBroadcast = true;
+                _socket.ExclusiveAddressUse = false;
+                _socket.MulticastLoopback = false;
+                _socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _socket.Client.Bind(LocalEndPoint);
 
-                        //_socket.Connect(RemoteEndPoint);
+                State = ResonanceComponentState.Connected;
 
-                        LogManager.Log($"{this}: Connected...");
-
-                        State = ResonanceComponentState.Connected;
-
-                        _pullThread = new Thread(PullThreadMethod);
-                        _pullThread.IsBackground = true;
-                        _pullThread.Name = $"{this} pull thread";
-                        _pullThread.Start();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw LogManager.Log(ex, $"{this}: Could not connect the UDP adapter.");
-                }
+                _pullThread = new Thread(PullThreadMethod);
+                _pullThread.IsBackground = true;
+                _pullThread.Name = $"{this} pull thread";
+                _pullThread.Start();
             });
         }
 
@@ -118,19 +104,8 @@ namespace Resonance.Adapters.Udp
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                try
-                {
-                    if (State == ResonanceComponentState.Connected)
-                    {
-                        State = ResonanceComponentState.Disconnected;
-                        _socket.Close();
-                        LogManager.Log($"{this} Disconnected.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogManager.Log(ex, $"{this} Could not disconnect the adapter.");
-                }
+                State = ResonanceComponentState.Disconnected;
+                _socket.Close();
             }));
         }
 
@@ -140,19 +115,12 @@ namespace Resonance.Adapters.Udp
         /// <param name="data">The data.</param>
         protected override void OnWrite(byte[] data)
         {
-            try
+            if (PreventLoopback)
             {
-                if (PreventLoopback)
-                {
-                    data = _tokenData.Concat(data).ToArray();
-                }
+                data = _tokenData.Concat(data).ToArray();
+            }
 
-                _socket.Send(data, data.Length, RemoteEndPoint);
-            }
-            catch (Exception ex)
-            {
-                OnFailed(LogManager.Log(ex, $"{this}: Error writing to socket stream."));
-            }
+            _socket.Send(data, data.Length, RemoteEndPoint);
         }
 
         #endregion
@@ -190,12 +158,16 @@ namespace Resonance.Adapters.Udp
                         {
                             Debugger.Break();
                         }
+                        else
+                        {
+                            throw ex;
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                OnFailed(ex);
+                OnFailed(ex, "Error occurred while trying to read from network stream.");
             }
         }
 

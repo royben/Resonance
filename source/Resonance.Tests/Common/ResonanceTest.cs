@@ -41,7 +41,7 @@ namespace Resonance.Tests.Common
             LogManager.Default.NewLog += Default_NewLog;
         }
 
-        private void Default_NewLog(object sender, LogItemBase e)
+        private void Default_NewLog(object sender, LogItem e)
         {
             if (IsRunningOnAzurePipelines && (e.Level == LogLevel.Debug || e.Level == LogLevel.Error)) return;
 

@@ -65,7 +65,7 @@ namespace Resonance.Servers.Tcp
                 _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _listener.Start();
                 IsStarted = true;
-                LogManager.Log($"TCP server started on port {Port}.");
+                LogManager.Info($"TCP server started on port {Port}.");
                 WaitForConnection();
             }
         }
@@ -78,7 +78,7 @@ namespace Resonance.Servers.Tcp
             {
                 _listener.Stop();
                 IsStarted = false;
-                LogManager.Log($"TCP server stopped on port {Port}.");
+                LogManager.Info($"TCP server stopped on port {Port}.");
             }
         }
 

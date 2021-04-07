@@ -20,7 +20,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceComponent" />
     /// <seealso cref="Resonance.IResonanceStateComponent" />
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
-    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent
+    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IResonanceAsyncDisposableComponent
     {
         /// <summary>
         /// Occurs when a new request message has been received.
@@ -268,5 +268,11 @@ namespace Resonance
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
         void Dispose(bool withAdapter = false);
+
+        /// <summary>
+        /// Disconnects and disposes this transporter.
+        /// </summary>
+        /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
+        Task DisposeAsync(bool withAdapter = false);
     }
 }
