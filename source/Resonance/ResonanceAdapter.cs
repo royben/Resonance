@@ -136,7 +136,7 @@ namespace Resonance
         protected virtual void OnFailed(Exception ex, String message)
         {
             FailedStateException = ex;
-            LogManager.Error(ex, $"{this}: {message}");
+            Log.Error(ex, $"{this}: {message}");
             Disconnect().Wait();
             State = ResonanceComponentState.Failed;
         }
@@ -159,7 +159,7 @@ namespace Resonance
         /// <param name="newState">The new component state.</param>
         protected virtual void OnStateChanged(ResonanceComponentState previousState, ResonanceComponentState newState)
         {
-            LogManager.Debug($"{this}: State changed '{previousState}' => '{newState}'.");
+            Log.Debug($"{this}: State changed '{previousState}' => '{newState}'.");
 
             StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
 
@@ -194,7 +194,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Disposed)
             {
-                throw LogManager.Error(new ObjectDisposedException($"{this}: The adapter is in a '{State}' state."));
+                throw Log.Error(new ObjectDisposedException($"{this}: The adapter is in a '{State}' state."));
             }
         }
 
@@ -242,15 +242,15 @@ namespace Resonance
             {
                 try
                 {
-                    LogManager.Info($"{this}: Disposing...");
+                    Log.Info($"{this}: Disposing...");
                     _isDisposing = true;
                     await Disconnect();
-                    LogManager.Info($"{this}: Disposed.");
+                    Log.Info($"{this}: Disposed.");
                     State = ResonanceComponentState.Disposed;
                 }
                 catch (Exception ex)
                 {
-                    throw LogManager.Error(ex, $"{this}: Error occurred while trying to dispose the adapter.");
+                    throw Log.Error(ex, $"{this}: Error occurred while trying to dispose the adapter.");
                 }
                 finally
                 {
@@ -273,13 +273,13 @@ namespace Resonance
 
             if (State != ResonanceComponentState.Connected)
             {
-                LogManager.Info($"{this}: Connecting...");
+                Log.Info($"{this}: Connecting...");
 
                 try
                 {
                     await OnConnect();
 
-                    LogManager.Info($"{this}: Connected.");
+                    Log.Info($"{this}: Connected.");
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
@@ -292,7 +292,7 @@ namespace Resonance
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error(ex, $"{this}: Adapter connection error occurred.");
+                    Log.Error(ex, $"{this}: Adapter connection error occurred.");
                     throw ex;
                 }
             }
@@ -308,11 +308,11 @@ namespace Resonance
             {
                 try
                 {
-                    LogManager.Info($"{this}: Disconnecting...");
+                    Log.Info($"{this}: Disconnecting...");
 
                     await OnDisconnect();
 
-                    LogManager.Info($"{this}: Disconnected...");
+                    Log.Info($"{this}: Disconnected...");
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
@@ -321,7 +321,7 @@ namespace Resonance
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error(ex, "Adapter disconnection error occurred.");
+                    Log.Error(ex, "Adapter disconnection error occurred.");
                     throw ex;
                 }
             }

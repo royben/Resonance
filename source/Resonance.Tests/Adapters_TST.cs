@@ -205,7 +205,7 @@ namespace Resonance.Tests
 
             if (IsRunningOnAzurePipelines)
             {
-                LogManager.Info("Running on azure. Skipping USB Adapter test.");
+                Log.Info("Running on azure. Skipping USB Adapter test.");
                 return;
             }
 

@@ -22,9 +22,9 @@ namespace Resonance
         /// <summary>
         /// Gets the default log manager.
         /// </summary>
-        protected LogManager LogManager
+        protected ResonanceLogManager Log
         {
-            get { return LogManager.Default; }
+            get { return ResonanceLogManager.Default; }
         }
 
         /// <summary>

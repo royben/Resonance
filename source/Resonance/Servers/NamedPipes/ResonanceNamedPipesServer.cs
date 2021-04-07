@@ -62,7 +62,7 @@ namespace Resonance.Servers.NamedPipes
             {
                 WaitForConnection();
                 IsStarted = true;
-                LogManager.Info($"{this}: Started...");
+                Log.Info($"{this}: Started...");
             }
         }
 
@@ -75,7 +75,7 @@ namespace Resonance.Servers.NamedPipes
             {
                 IsStarted = false;
                 _pendingPipeStream?.Dispose();
-                LogManager.Info($"{this}: Stopped.");
+                Log.Info($"{this}: Stopped.");
             }
         }
 

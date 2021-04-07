@@ -10,7 +10,7 @@ namespace Resonance.Logging
     /// <summary>
     /// Represents a Resonance information log item.
     /// </summary>
-    public class LogItem
+    public class ResonanceLogItem
     {
         /// <summary>
         /// Gets or sets the caller method.
@@ -35,7 +35,7 @@ namespace Resonance.Logging
         /// <summary>
         /// Gets or sets the log level.
         /// </summary>
-        public LogLevel Level { get; set; }
+        public ResonanceLogLevel Level { get; set; }
 
         /// <summary>
         /// Gets the log message.

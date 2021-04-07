@@ -136,7 +136,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        LogManager.Error(ex, $"{this}: Error occurred after successful connection.");
+                                        Log.Error(ex, $"{this}: Error occurred after successful connection.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -153,7 +153,7 @@ namespace Resonance.Adapters.SignalR
 
                                         var ex = new ConnectionDeclinedException();
 
-                                        LogManager.Error(ex, $"{this}: Error occurred after session created.");
+                                        Log.Error(ex, $"{this}: Error occurred after session created.");
                                         completionSource.SetException(ex);
                                     }
                                 }
@@ -161,7 +161,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        LogManager.Error(ex, $"{this}: Error occurred after session created.");
+                                        Log.Error(ex, $"{this}: Error occurred after session created.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -175,17 +175,17 @@ namespace Resonance.Adapters.SignalR
                             //Maybe just raise an event..
                         });
 
-                        LogManager.Info($"{this}: Authenticating with the remote hub...");
+                        Log.Info($"{this}: Authenticating with the remote hub...");
                         _client.Invoke(ResonanceHubMethods.Login, _credentials).GetAwaiter().GetResult();
 
                         if (Role == SignalRAdapterRole.Connect)
                         {
-                            LogManager.Info($"{this}: Connecting to service ({ServiceId})...");
+                            Log.Info($"{this}: Connecting to service ({ServiceId})...");
                             SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                         }
                         else
                         {
-                            LogManager.Info($"{this}: Accepting connection ({SessionId})...");
+                            Log.Info($"{this}: Accepting connection ({SessionId})...");
                             _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
 
                             if (!completed)
@@ -201,7 +201,7 @@ namespace Resonance.Adapters.SignalR
                     catch (Exception ex)
                     {
                         completed = true;
-                        LogManager.Error(ex, $"{this}: Error occurred while trying to connect.");
+                        Log.Error(ex, $"{this}: Error occurred while trying to connect.");
                         completionSource.SetException(ex);
                     }
                 });
@@ -242,10 +242,10 @@ namespace Resonance.Adapters.SignalR
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error(ex, $"{this}: Error occurred while disconnecting.");
+                    Log.Error(ex, $"{this}: Error occurred while disconnecting.");
                 }
 
-                LogManager.Info($"{this}: Disconnected.");
+                Log.Info($"{this}: Disconnected.");
                 State = ResonanceComponentState.Disconnected;
 
                 if (!notify)

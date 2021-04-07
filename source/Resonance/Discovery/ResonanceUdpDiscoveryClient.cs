@@ -120,7 +120,7 @@ namespace Resonance.Discovery
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error(ex, "Error disposing udp client.");
+                    Log.Error(ex, "Error disposing udp client.");
                 }
             }
         }
@@ -214,7 +214,7 @@ namespace Resonance.Discovery
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error(ex);
+                    Log.Error(ex);
                 }
             }
         }

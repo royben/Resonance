@@ -27,9 +27,9 @@ namespace Resonance.Tests.Common
         /// <summary>
         /// Gets the default log manager.
         /// </summary>
-        public LogManager LogManager
+        public ResonanceLogManager Log
         {
-            get { return LogManager.Default; }
+            get { return ResonanceLogManager.Default; }
         }
 
         public bool IsRunningOnAzurePipelines { get; set; }
@@ -37,14 +37,24 @@ namespace Resonance.Tests.Common
         protected void Init()
         {
             InMemoryAdapter.DisposeAll();
+
             IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
-            LogManager.Default.NewLog += Default_NewLog;
+
+            if (IsRunningOnAzurePipelines)
+            {
+                Log.LogLevel = ResonanceLogLevel.Warning;
+            }
+            else
+            {
+                Log.LogLevel = ResonanceLogLevel.Info;
+            }
+
+            ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;
+            ResonanceLogManager.Default.LogItemAvailable += Default_LogItemAvailable;
         }
 
-        private void Default_NewLog(object sender, LogItem e)
+        private void Default_LogItemAvailable(object sender, ResonanceLogItemAvailableEventArgs e)
         {
-            if (IsRunningOnAzurePipelines && (e.Level == LogLevel.Debug || e.Level == LogLevel.Error)) return;
-
             TestContext.WriteLine(e.ToString());
             Debug.WriteLine(e.ToString());
         }

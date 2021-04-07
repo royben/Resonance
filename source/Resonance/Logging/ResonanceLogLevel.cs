@@ -9,12 +9,12 @@ namespace Resonance.Logging
     /// <summary>
     /// Represents a Resonance log item level.
     /// </summary>
-    public enum LogLevel
+    public enum ResonanceLogLevel
     {
-        Debug,
-        Info,
-        Warning,
-        Error,
-        Fatal,
+        Debug = 0,
+        Info = 1,
+        Warning = 2,
+        Error = 3,
+        Fatal = 4,
     }
 }
