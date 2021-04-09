@@ -35,7 +35,6 @@ namespace Resonance
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
-        private bool _gotChannelSecure;
         private bool _clearedQueues;
         private bool _isDisposing;
 
@@ -200,6 +199,16 @@ namespace Resonance
                 return _pendingRequests.Count;
             }
         }
+
+        /// <summary>
+        /// Gets the total of incoming messages.
+        /// </summary>
+        public int TotalIncomingMessages { get; private set; }
+
+        /// <summary>
+        /// Gets the total of outgoing messages.
+        /// </summary>
+        public int TotalOutgoingMessages { get; private set; }
 
         #endregion
 
@@ -433,12 +442,12 @@ namespace Resonance
 
                 ValidateConnection();
 
-                _gotChannelSecure = false;
-
                 HandShakeNegotiator.WriteHandShake -= HandShakeNegotiator_WriteHandShake;
                 HandShakeNegotiator.SymmetricPasswordAvailable -= HandShakeNegotiator_SymmetricPasswordAvailable;
+                HandShakeNegotiator.Completed -= HandShakeNegotiator_Completed;
                 HandShakeNegotiator.WriteHandShake += HandShakeNegotiator_WriteHandShake;
                 HandShakeNegotiator.SymmetricPasswordAvailable += HandShakeNegotiator_SymmetricPasswordAvailable;
+                HandShakeNegotiator.Completed += HandShakeNegotiator_Completed;
                 HandShakeNegotiator.Reset(CryptographyConfiguration.Enabled, CryptographyConfiguration.CryptographyProvider);
 
                 await Adapter.Connect();
@@ -448,21 +457,24 @@ namespace Resonance
 
                 StartThreads();
 
-                String connectionConfiguration = String.Empty;
-
-                if (Adapter != null)
+                if (Log.HasLevel(ResonanceLogLevel.Debug))
                 {
-                    connectionConfiguration += $"Adapter: {Adapter.GetType().Name}\n";
-                }
-                if (Encoder != null && Decoder != null)
-                {
-                    connectionConfiguration += $"Transcoding: {Encoder.GetType().Name} | {Decoder.GetType().Name}\n";
-                }
+                    String connectionConfiguration = String.Empty;
 
-                connectionConfiguration += $"KeepAlive Configuration:\n{KeepAliveConfiguration.ToJsonString()}\n";
-                connectionConfiguration += $"Cryptography Configuration:\n{CryptographyConfiguration.ToJsonString()}";
+                    if (Adapter != null)
+                    {
+                        connectionConfiguration += $"Adapter: {Adapter.GetType().Name}\n";
+                    }
+                    if (Encoder != null && Decoder != null)
+                    {
+                        connectionConfiguration += $"Transcoding: {Encoder.GetType().Name} | {Decoder.GetType().Name}\n";
+                    }
 
-                Log.Debug($"{this}: Connection Configuration:\n{connectionConfiguration}");
+                    connectionConfiguration += $"KeepAlive Configuration:\n{KeepAliveConfiguration.ToJsonString()}\n";
+                    connectionConfiguration += $"Cryptography Configuration:\n{CryptographyConfiguration.ToJsonString()}";
+
+                    Log.Debug($"{this}: Connection Configuration:\n{connectionConfiguration}");
+                }
             }
             catch (Exception ex)
             {
@@ -1086,27 +1098,16 @@ namespace Resonance
             {
                 if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
                 {
-                    Log.Debug($"{this}: Starting handshake...");
                     HandShakeNegotiator.BeginHandShake();
                 }
 
-                if (!_gotChannelSecure)
-                {
-                    _gotChannelSecure = true;
-
-                    IsChannelSecure = HandShakeNegotiator.State == ResonanceHandShakeState.Completed && Encoder.EncryptionConfiguration.Enabled && Decoder.EncryptionConfiguration.Enabled;
-
-                    if (IsChannelSecure)
-                    {
-                        Log.Info($"{this}: Channel is now secured!");
-                    }
-                }
-
-                Log.Debug($"{this}: Encoding message '{info.Message.GetType().Name}'...");
+                if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Encoding message '{info.Message.GetType().Name}'...");
 
                 byte[] data = Encoder.Encode(info);
 
-                Log.Debug($"{this}: Writing message '{info.Message.GetType().Name}' ({data.ToFriendlyByteSize()})...");
+                TotalOutgoingMessages++;
+
+                if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Writing message № {TotalOutgoingMessages} '{info.Message.GetType().Name}' ({data.ToFriendlyByteSize()})...");
 
                 Adapter.Write(data);
             }
@@ -1147,11 +1148,13 @@ namespace Resonance
                             }
                         }
 
+                        TotalIncomingMessages++;
+
                         ResonanceDecodingInformation info = new ResonanceDecodingInformation();
 
                         try
                         {
-                            Log.Debug($"{this}: Incoming message received ({data.ToFriendlyByteSize()}). decoding...");
+                            if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Incoming message received № {TotalIncomingMessages} ({data.ToFriendlyByteSize()}). decoding...");
 
                             if (Decoder != null)
                             {
@@ -1238,7 +1241,7 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnIncomingRequest(ResonanceDecodingInformation info)
         {
-            Log.Debug($"{this}: Incoming request received '{info.Message.GetType().Name}', Token: '{info.Token}'...");
+            if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Incoming request received '{info.Message.GetType().Name}', Token: '{info.Token}'...");
 
             ResonanceRequest request = ResonanceRequest.CreateGenericRequest(info.Message.GetType());
             request.Token = info.Token;
@@ -1254,7 +1257,7 @@ namespace Resonance
                 {
                     Task.Factory.StartNew(() =>
                     {
-                        Log.Debug($"{this}: Invoking request handler '{handler.RegisteredCallbackDescription}'...");
+                        if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Invoking request handler '{handler.RegisteredCallbackDescription}'...");
 
                         try
                         {
@@ -1264,7 +1267,7 @@ namespace Resonance
 
                                 if (result != null && result.Response != null)
                                 {
-                                    Log.Debug($"{this}: request handler '{handler.RegisteredCallbackDescription}' completed. Sending response...");
+                                    if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: request handler '{handler.RegisteredCallbackDescription}' completed. Sending response...");
                                     SendResponse(result.Response, request.Token, result.Config).GetAwaiter().GetResult();
                                 }
                                 else
@@ -1275,7 +1278,7 @@ namespace Resonance
                             else
                             {
                                 handler.Callback.Invoke(this, request);
-                                Log.Debug($"{this}: request handler '{handler.RegisteredCallbackDescription}' completed.");
+                                if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: request handler '{handler.RegisteredCallbackDescription}' completed.");
                             }
                         }
                         catch (Exception ex)
@@ -1417,7 +1420,7 @@ namespace Resonance
                     Task.Factory.StartNew(() =>
                     {
                         pendingContinuousRequest.ContinuousObservable.OnNext(info.Message);
-                        Log.Debug($"{this}: Continuous request '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}' completed.");
+                        if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Continuous request '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}' completed.");
                         pendingContinuousRequest.ContinuousObservable.OnCompleted();
                         OnResponseReceived(response);
                     });
@@ -1429,7 +1432,7 @@ namespace Resonance
 
                 Task.Factory.StartNew(() =>
                 {
-                    Log.Debug($"{this}: Continuous request '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}' failed.");
+                    if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Continuous request '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}' failed.");
                     pendingContinuousRequest.ContinuousObservable.OnError(new ResonanceResponseException(info.ErrorMessage));
                 });
             }
@@ -1443,7 +1446,7 @@ namespace Resonance
         {
             if (KeepAliveConfiguration.EnableAutoResponse)
             {
-                Log.Debug($"{this}: KeepAlive request received. Sending response...");
+                if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: KeepAlive request received. Sending response...");
 
                 try
                 {
@@ -1467,7 +1470,7 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnKeepAliveResponseReceived(ResonancePendingRequest pendingRequest, ResonanceDecodingInformation info)
         {
-            Log.Debug($"{this}: KeepAlive response received...");
+            if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: KeepAlive response received...");
             _pendingRequests.Remove(pendingRequest);
             pendingRequest.CompletionSource.SetResult(info.Message);
         }
@@ -1564,14 +1567,24 @@ namespace Resonance
 
         private void HandShakeNegotiator_WriteHandShake(object sender, ResonanceHandShakeWriteEventArgs e)
         {
-            Adapter.Write(e.Data);
+            Adapter?.Write(e.Data);
         }
 
         private void HandShakeNegotiator_SymmetricPasswordAvailable(object sender, ResonanceHandShakeSymmetricPasswordAvailableEventArgs e)
         {
-            Log.Debug($"{this}: Symmetric password created: {e.SymmetricPassword}");
-            Encoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
-            Decoder.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
+            Log.Debug($"{this}: Symmetric password obtained: {e.SymmetricPassword}");
+            Encoder?.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
+            Decoder?.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
+        }
+
+        private void HandShakeNegotiator_Completed(object sender, EventArgs e)
+        {
+            IsChannelSecure = HandShakeNegotiator.State == ResonanceHandShakeState.Completed && Encoder.EncryptionConfiguration.Enabled && Decoder.EncryptionConfiguration.Enabled;
+
+            if (IsChannelSecure)
+            {
+                Log.Info($"{this}: Channel is now secured!");
+            }
         }
 
         #endregion
@@ -1695,7 +1708,7 @@ namespace Resonance
 
                         if (pending.Request.Message != null)
                         {
-                            Log.Debug($"{this}: Aborting request '{pending.Request.Message.GetType().Name}'...");
+                            if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Aborting request '{pending.Request.Message.GetType().Name}'...");
                         }
 
                         OnRequestFailed(pending.Request, exception);
@@ -1736,7 +1749,7 @@ namespace Resonance
                     {
                         if (pendingResponse.Response.Message != null)
                         {
-                            Log.Debug($"{this}: Aborting response '{pendingResponse.Response.Message.GetType().Name}'...");
+                            if (Log.HasLevel(ResonanceLogLevel.Debug)) Log.Debug($"{this}: Aborting response '{pendingResponse.Response.Message.GetType().Name}'...");
                         }
 
                         if (!pendingResponse.CompletionSource.Task.IsCompleted)

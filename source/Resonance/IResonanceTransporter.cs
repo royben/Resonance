@@ -129,6 +129,16 @@ namespace Resonance
         int PendingRequestsCount { get; }
 
         /// <summary>
+        /// Gets the total of incoming messages.
+        /// </summary>
+        int TotalIncomingMessages { get; }
+
+        /// <summary>
+        /// Gets the total of outgoing messages.
+        /// </summary>
+        int TotalOutgoingMessages { get; }
+
+        /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>

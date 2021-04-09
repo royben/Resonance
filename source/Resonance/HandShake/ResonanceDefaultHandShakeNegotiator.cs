@@ -35,6 +35,11 @@ namespace Resonance.HandShake
         public event EventHandler<ResonanceHandShakeSymmetricPasswordAvailableEventArgs> SymmetricPasswordAvailable;
 
         /// <summary>
+        /// Occurs when the hand shake has completed.
+        /// </summary>
+        public event EventHandler Completed;
+
+        /// <summary>
         /// Gets the current state of the negotiation.
         /// </summary>
         public ResonanceHandShakeState State { get; private set; }
@@ -104,6 +109,7 @@ namespace Resonance.HandShake
 
             if (State == ResonanceHandShakeState.Idle)
             {
+                Log.Debug($"{this}: Starting handshake...");
                 State = ResonanceHandShakeState.InProgress;
                 Log.Info($"{this}: Sending Handshake Request...");
                 ResonanceHandShakeMessage request = new ResonanceHandShakeMessage();
@@ -232,12 +238,14 @@ namespace Resonance.HandShake
                         State = ResonanceHandShakeState.Completed;
                         OnWriteHandShake(HandShakeTranscoder.Encode(new ResonanceHandShakeMessage() { Type = ResonanceHandShakeMessageType.Complete, ClientId = ClientID }));
                         Log.Info($"{this}: Handshake completed.");
+                        Completed?.Invoke(this, new EventArgs());
                     }
                 }
                 else
                 {
                     State = ResonanceHandShakeState.Completed;
                     Log.Info($"{this}: Handshake completed.");
+                    Completed?.Invoke(this, new EventArgs());
                 }
             }
         }

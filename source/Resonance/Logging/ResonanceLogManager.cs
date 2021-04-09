@@ -57,6 +57,15 @@ namespace Resonance.Logging
         }
 
         /// <summary>
+        /// Returns true of the current <see cref="LogLevel"/> determines that the specified log level should be logged.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        public bool HasLevel(ResonanceLogLevel level)
+        {
+            return level >= LogLevel;
+        }
+
+        /// <summary>
         /// Submits a debug level log item.
         /// </summary>
         /// <param name="message">The message.</param>

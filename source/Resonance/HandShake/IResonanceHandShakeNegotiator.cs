@@ -21,6 +21,11 @@ namespace Resonance.HandShake
         event EventHandler<ResonanceHandShakeSymmetricPasswordAvailableEventArgs> SymmetricPasswordAvailable;
 
         /// <summary>
+        /// Occurs when the hand shake has completed.
+        /// </summary>
+        event EventHandler Completed;
+
+        /// <summary>
         /// Gets the negotiator random client id.
         /// </summary>
         int ClientID { get; }

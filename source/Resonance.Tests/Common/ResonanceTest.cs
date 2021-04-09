@@ -46,7 +46,14 @@ namespace Resonance.Tests.Common
             }
             else
             {
-                Log.LogLevel = ResonanceLogLevel.Debug;
+                if (Debugger.IsAttached)
+                {
+                    Log.LogLevel = ResonanceLogLevel.Debug;
+                }
+                else
+                {
+                    Log.LogLevel = ResonanceLogLevel.Info;
+                }
             }
 
             ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;

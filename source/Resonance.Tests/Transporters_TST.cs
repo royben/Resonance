@@ -676,5 +676,44 @@ namespace Resonance.Tests
             await t1.DisposeAsync(true);
             await t2.DisposeAsync(true);
         }
+
+        [TestMethod]
+        public async Task Manual_Begin_Handshake()
+        {
+            Init();
+
+            var t1 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TST")
+                .WithJsonTranscoding()
+                .NoKeepAlive()
+                .WithEncryption()
+                .Build();
+
+            var t2 = ResonanceTransporter.Builder
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TST")
+                .WithJsonTranscoding()
+                .NoKeepAlive()
+                .WithEncryption()
+                .Build();
+
+
+            await t1.Connect();
+            await t2.Connect();
+
+            await t1.HandShakeNegotiator.BeginHandShakeAsync();
+            await t2.HandShakeNegotiator.BeginHandShakeAsync();
+
+            Assert.IsTrue(t1.IsChannelSecure);
+            Assert.IsTrue(t2.IsChannelSecure);
+
+            await t1.SendObject(new CalculateRequest());
+
+            await t1.DisposeAsync();
+            await t2.DisposeAsync();
+        }
     }
 }
