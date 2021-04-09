@@ -20,7 +20,11 @@ namespace Resonance.Adapters.SignalR
     public class SignalRAdapter<TCredentials> : ResonanceAdapter
     {
         private ISignalRClient _client;
-        private TCredentials _credentials;
+
+        /// <summary>
+        /// Gets the credentials used to authenticate with the remote Resonance SignalR hub.
+        /// </summary>
+        public TCredentials Credentials { get; private set; }
 
         /// <summary>
         /// Gets the URL of the SignalR service.
@@ -76,7 +80,7 @@ namespace Resonance.Adapters.SignalR
             Mode = mode;
             Url = url;
             ServiceId = serviceId;
-            _credentials = credentials;
+            Credentials = credentials;
             Role = SignalRAdapterRole.Connect;
         }
 
@@ -97,7 +101,7 @@ namespace Resonance.Adapters.SignalR
             adapter.Url = url;
             adapter.ServiceId = serviceId;
             adapter.SessionId = sessionId;
-            adapter._credentials = credentials;
+            adapter.Credentials = credentials;
             adapter.Role = SignalRAdapterRole.Accept;
 
             return adapter;
@@ -176,7 +180,7 @@ namespace Resonance.Adapters.SignalR
                         });
 
                         Log.Info($"{this}: Authenticating with the remote hub...");
-                        _client.Invoke(ResonanceHubMethods.Login, _credentials).GetAwaiter().GetResult();
+                        _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
 
                         if (Role == SignalRAdapterRole.Connect)
                         {

@@ -1,9 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
+using Resonance.Adapters.SignalR;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
+using Resonance.SignalR;
 using Resonance.Tests.Common;
+using Resonance.Tests.SignalR;
 using Resonance.Transcoding.Json;
 using System;
 using System.Net;
@@ -99,6 +102,65 @@ namespace Resonance.Tests
             Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void Usb_Adapter_Builder()
+        {
+            Init();
+
+            IResonanceTransporter usbTransporter = ResonanceTransporter.Builder
+               .Create()
+               .WithUsbAdapter()
+               .WithPort("COM1")
+               .WithBaudRate(Adapters.Usb.BaudRates.BR_115200)
+               .WithTranscoding<JsonEncoder, JsonDecoder>()
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithCompression()
+               .Build();
+
+            Assert.IsNotNull(usbTransporter);
+            Assert.IsInstanceOfType(usbTransporter.Adapter, typeof(UsbAdapter));
+            Assert.IsTrue((usbTransporter.Adapter as UsbAdapter).Port == "COM1");
+            Assert.IsTrue((usbTransporter.Adapter as UsbAdapter).BaudRate == (int)BaudRates.BR_115200);
+            Assert.IsInstanceOfType(usbTransporter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(usbTransporter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(usbTransporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void SignalR_Adapter_Builder()
+        {
+            Init();
+
+            IResonanceTransporter signalRTransporter = ResonanceTransporter.Builder
+               .Create()
+               .WithSignalRAdapter(SignalRMode.Legacy)
+               .WithCredentials<TestCredentials>(new TestCredentials() { Name = "TEST" })
+               .WithServiceId("1234")
+               .WithUrl("some url")
+               .WithTranscoding<JsonEncoder, JsonDecoder>()
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithCompression()
+               .Build();
+
+            Assert.IsNotNull(signalRTransporter);
+            Assert.IsInstanceOfType(signalRTransporter.Adapter, typeof(SignalRAdapter<TestCredentials>));
+            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Mode == SignalRMode.Legacy);
+            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Credentials.Name == "TEST");
+            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).ServiceId == "1234");
+            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Url == "some url");
+            Assert.IsInstanceOfType(signalRTransporter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(signalRTransporter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(signalRTransporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(signalRTransporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(signalRTransporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(signalRTransporter.Decoder.CompressionConfiguration.Enabled);
         }
     }
 }
