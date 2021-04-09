@@ -57,9 +57,9 @@ namespace Resonance.SignalR.Services
             _client.On<String, TAdapterInformation>(ResonanceHubMethods.ConnectionRequest, OnConnectionRequest);
         }
 
-        protected virtual Task<SignalRAdapter<TCredentials>> AcceptConnection(string sessionId)
+        protected virtual SignalRAdapter<TCredentials> AcceptConnection(string sessionId)
         {
-            return Task.FromResult((SignalRAdapter<TCredentials>)SignalRAdapter<TCredentials>.AcceptConnection(Credentials, _client.Url, ServiceInformation.ServiceId, sessionId, Mode));
+            return SignalRAdapter<TCredentials>.AcceptConnection(Credentials, _client.Url, ServiceInformation.ServiceId, sessionId, Mode);
         }
 
         protected virtual void OnConnectionRequest(string sessionId, TAdapterInformation adapterInformation)
@@ -71,9 +71,9 @@ namespace Resonance.SignalR.Services
             });
         }
 
-        protected virtual Task DeclineConnection(string sessionId)
+        protected virtual void DeclineConnection(string sessionId)
         {
-            return _client.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
+            _client.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
         }
 
         /// <summary>

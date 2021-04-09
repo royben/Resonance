@@ -15,8 +15,8 @@ namespace Resonance.SignalR.Services
     /// <seealso cref="System.EventArgs" />
     public class ConnectionRequestEventArgs<TCredentials, TAdapterInformation> : EventArgs
     {
-        private Func<String, Task<SignalRAdapter<TCredentials>>> _accept;
-        private Func<String, Task> _decline;
+        private Func<String, SignalRAdapter<TCredentials>> _accept;
+        private Action<String> _decline;
 
         /// <summary>
         /// Gets or sets the remote session identifier.
@@ -33,7 +33,7 @@ namespace Resonance.SignalR.Services
         /// </summary>
         /// <param name="accept">The accept callback.</param>
         /// <param name="decline">The decline callback.</param>
-        public ConnectionRequestEventArgs(Func<String, Task<SignalRAdapter<TCredentials>>> accept, Func<String, Task> decline)
+        public ConnectionRequestEventArgs(Func<String, SignalRAdapter<TCredentials>> accept, Action<String> decline)
         {
             _accept = accept;
             _decline = decline;
@@ -43,7 +43,7 @@ namespace Resonance.SignalR.Services
         /// Accepts the SignalR connection and return an adapter.
         /// </summary>
         /// <returns></returns>
-        public Task<SignalRAdapter<TCredentials>> Accept()
+        public SignalRAdapter<TCredentials> Accept()
         {
             return _accept?.Invoke(SessionId);
         }
@@ -52,9 +52,9 @@ namespace Resonance.SignalR.Services
         /// Declines the SignalR connection.
         /// </summary>
         /// <returns></returns>
-        public Task Decline()
+        public void Decline()
         {
-            return _decline?.Invoke(SessionId);
+            _decline?.Invoke(SessionId);
         }
     }
 }

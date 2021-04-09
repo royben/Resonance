@@ -4,6 +4,7 @@ using Resonance.Tests.Common;
 using Resonance.Messages;
 using Resonance.Transporters;
 using System;
+using System.Threading.Tasks;
 
 namespace Resonance.Tests
 {
@@ -12,45 +13,45 @@ namespace Resonance.Tests
     public class RequestHandlers_TST : ResonanceTest
     {
         [TestMethod]
-        public void Standard_Request_Handler()
+        public async Task Standard_Request_Handler()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            await t1.Connect();
+            await t2.Connect();
 
             t2.RegisterRequestHandler<CalculateRequest>(CalculateRequest_Standard_Handler);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            await t1.DisposeAsync(true);
+            await t2.DisposeAsync(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }
 
         [TestMethod]
-        public void Request_Response_Handler()
+        public async Task Request_Response_Handler()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            await t1.Connect();
+            await t2.Connect();
 
             t2.RegisterRequestHandler<CalculateRequest, CalculateResponse>(CalculateRequest_Response_Handler);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            await t1.DisposeAsync(true);
+            await t2.DisposeAsync(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }

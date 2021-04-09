@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 
 namespace Resonance.Discovery
@@ -78,17 +79,17 @@ namespace Resonance.Discovery
         /// <summary>
         /// Starts the discovery service.
         /// </summary>
-        public void Start()
+        public async Task Start()
         {
             if (!IsStarted)
             {
                 _tcpValidationServer = new ResonanceTcpServer(Port);
-                _tcpValidationServer.ClientConnected += (x, e) =>
+                _tcpValidationServer.ConnectionRequest += (x, e) => 
                 {
-                    e.TcpClient.Dispose();
+                    e.Decline();
                 };
 
-                _tcpValidationServer.Start();
+                await _tcpValidationServer.Start();
 
                 _timer = new Timer();
                 _timer.Interval = Interval.TotalMilliseconds;
@@ -103,11 +104,11 @@ namespace Resonance.Discovery
         /// <summary>
         /// Stops the discovery service.
         /// </summary>
-        public void Stop()
+        public async Task Stop()
         {
             if (IsStarted)
             {
-                _tcpValidationServer.Stop();
+                await _tcpValidationServer.Stop();
 
                 //Transmit the discovery packet one more time so clients can tell that we have disconnected.
                 BroadcastDiscoveryPacket();
@@ -149,7 +150,16 @@ namespace Resonance.Discovery
         /// </summary>
         public void Dispose()
         {
-            Stop();
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes component resources asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        public Task DisposeAsync()
+        {
+            return Stop();
         }
     }
 }

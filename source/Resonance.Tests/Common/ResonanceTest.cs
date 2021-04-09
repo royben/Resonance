@@ -34,7 +34,7 @@ namespace Resonance.Tests.Common
 
         public bool IsRunningOnAzurePipelines { get; set; }
 
-        protected void Init()
+        public void Init()
         {
             InMemoryAdapter.DisposeAll();
 
@@ -46,7 +46,7 @@ namespace Resonance.Tests.Common
             }
             else
             {
-                Log.LogLevel = ResonanceLogLevel.Info;
+                Log.LogLevel = ResonanceLogLevel.Debug;
             }
 
             ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;
@@ -55,8 +55,8 @@ namespace Resonance.Tests.Common
 
         private void Default_LogItemAvailable(object sender, ResonanceLogItemAvailableEventArgs e)
         {
-            TestContext.WriteLine(e.ToString());
-            Debug.WriteLine(e.ToString());
+            TestContext.WriteLine(e.LogItem.Message);
+            Debug.WriteLine(e.LogItem.Message);
         }
     }
 }

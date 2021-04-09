@@ -23,7 +23,7 @@ namespace Resonance.Tests
     public class SignalR_TST : ResonanceTest
     {
         [TestMethod]
-        public void SignalR_Legacy_Reading_Writing()
+        public async Task SignalR_Legacy_Reading_Writing()
         {
             Init();
 
@@ -35,11 +35,11 @@ namespace Resonance.Tests
             SignalRServer server = new SignalRServer(hostUrl);
             server.Start();
 
-            SignalR_Reading_Writing(hubUrl, SignalRMode.Legacy);
+            await SignalR_Reading_Writing(hubUrl, SignalRMode.Legacy);
         }
 
         [TestMethod]
-        public void SignalR_Core_Reading_Writing()
+        public async Task SignalR_Core_Reading_Writing()
         {
             Init();
 
@@ -74,12 +74,12 @@ namespace Resonance.Tests
                 Thread.Sleep(1000);
             }
 
-            SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
+            await SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
 
             cmd.Kill();
         }
 
-        private void SignalR_Reading_Writing(String url, SignalRMode mode)
+        private async Task SignalR_Reading_Writing(String url, SignalRMode mode)
         {
             TestCredentials credentials = new TestCredentials() { Name = "Test" };
             TestServiceInformation serviceInfo = new TestServiceInformation() { ServiceId = "My Test Service" };
@@ -94,16 +94,15 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter serviceTransporter = new ResonanceJsonTransporter();
 
-            registeredService.ConnectionRequest += (_, e) =>
+            registeredService.ConnectionRequest += async (_, e) =>
             {
                 Assert.IsTrue(e.RemoteAdapterInformation.Information == "No information on the remote adapter");
-                var adapter = e.Accept().GetAwaiter().GetResult();
-                serviceTransporter.Adapter = adapter;
-                serviceTransporter.Connect().GetAwaiter().GetResult();
+                serviceTransporter.Adapter = e.Accept();
+                await serviceTransporter.Connect();
                 connected = true;
             };
 
-            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode).GetAwaiter().GetResult();
+            var remoteServices = await ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode);
 
             Assert.IsTrue(remoteServices.Count == 1);
 
@@ -113,45 +112,14 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
 
-            clientTransporter.Connect().GetAwaiter().GetResult();
+            await clientTransporter.Connect();
 
             while (!connected)
             {
-                Thread.Sleep(100);
+                Thread.Sleep(10);
             }
 
-            clientTransporter.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                clientTransporter.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
-
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 10; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = serviceTransporter.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            serviceTransporter.Dispose(true);
-            clientTransporter.Dispose(true);
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            Assert.IsTrue(percentageOfOutliers < 20, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+            await TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, false, 1000, 20);
         }
     }
 }

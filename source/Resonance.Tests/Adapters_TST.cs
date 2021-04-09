@@ -17,6 +17,7 @@ using Resonance.Servers.Tcp;
 using Resonance.Servers.NamedPipes;
 using Resonance.Adapters.NamedPipes;
 using Resonance.Adapters.InMemory;
+using System.Threading.Tasks;
 
 namespace Resonance.Tests
 {
@@ -25,181 +26,66 @@ namespace Resonance.Tests
     public class Adapters_TST : ResonanceTest
     {
         [TestMethod]
-        public void InMemory_Adapter_Writing_Reading()
+        public async Task InMemory_Adapter_Writing_Reading()
         {
             Init();
-
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
-
-            t1.CryptographyConfiguration.Enabled = true;
-            t2.CryptographyConfiguration.Enabled = true;
-
-            t2.Connect().Wait();
-            t1.Connect().Wait();
-
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
-
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            t1.Dispose(true);
-            t2.Dispose(true);
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            if (!IsRunningOnAzurePipelines)
-            {
-                Assert.IsTrue(percentageOfOutliers < 2, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
-            }
+            await TestUtils.Read_Write_Test(
+                this, 
+                new InMemoryAdapter("TST"), 
+                new InMemoryAdapter("TST"), 
+                false, 
+                false, 
+                1000, 
+                2);
         }
 
         [TestMethod]
-        public void Tcp_Adapter_Writing_Reading()
+        public async Task Tcp_Adapter_Writing_Reading()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
-
-            t1.CryptographyConfiguration.Enabled = false;
-            t2.CryptographyConfiguration.Enabled = true;
-
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
-            server.Start();
-            server.ClientConnected += (x, e) =>
+            await server.Start();
+            server.ConnectionRequest += async (x, e) => 
             {
-                t2.Adapter = new TcpAdapter(e.TcpClient);
-                t2.Connect().Wait();
+                t2.Adapter = e.Accept();
+                await t2.Connect();
             };
 
-            t1.Connect().Wait();
+            await t1.Connect();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }
 
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
+            await TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
 
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            t1.Dispose(true);
-            t2.Dispose(true);
-            server.Dispose();
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            if (!IsRunningOnAzurePipelines)
-            {
-                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
-            }
+            await server.DisposeAsync();
         }
 
         [TestMethod]
-        public void Udp_Adapter_Writing_Reading()
+        public async Task Udp_Adapter_Writing_Reading()
         {
             Init();
 
             IPAddress localIpAddress = IPAddress.Parse(TcpAdapter.GetLocalIPAddress());
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
-
-            t1.Connect().Wait();
-            t2.Connect().Wait();
-
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
-
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            t1.Dispose(true);
-            t2.Dispose(true);
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            if (!IsRunningOnAzurePipelines)
-            {
-                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
-            }
+            await TestUtils.Read_Write_Test(
+                this, 
+                new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)), 
+                new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)), 
+                false, 
+                false, 
+                1000, 
+                5);
         }
 
         [TestMethod]
-        public void Usb_Adapter_Writing_Reading()
+        public async Task Usb_Adapter_Writing_Reading()
         {
             Init();
 
@@ -212,7 +98,7 @@ namespace Resonance.Tests
             String virtualSerialDeviceName = "HHD Software Virtual Serial Port";
             String errorMessage = "Could not locate any virtual serial port bridge. Please download from https://freevirtualserialports.com and create a local bridge.";
 
-            var devices = UsbDevice.GetAvailableDevices().GetAwaiter().GetResult();
+            var devices = await UsbDevice.GetAvailableDevices();
 
             var virtualPort1 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName));
             Assert.IsNotNull(virtualPort1, errorMessage);
@@ -220,51 +106,18 @@ namespace Resonance.Tests
             var virtualPort2 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName) && x != virtualPort1);
             Assert.IsNotNull(virtualPort2, errorMessage);
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort1, BaudRates.BR_19200));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new UsbAdapter(virtualPort2, BaudRates.BR_19200));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
-
-            t1.Connect().Wait();
-            t2.Connect().Wait();
-
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
-
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            t1.Dispose(true);
-            t2.Dispose(true);
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            Assert.IsTrue(percentageOfOutliers < 10, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
+            await TestUtils.Read_Write_Test(
+                this,
+                new UsbAdapter(virtualPort1, BaudRates.BR_19200),
+                new UsbAdapter(virtualPort2, BaudRates.BR_19200),
+                false,
+                false,
+                1000,
+                10);
         }
 
         [TestMethod]
-        public void NamedPipes_Adapter_Writing_Reading()
+        public async Task NamedPipes_Adapter_Writing_Reading()
         {
             Init();
 
@@ -275,56 +128,23 @@ namespace Resonance.Tests
             t2.DisableHandShake = true;
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
-            server.Start();
-            server.ClientConnected += (x, e) =>
+            await server.Start();
+            server.ConnectionRequest += async (x, e) =>
             {
-                t2.Adapter = new NamedPipesAdapter(e.PipeStream);
-                t2.Connect().Wait();
+                t2.Adapter = e.Accept();
+                await t2.Connect();
             };
 
-            t1.Connect().Wait();
+            await t1.Connect();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }
 
-            t2.RequestReceived += (s, e) =>
-            {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
-            };
+            await TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
 
-            Stopwatch watch = new Stopwatch();
-
-            List<double> measurements = new List<double>();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                watch.Restart();
-
-                var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-
-                measurements.Add(watch.ElapsedMilliseconds);
-
-                Assert.AreEqual(response.Sum, request.A + request.B);
-            }
-
-            watch.Stop();
-
-            t1.Dispose(true);
-            t2.Dispose(true);
-            server.Dispose();
-
-            var outliers = TestHelper.GetOutliers(measurements);
-
-            double percentageOfOutliers = outliers.Count / (double)measurements.Count * 100d;
-
-            if (!IsRunningOnAzurePipelines)
-            {
-                Assert.IsTrue(percentageOfOutliers < 5, $"Request/Response duration measurements contains {percentageOfOutliers}% outliers and is considered a performance issue.");
-            }
+            await server .DisposeAsync();
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceComponent" />
     /// <seealso cref="Resonance.IResonanceStateComponent" />
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
-    public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent , IDisposable, IResonanceAsyncDisposableComponent
+    public interface IResonanceAdapter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent , IDisposable, IResonanceAsyncDisposable
     {
         /// <summary>
         /// Gets the total bytes received.
@@ -31,9 +31,9 @@ namespace Resonance
         long TransferRate { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to enable compression/decompression of data.
+        /// Gets or sets a value indicating whether to change the adapter state to "Failed" when writing to the adapter fails.
         /// </summary>
-        bool EnableCompression { get; set; }
+        bool FailAdapterWhenWriteFails { get; set; }
 
         /// <summary>
         /// Gets or sets the adapter data writing mode.

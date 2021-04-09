@@ -50,14 +50,5 @@ namespace Resonance
             FailTransporterOnTimeout = true;
             Retries = 5;
         }
-
-        /// <summary>
-        /// Clones this instance.
-        /// </summary>
-        /// <returns></returns>
-        public ResonanceKeepAliveConfiguration Clone()
-        {
-            return this.MemberwiseClone() as ResonanceKeepAliveConfiguration;
-        }
     }
 }

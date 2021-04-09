@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.Adapters.Tcp;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,16 +13,13 @@ namespace Resonance.Servers.Tcp
     /// <summary>
     /// Represents a TCP/IP listener wrapper.
     /// </summary>
-    public class ResonanceTcpServer : ResonanceObject, IDisposable
+    public class ResonanceTcpServer : ResonanceObject, IResonanceListeningServer<TcpAdapter>
     {
         private TcpListener _listener;
 
         #region Events
 
-        /// <summary>
-        /// Occurs when a new <see cref="TcpClient"/> has connected.
-        /// </summary>
-        public event EventHandler<ResonanceTcpServerClientConnectedEventArgs> ClientConnected;
+        public event EventHandler<ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter>> ConnectionRequest;
 
         #endregion
 
@@ -33,7 +31,7 @@ namespace Resonance.Servers.Tcp
         public int Port { get; private set; }
 
         /// <summary>
-        /// Returns true if the Server instance is running.
+        /// Gets a value indicating whether this server is currently listening for incoming connections.
         /// </summary>
         public bool IsStarted { get; private set; }
 
@@ -54,32 +52,41 @@ namespace Resonance.Servers.Tcp
         #region Public Methods
 
         /// <summary>
-        /// Start Listening for incoming connections.
+        /// Start listening for incoming connections.
         /// </summary>
-        public void Start()
+        /// <returns></returns>
+        public Task Start()
         {
-            if (!IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                _listener = new TcpListener(System.Net.IPAddress.Any, Port);
-                _listener.ExclusiveAddressUse = false;
-                _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _listener.Start();
-                IsStarted = true;
-                Log.Info($"TCP server started on port {Port}.");
-                WaitForConnection();
-            }
+                if (!IsStarted)
+                {
+                    _listener = new TcpListener(System.Net.IPAddress.Any, Port);
+                    _listener.ExclusiveAddressUse = false;
+                    _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    _listener.Start();
+                    IsStarted = true;
+                    Log.Info($"TCP server started on port {Port}.");
+                    WaitForConnection();
+                }
+            });
         }
+
         /// <summary>
         /// Stop listening for incoming connections.
         /// </summary>
-        public void Stop()
+        /// <returns></returns>
+        public Task Stop()
         {
-            if (IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                _listener.Stop();
-                IsStarted = false;
-                Log.Info($"TCP server stopped on port {Port}.");
-            }
+                if (IsStarted)
+                {
+                    _listener.Stop();
+                    IsStarted = false;
+                    Log.Info($"TCP server stopped on port {Port}.");
+                }
+            });
         }
 
         #endregion
@@ -97,7 +104,7 @@ namespace Resonance.Servers.Tcp
             {
                 try
                 {
-                    OnClientConnected(_listener.EndAcceptTcpClient(ar));
+                    OnConnectionRequest(_listener.EndAcceptTcpClient(ar));
                     WaitForConnection();
                 }
                 catch (ObjectDisposedException)
@@ -112,12 +119,18 @@ namespace Resonance.Servers.Tcp
         #region Virtual Methods
 
         /// <summary>
-        /// Called when a new <see cref="TcpClient"/> has connected.
+        /// Called when a new tcp client has connected.
         /// </summary>
-        /// <param name="tcpClient">The tcp client.</param>
-        protected virtual void OnClientConnected(TcpClient tcpClient)
+        /// <param name="tcpClient">The TCP client.</param>
+        protected virtual void OnConnectionRequest(TcpClient tcpClient)
         {
-            ClientConnected?.Invoke(this, new ResonanceTcpServerClientConnectedEventArgs(tcpClient));
+            ConnectionRequest?.Invoke(this, new ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter>(() => 
+            {
+                return new TcpAdapter(tcpClient);
+            }, () => 
+            {
+                tcpClient.Dispose();
+            }));
         }
 
         #endregion
@@ -129,7 +142,16 @@ namespace Resonance.Servers.Tcp
         /// </summary>
         public void Dispose()
         {
-            Stop();
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes component resources asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        public Task DisposeAsync()
+        {
+            return Stop();
         }
 
         #endregion

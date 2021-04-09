@@ -13,8 +13,8 @@ namespace Resonance.Examples
         public async void Demo()
         {
             ResonanceTcpServer server = new ResonanceTcpServer(8888);
-            server.ClientConnected += Server_ClientConnected;
-            server.Start();
+            server.ConnectionRequest += Server_ConnectionRequest;
+            await server.Start();
 
             IResonanceTransporter transporter1 = ResonanceTransporter.Builder
                 .Create().WithTcpAdapter()
@@ -37,12 +37,11 @@ namespace Resonance.Examples
             Console.WriteLine(response.Sum);
         }
 
-        private async void Server_ClientConnected(object sender, ResonanceTcpServerClientConnectedEventArgs e)
+        private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<Adapters.Tcp.TcpAdapter> e)
         {
             IResonanceTransporter transporter2 = ResonanceTransporter.Builder
                 .Create()
-                .WithTcpAdapter()
-                .FromTcpClient(e.TcpClient)
+                .WithAdapter(e.Accept())
                 .WithJsonTranscoding()
                 .WithKeepAlive()
                 .NoEncryption()

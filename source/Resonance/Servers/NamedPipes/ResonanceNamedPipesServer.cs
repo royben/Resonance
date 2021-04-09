@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.Adapters.NamedPipes;
+using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Linq;
@@ -11,16 +12,16 @@ namespace Resonance.Servers.NamedPipes
     /// Represents a simple named pipes server.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
-    public class ResonanceNamedPipesServer : ResonanceObject, IDisposable
+    public class ResonanceNamedPipesServer : ResonanceObject, IResonanceListeningServer<NamedPipesAdapter>
     {
         private NamedPipeServerStream _pendingPipeStream;
 
         #region Events
 
         /// <summary>
-        /// Occurs when a new named pipes client has connected.
+        /// Occurs when a new connection request is available.
         /// </summary>
-        public event EventHandler<ResonanceNamedPipeServerClientConnectedEventArgs> ClientConnected;
+        public event EventHandler<ResonanceListeningServerConnectionRequestEventArgs<NamedPipesAdapter>> ConnectionRequest;
 
         #endregion
 
@@ -56,27 +57,33 @@ namespace Resonance.Servers.NamedPipes
         /// <summary>
         /// Starts the server.
         /// </summary>
-        public void Start()
+        public Task Start()
         {
-            if (!IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                WaitForConnection();
-                IsStarted = true;
-                Log.Info($"{this}: Started...");
-            }
+                if (!IsStarted)
+                {
+                    WaitForConnection();
+                    IsStarted = true;
+                    Log.Info($"{this}: Started...");
+                }
+            });
         }
 
         /// <summary>
         /// Stops the server.
         /// </summary>
-        public void Stop()
+        public Task Stop()
         {
-            if (IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                IsStarted = false;
-                _pendingPipeStream?.Dispose();
-                Log.Info($"{this}: Stopped.");
-            }
+                if (IsStarted)
+                {
+                    IsStarted = false;
+                    _pendingPipeStream?.Dispose();
+                    Log.Info($"{this}: Stopped.");
+                }
+            });
         }
 
         #endregion
@@ -108,7 +115,7 @@ namespace Resonance.Servers.NamedPipes
                 if (server != null)
                 {
                     server.EndWaitForConnection(ar);
-                    OnClientConnected(server);
+                    OnConnectionRequest(server);
                 }
 
                 WaitForConnection();
@@ -127,9 +134,16 @@ namespace Resonance.Servers.NamedPipes
         /// Called when a new named pipes client has connected.
         /// </summary>
         /// <param name="pipe">The pipe.</param>
-        protected virtual void OnClientConnected(PipeStream pipe)
+        protected virtual void OnConnectionRequest(PipeStream pipe)
         {
-            ClientConnected?.Invoke(this, new ResonanceNamedPipeServerClientConnectedEventArgs(pipe));
+            ConnectionRequest?.Invoke(this, new ResonanceListeningServerConnectionRequestEventArgs<NamedPipesAdapter>(
+                () =>
+                {
+                    return new NamedPipesAdapter(pipe);
+                }, () =>
+                {
+                    pipe.Dispose();
+                }));
         }
 
         #endregion
@@ -150,7 +164,16 @@ namespace Resonance.Servers.NamedPipes
         /// </summary>
         public void Dispose()
         {
-            Stop();
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes component resources asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        public Task DisposeAsync()
+        {
+            return Stop();
         }
 
         #endregion

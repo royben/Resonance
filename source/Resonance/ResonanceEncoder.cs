@@ -34,8 +34,8 @@ namespace Resonance
             var att = this.GetType().GetCustomAttribute<ResonanceTranscodingAttribute>();
             _transcodingName = att?.Name;
             _headerTranscoder = OnCreateHeaderTranscoder();
-            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration.Clone();
-            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration.Clone();
+            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration();
+            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration();
         }
 
         /// <summary>
@@ -54,7 +54,13 @@ namespace Resonance
                 {
                     _headerTranscoder.Encode(writer, info);
 
-                    if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
+                    if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest
+                        && 
+                        info.Type != ResonanceTranscodingInformationType.KeepAliveResponse
+                        &&
+                        info.Type != ResonanceTranscodingInformationType.Disconnect
+                        &&
+                        !info.HasError)
                     {
                         byte[] msgData = null;
 
@@ -117,7 +123,7 @@ namespace Resonance
         /// <returns></returns>
         protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
         {
-            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder;
+            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder();
         }
 
         /// <summary>

@@ -30,8 +30,8 @@ namespace Resonance
         public ResonanceDecoder()
         {
             _headerTranscoder = OnCreateHeaderTranscoder();
-            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration.Clone();
-            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration.Clone();
+            CompressionConfiguration = ResonanceGlobalSettings.Default.DefaultCompressionConfiguration();
+            EncryptionConfiguration = ResonanceGlobalSettings.Default.DefaultEncryptionConfiguration();
         }
 
         /// <summary>
@@ -41,35 +41,49 @@ namespace Resonance
         /// <param name="info">The decoding information object to populate.</param>
         public virtual void Decode(byte[] data, ResonanceDecodingInformation info)
         {
-            using (MemoryStream ms = new MemoryStream(data))
+            try
             {
-                using (BinaryReader reader = new BinaryReader(ms))
+                using (MemoryStream ms = new MemoryStream(data))
                 {
-                    _headerTranscoder.Decode(reader, info);
-                    OnTranscodingInformationDecoded(info);
-
-                    if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest && info.Type != ResonanceTranscodingInformationType.KeepAliveResponse)
+                    using (BinaryReader reader = new BinaryReader(ms))
                     {
-                        ms.Position = info.ActualMessageStreamPosition;
+                        _headerTranscoder.Decode(reader, info);
+                        OnTranscodingInformationDecoded(info);
 
-                        byte[] msgData = reader.ReadBytes((int)(ms.Length - ms.Position));
-
-                        if (info.IsCompressed)
+                        if (info.Type != ResonanceTranscodingInformationType.KeepAliveRequest
+                            &&
+                            info.Type != ResonanceTranscodingInformationType.KeepAliveResponse
+                            &&
+                            info.Type != ResonanceTranscodingInformationType.Disconnect
+                            &&
+                            !info.HasError)
                         {
-                            msgData = DecompressMessageData(msgData);
-                        }
+                            ms.Position = info.ActualMessageStreamPosition;
 
-                        if (EncryptionConfiguration.Enabled)
-                        {
-                            msgData = DecryptMessageData(msgData);
-                        }
+                            byte[] msgData = reader.ReadBytes((int)(ms.Length - ms.Position));
 
-                        using (MemoryStream msgMs = new MemoryStream(msgData))
-                        {
-                            info.Message = Decode(msgMs);
+                            if (info.IsCompressed)
+                            {
+                                msgData = DecompressMessageData(msgData);
+                            }
+
+                            if (EncryptionConfiguration.Enabled)
+                            {
+                                msgData = DecryptMessageData(msgData);
+                            }
+
+                            using (MemoryStream msgMs = new MemoryStream(msgData))
+                            {
+                                info.Message = Decode(msgMs);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                info.DecoderException = ex;
+                throw;
             }
         }
 
@@ -127,7 +141,7 @@ namespace Resonance
         /// <returns></returns>
         protected virtual IResonanceHeaderTranscoder OnCreateHeaderTranscoder()
         {
-            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder;
+            return ResonanceGlobalSettings.Default.DefaultHeaderTranscoder();
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace Resonance.Discovery
     /// <typeparam name="TDecoder">The type of the decoder.</typeparam>
     /// <typeparam name="TDiscoveredService">The type of the discovered service.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDecoder, TDiscoveredService> : IDisposable where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new() where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
+    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDecoder, TDiscoveredService> : IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new() where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
     {
         /// <summary>
         /// Occurs when a matching service has been discovered.
@@ -37,13 +37,13 @@ namespace Resonance.Discovery
         /// <summary>
         /// Start discovering.
         /// </summary>
-        void Start();
+        Task Start();
 
 
         /// <summary>
         /// Stop discovering.
         /// </summary>
-        void Stop();
+        Task Stop();
 
         /// <summary>
         /// Asynchronous method for collecting discovered services within the given duration.

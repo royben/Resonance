@@ -87,42 +87,50 @@ namespace Resonance.Discovery
         /// <summary>
         /// Start discovering.
         /// </summary>
-        public void Start()
+        public Task Start()
         {
-            if (!IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                IsStarted = true;
+                if (!IsStarted)
+                {
+                    _udpClient = new UdpClient();
+                    _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, Port));
+                    _udpClient.EnableBroadcast = true;
 
-                _udpClient = new UdpClient();
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, Port));
-                _udpClient.EnableBroadcast = true;
+                    _discoveredServices = new List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>();
+                    _receiveThread = new Thread(ReceiveThreadMethod);
+                    _receiveThread.IsBackground = true;
 
-                _discoveredServices = new List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>();
-                _receiveThread = new Thread(ReceiveThreadMethod);
-                _receiveThread.IsBackground = true;
-                _receiveThread.Start();
-            }
+                    IsStarted = true;
+                    _receiveThread.Start();
+                }
+            });
         }
 
         /// <summary>
         /// Stop discovering.
         /// </summary>
-        public void Stop()
+        public Task Stop()
         {
-            if (IsStarted)
+            return Task.Factory.StartNew(() =>
             {
-                IsStarted = false;
-
-                try
+                if (IsStarted)
                 {
-                    _udpClient?.Dispose();
+                    try
+                    {
+                        _udpClient?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error disposing udp client.");
+                    }
+                    finally
+                    {
+                        IsStarted = false;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error disposing udp client.");
-                }
-            }
+            });
         }
 
         /// <summary>
@@ -224,7 +232,16 @@ namespace Resonance.Discovery
         /// </summary>
         public void Dispose()
         {
-            Stop();
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disposes component resources asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        public Task DisposeAsync()
+        {
+            return Stop();
         }
     }
 }

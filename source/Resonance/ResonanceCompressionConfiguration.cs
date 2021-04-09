@@ -27,14 +27,5 @@ namespace Resonance
         {
             Compressor = new GZipCompressor();
         }
-
-        /// <summary>
-        /// Clones this instance.
-        /// </summary>
-        /// <returns></returns>
-        public ResonanceCompressionConfiguration Clone()
-        {
-            return this.MemberwiseClone() as ResonanceCompressionConfiguration;
-        }
     }
 }

@@ -20,7 +20,7 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceComponent" />
     /// <seealso cref="Resonance.IResonanceStateComponent" />
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
-    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IDisposable, IResonanceAsyncDisposableComponent
+    public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IDisposable, IResonanceAsyncDisposable
     {
         /// <summary>
         /// Occurs when a new request message has been received.
@@ -81,6 +81,11 @@ namespace Resonance
         /// Gets or sets the default request timeout.
         /// </summary>
         TimeSpan DefaultRequestTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to send a disconnection notification to the other side when disconnecting.
+        /// </summary>
+        bool NotifyOnDisconnect { get; set; }
 
         /// <summary>
         /// Gets or sets the keep alive configuration.

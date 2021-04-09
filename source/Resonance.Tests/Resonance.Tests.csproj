@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Common\ResonanceTest.cs" />
     <Compile Include="Common\TestHelper.cs" />
+    <Compile Include="Common\TestUtils.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoderException.cs" />
     <Compile Include="SignalR\SignalRServer.cs" />

@@ -8,7 +8,7 @@ namespace Resonance
     /// <summary>
     /// Represents an async disposable component.
     /// </summary>
-    public interface IResonanceAsyncDisposableComponent
+    public interface IResonanceAsyncDisposable
     {
         /// <summary>
         /// Disposes component resources asynchronously.

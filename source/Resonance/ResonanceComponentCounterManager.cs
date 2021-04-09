@@ -5,11 +5,17 @@ using System.Text;
 
 namespace Resonance
 {
+    /// <summary>
+    /// Represents a Resonance component counter manager for providing automatic incremental counters for each type.
+    /// </summary>
     public class ResonanceComponentCounterManager
     {
         private static object _lock = new object();
         private static Lazy<ResonanceComponentCounterManager> _default = new Lazy<ResonanceComponentCounterManager>(() => new ResonanceComponentCounterManager());
 
+        /// <summary>
+        /// Gets the default instance.
+        /// </summary>
         public static ResonanceComponentCounterManager Default
         {
             get { return _default.Value; }
@@ -22,6 +28,11 @@ namespace Resonance
             _counters = new ConcurrentDictionary<Type, int>();
         }
 
+        /// <summary>
+        /// Increments the last counter to the specified type and returns the new count.
+        /// </summary>
+        /// <param name="component">The component.</param>
+        /// <returns></returns>
         public int GetIncrement(IResonanceComponent component)
         {
             lock (_lock)
@@ -39,6 +50,14 @@ namespace Resonance
                     return 1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Resets the counter for all types.
+        /// </summary>
+        public void Reset()
+        {
+            _counters = new ConcurrentDictionary<Type, int>();
         }
     }
 }

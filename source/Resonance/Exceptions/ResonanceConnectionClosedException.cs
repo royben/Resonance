@@ -13,7 +13,7 @@ namespace Resonance.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceConnectionClosedException"/> class.
         /// </summary>
-        public ResonanceConnectionClosedException() : base("The remote peer has closed the connection.")
+        public ResonanceConnectionClosedException() : base("The remote transporter has disconnected.")
         {
 
         }

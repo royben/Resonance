@@ -90,16 +90,6 @@ namespace Resonance
             }
         }
 
-        private bool _enableCompression;
-        /// <summary>
-        /// Gets or sets a value indicating whether to enable compression/decompression of data.
-        /// </summary>
-        public bool EnableCompression
-        {
-            get { return _enableCompression; }
-            set { _enableCompression = value; RaisePropertyChangedAuto(); }
-        }
-
         /// <summary>
         /// Gets or sets the adapter data writing mode.
         /// </summary>
@@ -109,6 +99,11 @@ namespace Resonance
         /// Gets the queue write mode interval when <see cref="WriteMode" /> is set to <see cref="ResonanceAdapterWriteMode.Queue" />.
         /// </summary>
         public TimeSpan QueueWriteModeInterval { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to change the adapter state to "Failed" when writing to the adapter fails.
+        /// </summary>
+        public bool FailAdapterWhenWriteFails { get; set; }
 
         #endregion
 
@@ -122,6 +117,7 @@ namespace Resonance
             _componentCounter = ResonanceComponentCounterManager.Default.GetIncrement(this);
             WriteMode = ResonanceAdapterWriteMode.Direct;
             QueueWriteModeInterval = TimeSpan.FromMilliseconds(10);
+            FailAdapterWhenWriteFails = true;
         }
 
         #endregion
@@ -137,7 +133,7 @@ namespace Resonance
         {
             FailedStateException = ex;
             Log.Error(ex, $"{this}: {message}");
-            Disconnect().Wait();
+            Disconnect().GetAwaiter().GetResult();
             State = ResonanceComponentState.Failed;
         }
 
@@ -273,13 +269,13 @@ namespace Resonance
 
             if (State != ResonanceComponentState.Connected)
             {
-                Log.Info($"{this}: Connecting...");
+                Log.Info($"{this}: Connecting Adapter...");
 
                 try
                 {
                     await OnConnect();
 
-                    Log.Info($"{this}: Connected.");
+                    Log.Info($"{this}: Adapter Connected.");
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
@@ -308,16 +304,16 @@ namespace Resonance
             {
                 try
                 {
-                    Log.Info($"{this}: Disconnecting...");
+                    Log.Info($"{this}: Disconnecting Adapter...");
 
                     await OnDisconnect();
-
-                    Log.Info($"{this}: Disconnected...");
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
                         _pushQueue.BlockEnqueue(null); //Will terminate the push thread.
                     }
+
+                    Log.Info($"{this}: Adapter Disconnected...");
                 }
                 catch (Exception ex)
                 {
@@ -335,6 +331,9 @@ namespace Resonance
         {
             ThrowIfDisposed();
 
+            bool fail = false;
+            Exception failException = null;
+
             try
             {
                 if (WriteMode == ResonanceAdapterWriteMode.Direct)
@@ -351,8 +350,16 @@ namespace Resonance
             }
             catch (Exception ex)
             {
-                OnFailed(ex, "Error writing to adapter stream.");
-                throw;
+                fail = true;
+                failException = ex;
+                throw ex;
+            }
+            finally
+            {
+                if (fail && FailAdapterWhenWriteFails)
+                {
+                    OnFailed(failException, "Error writing to adapter stream.");
+                }
             }
         }
 

@@ -17,6 +17,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            ResonanceComponentCounterManager.Default.Reset();
+
             List<int> counters = new List<int>();
 
             var t1 = Task.Factory.StartNew(() =>

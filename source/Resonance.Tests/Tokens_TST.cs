@@ -18,7 +18,7 @@ namespace Resonance.Tests
     public class Tokens_TST : ResonanceTest
     {
         [TestMethod]
-        public void Short_Token_Million_Unique_Tokens_And_Performant()
+        public void Short_Token_1000_Unique_Tokens_And_Performant()
         {
             Init();
 
@@ -30,7 +30,7 @@ namespace Resonance.Tests
 
             Stopwatch watch = new Stopwatch();
 
-            for (int i = 0; i < 10000000; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 watch.Restart();
                 var token = generator.GenerateToken(new object());

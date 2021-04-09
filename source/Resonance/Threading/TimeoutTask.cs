@@ -33,8 +33,15 @@ namespace Resonance.Threading
         {
             Thread t = new Thread(() => 
             {
-                Thread.Sleep(_timeout);
-                _action();
+                try
+                {
+                    Thread.Sleep(_timeout);
+                    _action();
+                }
+                catch (ThreadAbortException)
+                {
+                    //Ignore
+                }
             });
             t.IsBackground = true;
             t.Start();

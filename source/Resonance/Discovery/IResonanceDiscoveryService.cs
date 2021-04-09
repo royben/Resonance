@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 
 namespace Resonance.Discovery
@@ -11,7 +12,7 @@ namespace Resonance.Discovery
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>
     /// <typeparam name="TEncoder">The type of the encoder that should be used to encode the packets.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public interface IResonanceDiscoveryService<TDiscoveryInfo, TEncoder> : IDisposable where TDiscoveryInfo : class, new() where TEncoder : IResonanceEncoder, new()
+    public interface IResonanceDiscoveryService<TDiscoveryInfo, TEncoder> : IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class, new() where TEncoder : IResonanceEncoder, new()
     {
         /// <summary>
         /// Occurs before broadcasting the discovery message and gives a chance to modify the message.
@@ -41,11 +42,11 @@ namespace Resonance.Discovery
         /// <summary>
         /// Starts the discovery service.
         /// </summary>
-        void Start();
+        Task Start();
 
         /// <summary>
         /// Stops the discovery service.
         /// </summary>
-        void Stop();
+        Task Stop();
     }
 }
