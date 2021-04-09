@@ -22,6 +22,7 @@ namespace Resonance.HandShake
         private IResonanceCryptographyProvider _cryptographyProvider;
         private bool _wasReset;
         private object _lock = new object();
+        private Object _loggingTag;
 
         /// <summary>
         /// Occurs when some data needs to be written to the other side.
@@ -59,6 +60,15 @@ namespace Resonance.HandShake
         public ResonanceDefaultHandShakeNegotiator()
         {
             HandShakeTranscoder = new ResonanceDefaultHandShakeTranscoder();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceDefaultHandShakeNegotiator"/> class.
+        /// </summary>
+        /// <param name="loggingTag">Set a prefix for the handshake logging.</param>
+        public ResonanceDefaultHandShakeNegotiator(Object loggingTag) : this()
+        {
+            _loggingTag = loggingTag;
         }
 
         /// <summary>
@@ -258,7 +268,14 @@ namespace Resonance.HandShake
         /// </returns>
         public override string ToString()
         {
-            return $"HandShake Negotiator {ClientID}";
+            if (_loggingTag != null)
+            {
+                return $"{_loggingTag}";
+            }
+            else
+            {
+                return $"HandShake Negotiator {ClientID}";
+            }
         }
     }
 }

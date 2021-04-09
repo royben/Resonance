@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.ExtensionMethods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -17,6 +18,7 @@ namespace Resonance.Discovery
     /// <seealso cref="Resonance.ResonanceObject" />
     public class ResonanceUdpDiscoveryClient<TDiscoveryInfo, TDecoder> : ResonanceObject, IResonanceDiscoveryClient<TDiscoveryInfo, TDecoder, ResonanceUdpDiscoveredService<TDiscoveryInfo>> where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new()
     {
+        private int _componentCounter;
         private UdpClient _udpClient;
         private Thread _receiveThread;
         private List<ResonanceUdpDiscoveredService<TDiscoveryInfo>> _discoveredServices;
@@ -59,6 +61,7 @@ namespace Resonance.Discovery
         /// </summary>
         public ResonanceUdpDiscoveryClient()
         {
+            _componentCounter = ResonanceComponentCounterManager.Default.GetIncrement(this);
             EnableTcpValidation = true;
             Port = 2021;
             Decoder = Activator.CreateInstance<TDecoder>();
@@ -93,6 +96,8 @@ namespace Resonance.Discovery
             {
                 if (!IsStarted)
                 {
+                    Log.Info($"{this}: Starting...");
+
                     _udpClient = new UdpClient();
                     _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                     _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, Port));
@@ -102,6 +107,8 @@ namespace Resonance.Discovery
                     _receiveThread = new Thread(ReceiveThreadMethod);
                     _receiveThread.IsBackground = true;
 
+
+                    Log.Info($"{this}: Started.");
                     IsStarted = true;
                     _receiveThread.Start();
                 }
@@ -117,6 +124,8 @@ namespace Resonance.Discovery
             {
                 if (IsStarted)
                 {
+                    Log.Info($"{this}: Stopping...");
+
                     try
                     {
                         _udpClient?.Dispose();
@@ -127,6 +136,7 @@ namespace Resonance.Discovery
                     }
                     finally
                     {
+                        Log.Info($"{this}: Stopped...");
                         IsStarted = false;
                     }
                 }
@@ -135,43 +145,38 @@ namespace Resonance.Discovery
 
         /// <summary>
         /// Asynchronous method for collecting discovered services within the given duration.
+        /// Will start the discovery client if not started already, but will not stop it on completion.
         /// </summary>
         /// <param name="maxDuration">The maximum duration to perform the scan.</param>
         /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
         /// <returns></returns>
         public Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> Discover(TimeSpan maxDuration, int? maxServices = null)
         {
-            List<ResonanceUdpDiscoveredService<TDiscoveryInfo>> list = new List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>();
-
-            TaskCompletionSource<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> source = new TaskCompletionSource<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>>();
-
-            EventHandler<ResonanceDiscoveredServiceEventArgs<ResonanceUdpDiscoveredService<TDiscoveryInfo>, TDiscoveryInfo>> handler = null;
-
-            handler = (sender, e) =>
-            {
-                list.Add(e.DiscoveredService);
-
-                if (maxServices != null && list.Count >= maxServices)
-                {
-                    ServiceDiscovered -= handler;
-                    source.SetResult(list);
-                }
-            };
-
-            ServiceDiscovered += handler;
-
-            Task.Delay(maxDuration).ContinueWith((x) =>
-            {
-                if (!source.Task.IsCompleted)
-                {
-                    ServiceDiscovered -= handler;
-                    source.SetResult(list);
-                }
-            });
-
             Start();
 
-            return source.Task;
+            return Task.Factory.StartNew<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>>(() => 
+            {
+                DateTime startTime = DateTime.Now;
+
+                while (DateTime.Now < startTime + maxDuration)
+                {
+                    Thread.Sleep(10);
+
+                    if (maxServices != null && _discoveredServices.Count >= maxServices.Value)
+                    {
+                        break;
+                    }
+                }
+
+                if (maxServices != null)
+                {
+                    return _discoveredServices.Take(maxServices.Value).ToList();
+                }
+                else
+                {
+                    return _discoveredServices.ToList();
+                }
+            });
         }
 
         private void ReceiveThreadMethod()
@@ -183,22 +188,29 @@ namespace Resonance.Discovery
                     var clientEndPoint = new IPEndPoint(IPAddress.Any, Port);
                     var data = _udpClient.Receive(ref clientEndPoint);
 
+                    Log.Debug($"{this}: Data received ({data.ToFriendlyByteSize()}), decoding discovery information...");
+
                     TDiscoveryInfo discoveryInfo = Decoder.Decode<TDiscoveryInfo>(data);
 
-                    //var host = Dns.GetHostEntry(clientEndPoint.Address);
-                    //String hostName = host != null ? host.HostName : "Unresolved";
+                    Log.Debug($"{this}: Discovery information decoded:\n{discoveryInfo.ToJsonString()}");
+
                     string address = clientEndPoint.Address.ToString();
+
+                    Log.Debug($"{this}: Service host address: {address}.");
 
                     ResonanceUdpDiscoveredService<TDiscoveryInfo> discoveredService = new ResonanceUdpDiscoveredService<TDiscoveryInfo>(discoveryInfo, address);
 
                     //validate service existence using TCP connection.
                     if (EnableTcpValidation)
                     {
+                        Log.Debug($"{this}: Validating service existence using TCP...");
+
                         try
                         {
                             TcpClient client = new TcpClient();
                             client.Connect(address, Port);
                             client.Dispose();
+                            Log.Debug($"{this}: Service validated.");
                         }
                         catch
                         {
@@ -206,8 +218,14 @@ namespace Resonance.Discovery
 
                             if (missingService != null)
                             {
+                                Log.Debug($"{this}: Service TCP validation failed. Reporting service lost...");
                                 _discoveredServices.Remove(missingService);
+                                Log.Debug($"{this}: Total discovered services: {_discoveredServices.Count}.");
                                 ServiceLost?.Invoke(this, new ResonanceDiscoveredServiceEventArgs<ResonanceUdpDiscoveredService<TDiscoveryInfo>, TDiscoveryInfo>(missingService));
+                            }
+                            else
+                            {
+                                Log.Debug($"{this}: Service TCP validation failed.");
                             }
 
                             continue;
@@ -216,13 +234,19 @@ namespace Resonance.Discovery
 
                     if (!_discoveredServices.ToList().Exists(existingService => _discoveredServiceCompareFunc(existingService, discoveredService)))
                     {
+                        Log.Info($"{this}: New service discovered on address {discoveredService.Address}. Reporting service discovered...");
                         _discoveredServices.Add(discoveredService);
+                        Log.Debug($"{this}: Total discovered services: {_discoveredServices.Count}.");
                         ServiceDiscovered?.Invoke(this, new ResonanceDiscoveredServiceEventArgs<ResonanceUdpDiscoveredService<TDiscoveryInfo>, TDiscoveryInfo>(discoveredService));
+                    }
+                    else
+                    {
+                        Log.Debug($"{this}: Service was already discovered.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex);
+                    Log.Error(ex,$"{this}: Error occurred on discovery method.");
                 }
             }
         }
@@ -242,6 +266,14 @@ namespace Resonance.Discovery
         public Task DisposeAsync()
         {
             return Stop();
+        }
+
+        /// <summary>
+        /// Returns the string representation of this instance.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"UDP Discovery Client {_componentCounter}";
         }
     }
 }

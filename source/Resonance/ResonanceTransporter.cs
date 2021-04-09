@@ -214,7 +214,7 @@ namespace Resonance
 
             ClearQueues();
 
-            HandShakeNegotiator = new ResonanceDefaultHandShakeNegotiator();
+            HandShakeNegotiator = new ResonanceDefaultHandShakeNegotiator(this);
 
             _requestHandlers = new List<ResonanceRequestHandler>();
             _services = new List<IResonanceService>();
@@ -582,13 +582,19 @@ namespace Resonance
             pendingRequest.Config = config;
             pendingRequest.CompletionSource = completionSource;
 
-            if (config.ShouldLog)
+            String logMessage = $"{this}: Sending request message: '{request.Message.GetType().Name}', Token: '{request.Token}'...";
+
+            switch (config.LoggingMode)
             {
-                Log.Info($"{this}: Sending request message: '{request.Message.GetType().Name}', Token: '{request.Token}'...\n{request.Message.ToJsonString()}");
-            }
-            else
-            {
-                Log.Debug($"{this}: Sending request message: '{request.Message.GetType().Name}', Token: '{request.Token}'...");
+                case ResonanceMessageLoggingMode.Content:
+                    Log.Info($"{logMessage}\n{request.Message.ToJsonString()}");
+                    break;
+                case ResonanceMessageLoggingMode.Title:
+                    Log.Info(logMessage);
+                    break;
+                case ResonanceMessageLoggingMode.None:
+                    Log.Debug(logMessage);
+                    break;
             }
 
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
@@ -624,13 +630,19 @@ namespace Resonance
             pendingContinuousRequest.Config = config;
             pendingContinuousRequest.ContinuousObservable = observable;
 
-            if (config.ShouldLog)
+            String logMessage = $"{this}: Sending continuous request message: '{request.GetType().Name}', Token: '{resonanceRequest.Token}'...";
+
+            switch (config.LoggingMode)
             {
-                Log.Debug($"{this}: Sending continuous request message: '{request.GetType().Name}', Token: '{resonanceRequest.Token}'\n{request.ToJsonString()}...");
-            }
-            else
-            {
-                Log.Debug($"{this}: Sending continuous request message: '{request.GetType().Name}', Token: '{resonanceRequest.Token}'...");
+                case ResonanceMessageLoggingMode.Content:
+                    Log.Info($"{logMessage}\n{request.ToJsonString()}");
+                    break;
+                case ResonanceMessageLoggingMode.Title:
+                    Log.Info(logMessage);
+                    break;
+                case ResonanceMessageLoggingMode.None:
+                    Log.Debug(logMessage);
+                    break;
             }
 
             _sendingQueue.BlockEnqueue(pendingContinuousRequest, config.Priority);
@@ -721,19 +733,34 @@ namespace Resonance
             pendingResponse.CompletionSource = completionSource;
             pendingResponse.Config = config;
 
+            String errorMessage = $"{this}: Sending error response: '{response.Message.ToStringOrEmpty().Ellipsis(50)}', Token: '{response.Token}'...";
+            String message = $"{this}: Sending response message: '{response.Message.GetType().Name}', Token: '{response.Token}'...";
+
             if (isError)
             {
-                Log.Info($"{this}: Sending error response: '{response.Message.ToStringOrEmpty().Ellipsis(50)}', Token: '{response.Token}'...");
+                switch (config.LoggingMode)
+                {
+                    case ResonanceMessageLoggingMode.None:
+                        Log.Debug(message);
+                        break;
+                    default:
+                        Log.Info(errorMessage);
+                        break;
+                }
             }
             else
             {
-                if (config.ShouldLog)
+                switch (config.LoggingMode)
                 {
-                    Log.Info($"{this}: Sending response message: '{response.Message.GetType().Name}', Token: '{response.Token}'...\n{response.Message.ToJsonString()}");
-                }
-                else
-                {
-                    Log.Debug($"{this}: Sending response message: '{response.Message.GetType().Name}', Token: '{response.Token}'...");
+                    case ResonanceMessageLoggingMode.Content:
+                        Log.Info($"{message}\n{response.Message.ToJsonString()}");
+                        break;
+                    case ResonanceMessageLoggingMode.Title:
+                        Log.Info(message);
+                        break;
+                    case ResonanceMessageLoggingMode.None:
+                        Log.Debug(message);
+                        break;
                 }
             }
 
@@ -768,7 +795,20 @@ namespace Resonance
             pendingRequest.IsWithoutResponse = true;
             pendingRequest.CompletionSource = completionSource;
 
-            Log.Debug($"{this}: Sending request: '{message.GetType().Name}', Token: {pendingRequest.Request.Token}");
+            String logMessage = $"{this}: Sending request message: '{message.GetType().Name}', Token: '{pendingRequest.Request.Token}'...";
+
+            switch (config.LoggingMode)
+            {
+                case ResonanceMessageLoggingMode.Content:
+                    Log.Info($"{logMessage}\n{message.ToJsonString()}");
+                    break;
+                case ResonanceMessageLoggingMode.Title:
+                    Log.Info(logMessage);
+                    break;
+                case ResonanceMessageLoggingMode.None:
+                    Log.Debug(logMessage);
+                    break;
+            }
 
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
@@ -1268,27 +1308,28 @@ namespace Resonance
 
             if (!info.HasDecodingException)
             {
-                if (pendingRequest.Config.ShouldLog)
+                if (!info.HasError)
                 {
-                    if (!info.HasError)
+                    String responseMessage = $"{this}: Incoming response received '{info.Message.GetType().Name}', Token: '{info.Token}'...";
+
+                    switch (pendingRequest.Config.LoggingMode)
                     {
-                        Log.Info($"{this}: Incoming response received '{info.Message.GetType().Name}', Token: '{info.Token}'...\n{info.Message.ToJsonString()}");
-                    }
-                    else
-                    {
-                        Log.Info($"{this}: Incoming error response received for '{pendingRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.");
+                        case ResonanceMessageLoggingMode.Content:
+                            Log.Info($"{responseMessage}\n{info.Message.ToJsonString()}");
+                            break;
+                        case ResonanceMessageLoggingMode.Title:
+                            Log.Info(responseMessage);
+                            break;
+                        case ResonanceMessageLoggingMode.None:
+                            Log.Debug($"{responseMessage}");
+                            break;
                     }
                 }
                 else
                 {
-                    if (!info.HasError)
-                    {
-                        Log.Debug($"{this}: Incoming response received '{info.Message.GetType().Name}', Token: '{info.Token}'...");
-                    }
-                    else
-                    {
-                        Log.Info($"{this}: Incoming error response received for '{pendingRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.");
-                    }
+                    String errorMessage = $"{this}: Incoming error response received for '{pendingRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.";
+
+                    Log.Info(errorMessage);
                 }
             }
 
@@ -1323,27 +1364,28 @@ namespace Resonance
         {
             if (!info.HasDecodingException)
             {
-                if (pendingContinuousRequest.Config.ShouldLog)
+                if (!info.HasError)
                 {
-                    if (!info.HasError)
+                    String responseMessage = $"{this}: Incoming continuous response received '{info.Message.GetType().Name}', Token: '{info.Token}'...";
+
+                    switch (pendingContinuousRequest.Config.LoggingMode)
                     {
-                        Log.Info($"{this}: Incoming continuous response received '{info.Message.GetType().Name}', Token: '{info.Token}'...\n{info.Message.ToJsonString()}");
-                    }
-                    else
-                    {
-                        Log.Info($"{this}: Incoming error response received for '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.");
+                        case ResonanceMessageLoggingMode.Content:
+                            Log.Info($"{responseMessage}\n{info.Message.ToJsonString()}");
+                            break;
+                        case ResonanceMessageLoggingMode.Title:
+                            Log.Info(responseMessage);
+                            break;
+                        case ResonanceMessageLoggingMode.None:
+                            Log.Debug($"{responseMessage}");
+                            break;
                     }
                 }
                 else
                 {
-                    if (!info.HasError)
-                    {
-                        Log.Debug($"{this}: Incoming continuous response received '{info.Message.GetType().Name}', Token: '{info.Token}'...");
-                    }
-                    else
-                    {
-                        Log.Info($"{this}: Incoming error response received for '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.");
-                    }
+                    String errorMessage = $"{this}: Incoming error response received for '{pendingContinuousRequest.Request.Message.GetType().Name}', Token: '{info.Token}', '{info.ErrorMessage.Ellipsis(30)}'.";
+
+                    Log.Info(errorMessage);
                 }
             }
 

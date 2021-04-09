@@ -1,4 +1,5 @@
-﻿using Resonance.Servers.Tcp;
+﻿using Resonance.ExtensionMethods;
+using Resonance.Servers.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -20,6 +21,7 @@ namespace Resonance.Discovery
     {
         private Timer _timer;
         private ResonanceTcpServer _tcpValidationServer;
+        private int _componentCounter;
 
         /// <summary>
         /// Occurs before broadcasting the discovery message and gives a chance to modify the message.
@@ -58,12 +60,12 @@ namespace Resonance.Discovery
         /// </summary>
         public ResonanceUdpDiscoveryService()
         {
+            _componentCounter = ResonanceComponentCounterManager.Default.GetIncrement(this);
             Port = 2021;
             Interval = TimeSpan.FromSeconds(5);
             DiscoveryInfo = Activator.CreateInstance<TDiscoveryInfo>();
             Encoder = Activator.CreateInstance<TEncoder>();
         }
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceUdpDiscoveryService{TDiscoveryInfo, TEncoder}"/> class.
@@ -83,6 +85,9 @@ namespace Resonance.Discovery
         {
             if (!IsStarted)
             {
+                Log.Info($"{this}: Starting...");
+                Log.Debug($"{this}: Discovery Info:\n{DiscoveryInfo.ToJsonString()}");
+
                 _tcpValidationServer = new ResonanceTcpServer(Port);
                 _tcpValidationServer.ConnectionRequest += (x, e) => 
                 {
@@ -98,6 +103,7 @@ namespace Resonance.Discovery
                 _timer.Start();
 
                 IsStarted = true;
+                Log.Info($"{this}: Started.");
             }
         }
 
@@ -108,12 +114,16 @@ namespace Resonance.Discovery
         {
             if (IsStarted)
             {
+                Log.Info($"{this}: Stopping...");
+
                 await _tcpValidationServer.Stop();
 
                 //Transmit the discovery packet one more time so clients can tell that we have disconnected.
                 BroadcastDiscoveryPacket();
+
                 _timer.Stop();
                 IsStarted = false;
+                Log.Info($"{this}: Stopped...");
             }
         }
 
@@ -121,6 +131,8 @@ namespace Resonance.Discovery
         {
             try
             {
+                Log.Debug($"{this}: Broadcasting discovery message...");
+
                 UdpClient client = new UdpClient();
                 client.EnableBroadcast = true;
 
@@ -141,7 +153,7 @@ namespace Resonance.Discovery
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error broadcasting discovery packet.");
+                Log.Error(ex, "Error broadcasting discovery message.");
             }
         }
 
@@ -160,6 +172,14 @@ namespace Resonance.Discovery
         public Task DisposeAsync()
         {
             return Stop();
+        }
+
+        /// <summary>
+        /// Gets the string representation of this instance.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"UDP Discovery Service {_componentCounter}";
         }
     }
 }

@@ -19,9 +19,9 @@ namespace Resonance
         public TimeSpan? Timeout { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the transporter should log this message.
+        /// Gets or sets the request logging mode.
         /// </summary>
-        public bool ShouldLog { get; set; }
+        public ResonanceMessageLoggingMode LoggingMode { get; set; }
 
         /// <summary>
         /// Gets or sets the request queue priority.

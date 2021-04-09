@@ -28,9 +28,9 @@ namespace Resonance
         public String ErrorMessage { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the transporter should log this response.
+        /// Gets or sets the request logging mode.
         /// </summary>
-        public bool ShouldLog { get; set; }
+        public ResonanceMessageLoggingMode LoggingMode { get; set; }
 
         /// <summary>
         /// Gets or sets the response queue priority.
