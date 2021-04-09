@@ -44,7 +44,6 @@ The following built-in adapters are currently supported by the library:
 *	TCP
 *	UDP
 *	USB
-*	WebAPI
 *	In-Memory
 *	SignalR
 *	WebRTC
