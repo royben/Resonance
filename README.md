@@ -33,10 +33,10 @@ A transporter responsibility is to provide the API for sending and receiving mes
 ### Transcoding
 Encoders and Decoders are components that can be plugged to a transporter, they determine how outgoing/incoming messages should be encoded and whether the data should be encrypted and/or compressed.
 The Following built-in transcoding methods are currently supported by the library:
-*	Json - <span style="color:gray">(using Json.NET)</span>.
-*	Bson - <span style="color:gray">(using (using Json.NET))</span>.
-*	Protobuf - <span style="color:gray">(using Google.Protobuf separate NuGet package)</span>.
-*	Xml - <span style="color:gray">(using .NET built-in Xml Serializer)</span>.
+*	Json
+*	Bson
+*	Protobuf
+*	Xml
 
 ### Adapters
 Adapters can also be plugged to a transporter to determine how outgoing/incoming encoded data is going to be transmitted and where.
@@ -44,7 +44,6 @@ The following built-in adapters are currently supported by the library:
 *	TCP
 *	UDP
 *	USB
-*	WebAPI
 *	In-Memory
 *	SignalR
 *	WebRTC
