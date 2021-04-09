@@ -43,6 +43,7 @@ namespace Resonance.Tests.Common
             if (IsRunningOnAzurePipelines)
             {
                 Log.LogLevel = ResonanceLogLevel.Info;
+                ResonanceGlobalSettings.Default.DisableHandShake = true;
             }
             else
             {
