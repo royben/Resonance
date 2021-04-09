@@ -18,56 +18,56 @@ namespace Resonance.Tests
     public class Transporters_TST : ResonanceTest
     {
         [TestMethod]
-        public async Task Send_And_Receive_Standard_Request()
+        public void Send_And_Receive_Standard_Request()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 Assert.IsTrue(t1.PendingRequestsCount == 1);
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                await t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }
 
         [TestMethod]
-        public async Task Send_And_Receive_Standard_Request_With_Error()
+        public void Send_And_Receive_Standard_Request_With_Error()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
             t2.RequestReceived += async (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                await t2.SendErrorResponse("Error Message", e.Request.Token);
+                t2.SendErrorResponse("Error Message", e.Request.Token).GetAwaiter().GetResult();
             };
 
-            await Assert.ThrowsExceptionAsync<ResonanceResponseException>(async () =>
+            Assert.ThrowsException<ResonanceResponseException>(() =>
             {
-                var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()).GetAwaiter().GetResult();
             }, "Error Message");
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
         }
 
         [TestMethod]
