@@ -55,7 +55,7 @@ namespace Resonance.Tests
             t1.Connect().GetAwaiter().GetResult();
             t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
                 t2.SendErrorResponse("Error Message", e.Request.Token).GetAwaiter().GetResult();
