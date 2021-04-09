@@ -44,31 +44,31 @@ namespace Resonance.Tests
             Assert.AreEqual(response.Sum, request.A + request.B);
         }
 
-        //[TestMethod]
-        //public async Task Send_And_Receive_Standard_Request_With_Error()
-        //{
-        //    Init();
+        [TestMethod]
+        public async Task Send_And_Receive_Standard_Request_With_Error()
+        {
+            Init();
 
-        //    ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-        //    ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-        //    await t1.Connect();
-        //    await t2.Connect();
+            await t1.Connect();
+            await t2.Connect();
 
-        //    t2.RequestReceived += async (s, e) =>
-        //    {
-        //        CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-        //        await t2.SendErrorResponse("Error Message", e.Request.Token);
-        //    };
+            t2.RequestReceived += async (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                await t2.SendErrorResponse("Error Message", e.Request.Token);
+            };
 
-        //    await Assert.ThrowsExceptionAsync<ResonanceResponseException>(async () =>
-        //    {
-        //        var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
-        //    }, "Error Message");
+            await Assert.ThrowsExceptionAsync<ResonanceResponseException>(async () =>
+            {
+                var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            }, "Error Message");
 
-        //    await t1.DisposeAsync(true);
-        //    await t2.DisposeAsync(true);
-        //}
+            await t1.DisposeAsync(true);
+            await t2.DisposeAsync(true);
+        }
 
         [TestMethod]
         public async Task Send_And_Receive_Continuous_Request()
