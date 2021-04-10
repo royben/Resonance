@@ -32,4 +32,4 @@ steps:
     platform: '$(buildPlatform)'
     configuration: 'AzureBuild'
     overrideTestrunParameters: -IsFromAzure true
-    runInParallel: true
+    runInParallel: false
