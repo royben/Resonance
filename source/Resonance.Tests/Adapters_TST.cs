@@ -26,10 +26,10 @@ namespace Resonance.Tests
     public class Adapters_TST : ResonanceTest
     {
         [TestMethod]
-        public async Task InMemory_Adapter_Writing_Reading()
+        public void InMemory_Adapter_Writing_Reading()
         {
             Init();
-            await TestUtils.Read_Write_Test(
+            TestUtils.Read_Write_Test(
                 this, 
                 new InMemoryAdapter("TST"), 
                 new InMemoryAdapter("TST"), 
@@ -40,7 +40,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Tcp_Adapter_Writing_Reading()
+        public void Tcp_Adapter_Writing_Reading()
         {
             Init();
 
@@ -48,33 +48,33 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
-            await server.Start();
-            server.ConnectionRequest += async (x, e) => 
+            server.Start().GetAwaiter().GetResult();
+            server.ConnectionRequest += (x, e) => 
             {
                 t2.Adapter = e.Accept();
-                await t2.Connect();
+                t2.Connect().GetAwaiter().GetResult();
             };
 
-            await t1.Connect();
+            t1.Connect().GetAwaiter().GetResult();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }
 
-            await TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
+            TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
 
-            await server.DisposeAsync();
+            server.Dispose();
         }
 
         [TestMethod]
-        public async Task Udp_Adapter_Writing_Reading()
+        public void Udp_Adapter_Writing_Reading()
         {
             Init();
 
             IPAddress localIpAddress = IPAddress.Parse(TcpAdapter.GetLocalIPAddress());
 
-            await TestUtils.Read_Write_Test(
+            TestUtils.Read_Write_Test(
                 this, 
                 new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)), 
                 new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)), 
@@ -85,7 +85,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Usb_Adapter_Writing_Reading()
+        public void Usb_Adapter_Writing_Reading()
         {
             Init();
 
@@ -98,7 +98,7 @@ namespace Resonance.Tests
             String virtualSerialDeviceName = "HHD Software Virtual Serial Port";
             String errorMessage = "Could not locate any virtual serial port bridge. Please download from https://freevirtualserialports.com and create a local bridge.";
 
-            var devices = await UsbDevice.GetAvailableDevices();
+            var devices = UsbDevice.GetAvailableDevices().GetAwaiter().GetResult();
 
             var virtualPort1 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName));
             Assert.IsNotNull(virtualPort1, errorMessage);
@@ -106,7 +106,7 @@ namespace Resonance.Tests
             var virtualPort2 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName) && x != virtualPort1);
             Assert.IsNotNull(virtualPort2, errorMessage);
 
-            await TestUtils.Read_Write_Test(
+            TestUtils.Read_Write_Test(
                 this,
                 new UsbAdapter(virtualPort1, BaudRates.BR_19200),
                 new UsbAdapter(virtualPort2, BaudRates.BR_19200),
@@ -117,7 +117,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task NamedPipes_Adapter_Writing_Reading()
+        public void NamedPipes_Adapter_Writing_Reading()
         {
             Init();
 
@@ -128,23 +128,23 @@ namespace Resonance.Tests
             t2.DisableHandShake = true;
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
-            await server.Start();
-            server.ConnectionRequest += async (x, e) =>
+            server.Start().GetAwaiter().GetResult();
+            server.ConnectionRequest += (x, e) =>
             {
                 t2.Adapter = e.Accept();
-                await t2.Connect();
+                t2.Connect().GetAwaiter().GetResult();
             };
 
-            await t1.Connect();
+            t1.Connect().GetAwaiter().GetResult();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }
 
-            await TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
+            TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
 
-            await server .DisposeAsync();
+            server.Dispose();
         }
     }
 }

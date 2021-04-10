@@ -2,7 +2,7 @@
 <RunSettings>
   <!-- Configurations that affect the Test Framework -->
   <RunConfiguration>
-    <!--<MaxCpuCount>1</MaxCpuCount>-->
+    <!--<MaxCpuCount>4</MaxCpuCount>-->
     <!-- Path relative to directory that contains .runsettings file-->
     <!--<ResultsDirectory>.\TestResults</ResultsDirectory>-->
 
@@ -18,7 +18,7 @@
 
     <!-- TestSessionTimeout was introduced in Visual Studio 2017 version 15.5 -->
     <!-- Specify timeout in milliseconds. A valid value should be greater than 0 -->
-    <!--<TestSessionTimeout>10000</TestSessionTimeout>-->
+    <!--<TestSessionTimeout>100000</TestSessionTimeout>-->
 
     <!-- true or false -->
     <!-- Value that specifies the exit code when no tests are discovered -->

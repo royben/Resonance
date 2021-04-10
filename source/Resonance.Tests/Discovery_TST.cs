@@ -29,7 +29,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Udp_Discovery()
+        public void Udp_Discovery()
         {
             Init();
 
@@ -39,21 +39,21 @@ namespace Resonance.Tests
                     Identity = "Test Identity"
                 }, 1984);
 
-            await service.Start();
+            service.Start().GetAwaiter().GetResult();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(1984);
 
-            var services = await client.Discover(TimeSpan.FromSeconds(10));
+            var services = client.Discover(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.Identity == service.DiscoveryInfo.Identity);
 
-            await service.DisposeAsync();
-            await client.DisposeAsync();
+            service.Dispose();
+            client.Dispose();
         }
 
         [TestMethod]
-        public async Task Udp_Multi_Discovery()
+        public void Udp_Multi_Discovery()
         {
             Init();
 
@@ -73,14 +73,14 @@ namespace Resonance.Tests
 
                 services.Add(service);
 
-                await service.Start();
+                service.Start().GetAwaiter().GetResult();
             }
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(
                 1984,
                 (s1, s2) => s1.DiscoveryInfo.Identity == s2.DiscoveryInfo.Identity);
 
-            var discoveredDervices = await client .Discover(TimeSpan.FromSeconds(10));
+            var discoveredDervices = client .Discover(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
 
             Assert.IsTrue(discoveredDervices.Count == servicesCount);
 
@@ -96,7 +96,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Udp_Discovery_Service_Lost()
+        public void Udp_Discovery_Service_Lost()
         {
             Init();
 
@@ -106,7 +106,7 @@ namespace Resonance.Tests
                     Identity = "Test Identity"
                 }, 1984);
 
-            await service.Start();
+            service.Start().GetAwaiter().GetResult();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(1984);
 
@@ -119,22 +119,22 @@ namespace Resonance.Tests
                 waitHandle.Set();
             };
 
-            var services = await client.Discover(TimeSpan.FromSeconds(10), 1);
+            var services = client.Discover(TimeSpan.FromSeconds(10), 1).GetAwaiter().GetResult();
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.Identity == service.DiscoveryInfo.Identity);
 
-            await service.DisposeAsync();
+            service.Dispose();
 
             waitHandle.WaitOne(TimeSpan.FromSeconds(10));
 
             Assert.IsTrue(lost);
 
-            await client.DisposeAsync();
+            client.Dispose();
         }
 
         [TestMethod]
-        public async Task Udp_Discovery_And_Tcp_Transporter_Connection()
+        public void Udp_Discovery_And_Tcp_Transporter_Connection()
         {
             Init();
 
@@ -144,17 +144,17 @@ namespace Resonance.Tests
                     TcpServerPort = 9999
                 }, 1984);
 
-            await service.Start();
+            service.Start().GetAwaiter().GetResult();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfoTransporter, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfoTransporter, JsonDecoder>(1984);
 
-            var services = await client.Discover(TimeSpan.FromSeconds(10), 1);
+            var services = client.Discover(TimeSpan.FromSeconds(10), 1).GetAwaiter().GetResult();
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.TcpServerPort == service.DiscoveryInfo.TcpServerPort);
 
-            await service.DisposeAsync();
-            await client.DisposeAsync();
+            service.Dispose();
+            client.Dispose();
 
             var discoveredService = services.First();
 
@@ -162,33 +162,33 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
-            await server.Start();
-            server.ConnectionRequest += async (x, e) =>
+            server.Start().GetAwaiter().GetResult();
+            server.ConnectionRequest += (x, e) =>
             {
                 t2.Adapter = e.Accept();
-                await t2.Connect();
+                t2.Connect().GetAwaiter().GetResult();
             };
 
-            await t1.Connect();
+            t1.Connect().GetAwaiter().GetResult();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
                 Thread.Sleep(10);
             }
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                await t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             Assert.AreEqual(response.Sum, request.A + request.B);
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
-            await server.DisposeAsync();
+            t1.Dispose(true);
+            t2.Dispose(true);
+            server.Dispose();
         }
     }
 }

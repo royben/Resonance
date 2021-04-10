@@ -42,7 +42,7 @@ namespace Resonance.Tests.Common
 
             if (IsRunningOnAzurePipelines)
             {
-                Log.LogLevel = ResonanceLogLevel.Info;
+                Log.LogLevel = ResonanceLogLevel.Warning;
             }
             else
             {

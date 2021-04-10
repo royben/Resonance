@@ -85,7 +85,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Bson_Transcoding_With_DateTime_Kind()
+        public void Bson_Transcoding_With_DateTime_Kind()
         {
             Init();
 
@@ -105,46 +105,46 @@ namespace Resonance.Tests
                 .WithBsonTranscoding()
                 .Build();
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 CalculateRequestWithDate receivedRequest = e.Request.Message as CalculateRequestWithDate;
-                await t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token);
+                t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token).GetAwaiter().GetResult();
             };
 
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequestWithDate() { A = 10, B = 15, Date = DateTime.UtcNow };
-                var response = await t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request);
+                var response = t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request).GetAwaiter().GetResult();
 
                 Assert.AreEqual(response.Sum, request.A + request.B);
                 Assert.AreEqual(request.Date.Kind, response.Date.Kind);
                 Assert.AreEqual(request.Date.ToString(), response.Date.ToString());
             }
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
         }
 
         [TestMethod]
-        public async Task Xml_Transcoding()
+        public void Xml_Transcoding()
         {
             Init();
-            await TestUtils.Read_Write_Test(this, new XmlEncoder(), new XmlDecoder(), false, false, 1, 0);
+            TestUtils.Read_Write_Test(this, new XmlEncoder(), new XmlDecoder(), false, false, 1, 0);
         }
 
         [TestMethod]
-        public async Task Json_Transcoding()
+        public void Json_Transcoding()
         {
             Init();
-            await TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, false, 1, 0);
+            TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, false, 1, 0);
         }
 
         [TestMethod]
-        public async Task Protobuf_Transcoding()
+        public void Protobuf_Transcoding()
         {
             Init();
 
@@ -166,26 +166,26 @@ namespace Resonance.Tests
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(10);
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                await t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request);
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }
 
         [TestMethod]
-        public async Task Protobuf_Transcoding_Type_Resolver()
+        public void Protobuf_Transcoding_Type_Resolver()
         {
             Init();
 
@@ -209,26 +209,26 @@ namespace Resonance.Tests
                 .WithTypeResolver<ProtobufTypeResolver>()
                 .Build();
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                await t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request);
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }
 
         [TestMethod]
-        public async Task Auto_Decoding__Needs_A_Second_Run()
+        public void Auto_Decoding__Needs_A_Second_Run()
         {
             return;
             //This test needs a second run. not sure why.
@@ -251,23 +251,23 @@ namespace Resonance.Tests
                 .Build();
 
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
-            t2.RequestReceived += async (s, e) =>
+            t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                await t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
             {
                 Timeout = TimeSpan.FromSeconds(20)
-            });
+            }).GetAwaiter().GetResult();
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
         }

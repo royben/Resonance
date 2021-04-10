@@ -23,7 +23,7 @@ namespace Resonance.Tests
     public class SignalR_TST : ResonanceTest
     {
         [TestMethod]
-        public async Task SignalR_Legacy_Reading_Writing()
+        public void SignalR_Legacy_Reading_Writing()
         {
             Init();
 
@@ -35,11 +35,11 @@ namespace Resonance.Tests
             SignalRServer server = new SignalRServer(hostUrl);
             server.Start();
 
-            await SignalR_Reading_Writing(hubUrl, SignalRMode.Legacy);
+            SignalR_Reading_Writing(hubUrl, SignalRMode.Legacy);
         }
 
         [TestMethod]
-        public async Task SignalR_Core_Reading_Writing()
+        public void SignalR_Core_Reading_Writing()
         {
             Init();
 
@@ -74,12 +74,12 @@ namespace Resonance.Tests
                 Thread.Sleep(1000);
             }
 
-            await SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
+            SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
 
             cmd.Kill();
         }
 
-        private async Task SignalR_Reading_Writing(String url, SignalRMode mode)
+        private void SignalR_Reading_Writing(String url, SignalRMode mode)
         {
             TestCredentials credentials = new TestCredentials() { Name = "Test" };
             TestServiceInformation serviceInfo = new TestServiceInformation() { ServiceId = "My Test Service" };
@@ -94,15 +94,15 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter serviceTransporter = new ResonanceJsonTransporter();
 
-            registeredService.ConnectionRequest += async (_, e) =>
+            registeredService.ConnectionRequest += (_, e) =>
             {
                 Assert.IsTrue(e.RemoteAdapterInformation.Information == "No information on the remote adapter");
                 serviceTransporter.Adapter = e.Accept();
-                await serviceTransporter.Connect();
+                serviceTransporter.Connect().GetAwaiter().GetResult();
                 connected = true;
             };
 
-            var remoteServices = await ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode);
+            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode).GetAwaiter().GetResult();
 
             Assert.IsTrue(remoteServices.Count == 1);
 
@@ -112,14 +112,14 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
 
-            await clientTransporter.Connect();
+            clientTransporter.Connect().GetAwaiter().GetResult();
 
             while (!connected)
             {
                 Thread.Sleep(10);
             }
 
-            await TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, false, 1000, 20);
+            TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, false, 1000, 20);
         }
     }
 }
