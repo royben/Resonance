@@ -14,7 +14,7 @@ namespace Resonance.Tests
     public class Services_TST : ResonanceTest
     {
         [TestMethod]
-        public async Task Service_Handles_Request_And_Get_Notified_About_State_Changes()
+        public void Service_Handles_Request_And_Get_Notified_About_State_Changes()
         {
             Init();
 
@@ -24,32 +24,32 @@ namespace Resonance.Tests
             t1.DisableHandShake = true;
             t2.DisableHandShake = true;
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
             var testService = new TestService();
 
             t2.RegisterService(testService);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
 
             Assert.AreEqual(response.Sum, request.A + request.B);
 
             t2.UnregisterService(testService);
 
-            await Assert.ThrowsExceptionAsync<TimeoutException>(async () =>
+            Assert.ThrowsException<TimeoutException>(() =>
             {
-                response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
+                response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
                 {
                     Timeout = TimeSpan.FromSeconds(1)
-                });
+                }).GetAwaiter().GetResult();
             });
 
             t2.RegisterService(testService);
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
 
             Assert.IsTrue(testService.State == ResonanceComponentState.Disposed);
         }
@@ -70,26 +70,26 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Service_Handles_Request_And_Reports_Error_By_Throwing_Exception()
+        public void Service_Handles_Request_And_Reports_Error_By_Throwing_Exception()
         {
             Init();
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
             var testErrorService = new TestErrorService();
 
             t2.RegisterService(testErrorService);
 
-            await Assert.ThrowsExceptionAsync<ResonanceResponseException>(async () =>
+            Assert.ThrowsException<ResonanceResponseException>(() =>
             {
                 try
                 {
                     var request = new CalculateRequest() { A = 10, B = 15 };
-                    var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+                    var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
@@ -98,8 +98,8 @@ namespace Resonance.Tests
                 }
             });
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
         }
 
         private class TestErrorService : IResonanceService
@@ -116,7 +116,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Service_Handles_Task_Result()
+        public void Service_Handles_Task_Result()
         {
             Init();
 
@@ -126,22 +126,22 @@ namespace Resonance.Tests
             t1.DisableHandShake = true;
             t2.DisableHandShake = true;
 
-            await t1.Connect();
-            await t2.Connect();
+            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect().GetAwaiter().GetResult();
 
             var testService = new TestAsyncService();
 
             t2.RegisterService(testService);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
 
             Assert.AreEqual(response.Sum, request.A + request.B);
 
             t2.UnregisterService(testService);
 
-            await t1.DisposeAsync(true);
-            await t2.DisposeAsync(true);
+            t1.Dispose(true);
+            t2.Dispose(true);
         }
 
         private class TestAsyncService : IResonanceService

@@ -156,8 +156,8 @@ namespace Resonance.Tests
                 negotiator1.Reset(true, new RSACryptographyProvider());
                 negotiator2.Reset(true, new RSACryptographyProvider());
 
-                negotiator1.BeginHandShakeAsync();
-                negotiator2.BeginHandShakeAsync();
+                negotiator1.BeginHandShake();
+                negotiator2.BeginHandShake();
 
                 Thread.Sleep(100);
 
@@ -293,8 +293,8 @@ namespace Resonance.Tests
                 negotiator1.Reset(i % 2 == 0, new RSACryptographyProvider());
                 negotiator2.Reset(i % 2 != 0, new RSACryptographyProvider());
 
-                negotiator1.BeginHandShakeAsync();
-                negotiator2.BeginHandShakeAsync();
+                negotiator1.BeginHandShake();
+                negotiator2.BeginHandShake();
 
                 Thread.Sleep(100);
 
@@ -309,7 +309,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public async Task Handshake_With_Different_Encryption_Configuration_And_Conditions()
+        public void Handshake_With_Different_Encryption_Configuration_And_Conditions()
         {
             Init();
 
@@ -321,19 +321,19 @@ namespace Resonance.Tests
                 t1.CryptographyConfiguration.Enabled = i % 2 == 0;
                 t2.CryptographyConfiguration.Enabled = i % 3 == 0;
 
-                await t1.Connect();
-                await t2.Connect();
+                t1.Connect().GetAwaiter().GetResult();
+                t2.Connect().GetAwaiter().GetResult();
 
-                t2.RequestReceived += async (s, e) =>
+                t2.RequestReceived += (s, e) =>
                 {
                     CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                    await t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                    t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
                 };
 
-                t1.RequestReceived += async (s, e) =>
+                t1.RequestReceived += (s, e) =>
                 {
                     CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                    await t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                    t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
                 };
 
                 var request = new CalculateRequest() { A = 10, B = 15 };
@@ -346,17 +346,17 @@ namespace Resonance.Tests
                     Task.Factory.StartNew(() =>
                     {
                         response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-                    }).GetAwaiter().GetResult();
+                    });
 
                     Task.Factory.StartNew(() =>
                     {
                         response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-                    }).GetAwaiter().GetResult();
+                    });
                 }
                 else
                 {
-                    response1 = await t2.SendRequest<CalculateRequest, CalculateResponse>(request);
-                    response2 = await t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+                    response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                    response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
                 }
 
                 Thread.Sleep(1000);
@@ -375,8 +375,8 @@ namespace Resonance.Tests
                     Assert.IsFalse(t2.IsChannelSecure);
                 }
 
-                await t1.DisposeAsync(true);
-                await t2.DisposeAsync(true);
+                t1.Dispose(true);
+                t2.Dispose(true);
 
                 Assert.IsNotNull(response1);
                 Assert.IsNotNull(response2);
