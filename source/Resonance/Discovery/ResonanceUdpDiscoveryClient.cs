@@ -150,11 +150,11 @@ namespace Resonance.Discovery
         /// <param name="maxDuration">The maximum duration to perform the scan.</param>
         /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
         /// <returns></returns>
-        public Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> Discover(TimeSpan maxDuration, int? maxServices = null)
+        public async Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> Discover(TimeSpan maxDuration, int? maxServices = null)
         {
-            Start();
+            await Start();
 
-            return Task.Factory.StartNew<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>>(() => 
+            return await Task.Factory.StartNew<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>>(() => 
             {
                 DateTime startTime = DateTime.Now;
 

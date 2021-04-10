@@ -313,6 +313,8 @@ namespace Resonance.Tests
         {
             Init();
 
+            if (IsRunningOnAzurePipelines) return;
+
             for (int i = 0; i < 10; i++)
             {
                 ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
