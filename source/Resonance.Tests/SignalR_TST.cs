@@ -25,7 +25,6 @@ namespace Resonance.Tests
         [TestMethod]
         public async Task SignalR_Legacy_Reading_Writing()
         {
-            return;
             Init();
 
             if (IsRunningOnAzurePipelines) return;
@@ -42,7 +41,6 @@ namespace Resonance.Tests
         [TestMethod]
         public async Task SignalR_Core_Reading_Writing()
         {
-            return;
             Init();
 
             if (IsRunningOnAzurePipelines) return;
