@@ -383,7 +383,7 @@ You can easily trace all communication using your favorite logging library by pr
 ```
 <br/>
 
-**Specifying Logging Degree Per Request**
+**Specifying logging degree per request**
 
 ```c#
         public async void Demo()
@@ -412,7 +412,9 @@ You can easily trace all communication using your favorite logging library by pr
         }
 ```
 
-Viewing and tracking a request using Seq and the Token property.
+<br/>
+
+**Viewing and tracking a request using Seq and the request Token property.**
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png)
 
 <br/>
