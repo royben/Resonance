@@ -34,7 +34,7 @@ namespace Resonance.Tests
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request,new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content }).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content }).GetAwaiter().GetResult();
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -327,10 +327,13 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
-            Assert.ThrowsException<ResonanceAdapterFailedException>(() =>
+
+            try
             {
                 var response = t1.SendRequest(request).GetAwaiter().GetResult();
-            });
+                Assert.Fail("Expected an exception.");
+            }
+            catch { }
 
             Assert.IsTrue(t1.State == ResonanceComponentState.Failed);
             Assert.IsTrue(t1.FailedStateException.InnerException is KeyNotFoundException);
