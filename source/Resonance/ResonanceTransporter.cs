@@ -1430,10 +1430,7 @@ namespace Resonance
 
             if (info.HasDecodingException && info.Token != null)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    pendingContinuousRequest.OnError(info.DecoderException);
-                });
+                pendingContinuousRequest.OnError(info.DecoderException);
             }
             else if (!info.HasError)
             {
@@ -1443,34 +1440,25 @@ namespace Resonance
 
                 if (!info.Completed)
                 {
-                    Task.Factory.StartNew(() =>
-                    {
-                        pendingContinuousRequest.OnNext(info.Message);
-                        OnResponseReceived(response);
-                    });
+                    pendingContinuousRequest.OnNext(info.Message);
+                    OnResponseReceived(response);
                 }
                 else
                 {
                     _pendingRequests.Remove(pendingContinuousRequest);
 
-                    Task.Factory.StartNew(() =>
-                    {
-                        pendingContinuousRequest.OnNext(info.Message);
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Request.MessageTypeName);
-                        pendingContinuousRequest.OnCompleted();
-                        OnResponseReceived(response);
-                    });
+                    pendingContinuousRequest.OnNext(info.Message);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Request.MessageTypeName);
+                    pendingContinuousRequest.OnCompleted();
+                    OnResponseReceived(response);
                 }
             }
             else
             {
                 _pendingRequests.Remove(pendingContinuousRequest);
 
-                Task.Factory.StartNew(() =>
-                {
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Request.MessageTypeName);
-                    pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
-                });
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Request.MessageTypeName);
+                pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
             }
         }
 
