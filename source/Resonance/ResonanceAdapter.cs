@@ -1,4 +1,6 @@
-﻿using Resonance.Threading;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.ExtensionMethods;
+using Resonance.Threading;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -132,7 +134,7 @@ namespace Resonance
         protected virtual void OnFailed(Exception ex, String message)
         {
             FailedStateException = ex;
-            Log.Error(ex, $"{this}: {message}");
+            Logger.LogError(ex, message);
             Disconnect().GetAwaiter().GetResult();
             State = ResonanceComponentState.Failed;
         }
@@ -155,7 +157,7 @@ namespace Resonance
         /// <param name="newState">The new component state.</param>
         protected virtual void OnStateChanged(ResonanceComponentState previousState, ResonanceComponentState newState)
         {
-            Log.Debug($"{this}: State changed '{previousState}' => '{newState}'.");
+            Logger.LogDebug($"State changed '{previousState}' => '{newState}'.");
 
             StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
 
@@ -190,7 +192,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Disposed)
             {
-                throw Log.Error(new ObjectDisposedException($"{this}: The adapter is in a '{State}' state."));
+                throw Logger.LogErrorThrow(new ObjectDisposedException($"The adapter is in a '{State}' state."));
             }
         }
 
@@ -238,15 +240,15 @@ namespace Resonance
             {
                 try
                 {
-                    Log.Info($"{this}: Disposing...");
+                    Logger.LogInformation("Disposing...");
                     _isDisposing = true;
                     await Disconnect();
-                    Log.Info($"{this}: Disposed.");
+                    Logger.LogInformation("Disposed.");
                     State = ResonanceComponentState.Disposed;
                 }
                 catch (Exception ex)
                 {
-                    throw Log.Error(ex, $"{this}: Error occurred while trying to dispose the adapter.");
+                    throw Logger.LogErrorThrow(ex, "Error occurred while trying to dispose the adapter.");
                 }
                 finally
                 {
@@ -257,7 +259,7 @@ namespace Resonance
 
         #endregion
 
-        #region Connect / Disconnect /Write
+        #region Connect / Disconnect / Write
 
         /// <summary>
         /// Connects the adapter.
@@ -269,13 +271,13 @@ namespace Resonance
 
             if (State != ResonanceComponentState.Connected)
             {
-                Log.Info($"{this}: Connecting Adapter...");
+                Logger.LogInformation("Connecting Adapter...");
 
                 try
                 {
                     await OnConnect();
 
-                    Log.Info($"{this}: Adapter Connected.");
+                    Logger.LogInformation("Adapter Connected.");
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
@@ -288,7 +290,7 @@ namespace Resonance
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, $"{this}: Adapter connection error occurred.");
+                    Logger.LogError(ex, "Adapter connection error occurred.");
                     throw ex;
                 }
             }
@@ -304,7 +306,7 @@ namespace Resonance
             {
                 try
                 {
-                    Log.Info($"{this}: Disconnecting Adapter...");
+                    Logger.LogInformation("Disconnecting Adapter...");
 
                     await OnDisconnect();
 
@@ -313,11 +315,11 @@ namespace Resonance
                         _pushQueue.BlockEnqueue(null); //Will terminate the push thread.
                     }
 
-                    Log.Info($"{this}: Adapter Disconnected...");
+                    Logger.LogInformation("Adapter Disconnected...");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Adapter disconnection error occurred.");
+                    Logger.LogError(ex, "Adapter disconnection error occurred.");
                     throw ex;
                 }
             }

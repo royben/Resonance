@@ -1,4 +1,5 @@
-﻿using Resonance.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,12 +20,34 @@ namespace Resonance
         /// <returns></returns>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private ILogger _logger;
         /// <summary>
-        /// Gets the default log manager.
+        /// Gets or creates a new ILogger instance from <see cref="ResonanceGlobalSettings.LoggerFactory"/>.
         /// </summary>
-        protected ResonanceLogManager Log
+        protected ILogger Logger
         {
-            get { return ResonanceLogManager.Default; }
+            get
+            {
+                if (_logger == null)
+                {
+                    lock (this)
+                    {
+                        if (_logger == null)
+                        {
+                            if (ResonanceGlobalSettings.Default.LoggerFactory != null)
+                            {
+                                _logger = ResonanceGlobalSettings.Default.LoggerFactory.CreateLogger(this.ToString());
+                            }
+                            else
+                            {
+                                _logger = new ResonanceDummyLogger();
+                            }
+                        }
+                    }
+                }
+
+                return _logger;
+            }
         }
 
         /// <summary>

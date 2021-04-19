@@ -15,7 +15,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Standard_Request_Handler()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -37,7 +37,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Request_Response_Handler()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));

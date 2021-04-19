@@ -1,4 +1,5 @@
-﻿using Resonance.Adapters.NamedPipes;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.Adapters.NamedPipes;
 using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
@@ -65,7 +66,7 @@ namespace Resonance.Servers.NamedPipes
                 {
                     WaitForConnection();
                     IsStarted = true;
-                    Log.Info($"{this}: Started...");
+                    Logger.LogInformation("Started...");
                 }
             });
         }
@@ -81,7 +82,7 @@ namespace Resonance.Servers.NamedPipes
                 {
                     IsStarted = false;
                     _pendingPipeStream?.Dispose();
-                    Log.Info($"{this}: Stopped.");
+                    Logger.LogInformation("Stopped.");
                 }
             });
         }

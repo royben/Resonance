@@ -1,10 +1,13 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
 using Resonance.Logging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +16,9 @@ namespace Resonance.Tests.Common
     [TestClass]
     public class ResonanceTest
     {
+        private Serilog.Core.Logger _logger;
+        private static object syncLock = new object();
+
         private TestContext testContextInstance;
         /// <summary>
         /// Gets or sets the test context which provides
@@ -24,40 +30,58 @@ namespace Resonance.Tests.Common
             set { testContextInstance = value; }
         }
 
-        /// <summary>
-        /// Gets the default log manager.
-        /// </summary>
-        public ResonanceLogManager Log
-        {
-            get { return ResonanceLogManager.Default; }
-        }
-
         public bool IsRunningOnAzurePipelines { get; set; }
 
+        [TestInitialize]
         public void Init()
         {
             InMemoryAdapter.DisposeAll();
 
             IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
 
+            ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;
+            ResonanceLogManager.Default.LogItemAvailable += Default_LogItemAvailable;
+
+            var loggerFactory = new LoggerFactory();
+            var loggerConfiguration = new LoggerConfiguration();
+
             if (IsRunningOnAzurePipelines)
             {
-                Log.LogLevel = ResonanceLogLevel.Warning;
+                loggerConfiguration.MinimumLevel.Warning();
             }
             else
             {
                 if (Debugger.IsAttached)
                 {
-                    Log.LogLevel = ResonanceLogLevel.Debug;
+                    loggerConfiguration.MinimumLevel.Debug();
                 }
                 else
                 {
-                    Log.LogLevel = ResonanceLogLevel.Info;
+                    loggerConfiguration.MinimumLevel.Information();
                 }
+
+                loggerConfiguration.WriteTo.Sink(new SerilogTestContextSink(TestContext));
+                loggerConfiguration.WriteTo.Debug(Serilog.Events.LogEventLevel.Debug, "[{SourceContext}] [{Level}] [{Timestamp:HH:mm:ss.fff}]: {Message}{NewLine}{Exception}");
+                loggerConfiguration.WriteTo.Seq("http://localhost:5341");
             }
 
-            ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;
-            ResonanceLogManager.Default.LogItemAvailable += Default_LogItemAvailable;
+            _logger = loggerConfiguration.CreateLogger();
+
+            loggerFactory.AddSerilog(_logger);
+
+            ResonanceGlobalSettings.Default.LoggerFactory = loggerFactory;
+
+            StackTrace stackTrace = new StackTrace();
+            var testName = stackTrace.GetFrame(1).GetMethod().Name;
+
+            var logger = loggerFactory.CreateLogger(testName);
+            logger.LogDebug("Starting Test...");
+        }
+
+        [TestCleanup]
+        public void Dispose()
+        {
+            _logger?.Dispose();
         }
 
         private void Default_LogItemAvailable(object sender, ResonanceLogItemAvailableEventArgs e)

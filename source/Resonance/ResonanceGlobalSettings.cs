@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -59,5 +60,10 @@ namespace Resonance
         /// Gets or sets the encryption configuration.
         /// </summary>
         public Func<ResonanceEncryptionConfiguration> DefaultEncryptionConfiguration { get; set; } = () => new ResonanceEncryptionConfiguration();
+
+        /// <summary>
+        /// Gets or sets the logger factory for all Resonance components.
+        /// </summary>
+        public ILoggerFactory LoggerFactory { get; set; }
     }
 }

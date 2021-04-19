@@ -20,7 +20,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Short_Token_1000_Unique_Tokens_And_Performant()
         {
-            Init();
+
 
             var generator = new Tokens.ShortGuidGenerator();
 

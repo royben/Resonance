@@ -16,7 +16,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Request_And_Get_Notified_About_State_Changes()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -72,7 +72,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Request_And_Reports_Error_By_Throwing_Exception()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -118,7 +118,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Task_Result()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));

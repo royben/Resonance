@@ -13,6 +13,8 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonancePendingRequest" />
     public class ResonancePendingRequest : IResonancePendingRequest
     {
+        public bool IsCompleted { get; private set; }
+
         /// <summary>
         /// Gets or sets the Resonance request.
         /// </summary>
@@ -32,5 +34,31 @@ namespace Resonance
         /// Gets or sets a value indicating whether this pending request does not expect any response.
         /// </summary>
         public bool IsWithoutResponse { get; set; }
+
+        public void SetResult(Object result)
+        {
+            if (!IsCompleted)
+            {
+                IsCompleted = true;
+
+                if (!CompletionSource.Task.IsCompleted)
+                {
+                    CompletionSource.SetResult(result);
+                }
+            }
+        }
+
+        public void SetException(Exception exception)
+        {
+            if (!IsCompleted)
+            {
+                IsCompleted = true;
+
+                if (!CompletionSource.Task.IsCompleted)
+                {
+                    CompletionSource.SetException(exception);
+                }
+            }
+        }
     }
 }

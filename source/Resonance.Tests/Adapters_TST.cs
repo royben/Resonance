@@ -28,7 +28,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void InMemory_Adapter_Writing_Reading()
         {
-            Init();
             TestUtils.Read_Write_Test(
                 this, 
                 new InMemoryAdapter("TST"), 
@@ -42,8 +41,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Tcp_Adapter_Writing_Reading()
         {
-            Init();
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
@@ -70,8 +67,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Udp_Adapter_Writing_Reading()
         {
-            Init();
-
             IPAddress localIpAddress = IPAddress.Parse(TcpAdapter.GetLocalIPAddress());
 
             TestUtils.Read_Write_Test(
@@ -87,11 +82,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void Usb_Adapter_Writing_Reading()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines)
             {
-                Log.Info("Running on azure. Skipping USB Adapter test.");
                 return;
             }
 
@@ -119,7 +113,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void NamedPipes_Adapter_Writing_Reading()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new NamedPipesAdapter("Resonance"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
