@@ -38,9 +38,6 @@ namespace Resonance.Tests.Common
 
             IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
 
-            ResonanceLogManager.Default.LogItemAvailable -= Default_LogItemAvailable;
-            ResonanceLogManager.Default.LogItemAvailable += Default_LogItemAvailable;
-
             var loggerFactory = new LoggerFactory();
             var loggerConfiguration = new LoggerConfiguration();
 
@@ -81,12 +78,6 @@ namespace Resonance.Tests.Common
         public void Dispose()
         {
             _logger?.Dispose();
-        }
-
-        private void Default_LogItemAvailable(object sender, ResonanceLogItemAvailableEventArgs e)
-        {
-            TestContext.WriteLine(e.LogItem.Message);
-            Debug.WriteLine(e.LogItem.Message);
         }
     }
 }
