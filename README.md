@@ -385,6 +385,8 @@ You can easily trace all communication using your favorite logging library by pr
 
 **Specifying logging degree per request**
 
+<br/>
+
 ```c#
         public async void Demo()
         {
