@@ -87,7 +87,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Bson_Transcoding_With_DateTime_Kind()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return; //Hangs when running in a sequence of tests for some reason.
 
@@ -132,21 +132,21 @@ namespace Resonance.Tests
         [TestMethod]
         public void Xml_Transcoding()
         {
-            Init();
+
             TestUtils.Read_Write_Test(this, new XmlEncoder(), new XmlDecoder(), false, false, 1, 0);
         }
 
         [TestMethod]
         public void Json_Transcoding()
         {
-            Init();
+
             TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, false, 1, 0);
         }
 
         [TestMethod]
         public void Protobuf_Transcoding()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -187,7 +187,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Protobuf_Transcoding_Type_Resolver()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -232,7 +232,7 @@ namespace Resonance.Tests
         {
             return;
             //This test needs a second run. not sure why.
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return; //Hangs when running in a sequence of tests for some reason.
 

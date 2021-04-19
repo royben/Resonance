@@ -1,4 +1,5 @@
-﻿using Resonance.SignalR;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.SignalR;
 using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
@@ -140,7 +141,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        Log.Error(ex, $"{this}: Error occurred after successful connection.");
+                                        Logger.LogError(ex, "Error occurred after successful connection.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -157,7 +158,7 @@ namespace Resonance.Adapters.SignalR
 
                                         var ex = new ConnectionDeclinedException();
 
-                                        Log.Error(ex, $"{this}: Error occurred after session created.");
+                                        Logger.LogError(ex, "Error occurred after session created.");
                                         completionSource.SetException(ex);
                                     }
                                 }
@@ -165,7 +166,7 @@ namespace Resonance.Adapters.SignalR
                                 {
                                     if (!completed)
                                     {
-                                        Log.Error(ex, $"{this}: Error occurred after session created.");
+                                        Logger.LogError(ex, "Error occurred after session created.");
                                         completed = true;
                                         completionSource.SetException(ex);
                                     }
@@ -179,17 +180,17 @@ namespace Resonance.Adapters.SignalR
                             //Maybe just raise an event..
                         });
 
-                        Log.Info($"{this}: Authenticating with the remote hub...");
+                        Logger.LogInformation("Authenticating with the remote hub...");
                         _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
 
                         if (Role == SignalRAdapterRole.Connect)
                         {
-                            Log.Info($"{this}: Connecting to service ({ServiceId})...");
+                            Logger.LogInformation("Connecting to service ({ServiceId})...");
                             SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                         }
                         else
                         {
-                            Log.Info($"{this}: Accepting connection ({SessionId})...");
+                            Logger.LogInformation($"Accepting connection ({SessionId})...");
                             _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
 
                             if (!completed)
@@ -205,7 +206,7 @@ namespace Resonance.Adapters.SignalR
                     catch (Exception ex)
                     {
                         completed = true;
-                        Log.Error(ex, $"{this}: Error occurred while trying to connect.");
+                        Logger.LogError(ex, "Error occurred while trying to connect.");
                         completionSource.SetException(ex);
                     }
                 });
@@ -246,10 +247,10 @@ namespace Resonance.Adapters.SignalR
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, $"{this}: Error occurred while disconnecting.");
+                    Logger.LogError(ex, $"Error occurred while disconnecting.");
                 }
 
-                Log.Info($"{this}: Disconnected.");
+                Logger.LogInformation("Disconnected.");
                 State = ResonanceComponentState.Disconnected;
 
                 if (!notify)

@@ -1,4 +1,5 @@
-﻿using Resonance.Adapters.Tcp;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.Adapters.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -66,7 +67,7 @@ namespace Resonance.Servers.Tcp
                     _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                     _listener.Start();
                     IsStarted = true;
-                    Log.Info($"TCP server started on port {Port}.");
+                    Logger.LogInformation($"TCP server started on port {Port}.");
                     WaitForConnection();
                 }
             });
@@ -84,7 +85,7 @@ namespace Resonance.Servers.Tcp
                 {
                     _listener.Stop();
                     IsStarted = false;
-                    Log.Info($"TCP server stopped on port {Port}.");
+                    Logger.LogInformation($"TCP server stopped on port {Port}.");
                 }
             });
         }
@@ -152,6 +153,15 @@ namespace Resonance.Servers.Tcp
         public Task DisposeAsync()
         {
             return Stop();
+        }
+
+        #endregion
+
+        #region ToString
+
+        public override string ToString()
+        {
+            return this.GetType().Name;
         }
 
         #endregion

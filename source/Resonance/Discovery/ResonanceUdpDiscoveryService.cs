@@ -1,4 +1,5 @@
-﻿using Resonance.ExtensionMethods;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.ExtensionMethods;
 using Resonance.Servers.Tcp;
 using System;
 using System.Collections.Generic;
@@ -85,11 +86,11 @@ namespace Resonance.Discovery
         {
             if (!IsStarted)
             {
-                Log.Info($"{this}: Starting...");
-                Log.Debug($"{this}: Discovery Info:\n{DiscoveryInfo.ToJsonString()}");
+                Logger.LogInformation("Starting...");
+                Logger.LogDebug("Discovery Info: {@DiscoveryInfo}", DiscoveryInfo);
 
                 _tcpValidationServer = new ResonanceTcpServer(Port);
-                _tcpValidationServer.ConnectionRequest += (x, e) => 
+                _tcpValidationServer.ConnectionRequest += (x, e) =>
                 {
                     e.Decline();
                 };
@@ -103,7 +104,7 @@ namespace Resonance.Discovery
                 _timer.Start();
 
                 IsStarted = true;
-                Log.Info($"{this}: Started.");
+                Logger.LogInformation("Started.");
             }
         }
 
@@ -114,7 +115,7 @@ namespace Resonance.Discovery
         {
             if (IsStarted)
             {
-                Log.Info($"{this}: Stopping...");
+                Logger.LogInformation("Stopping...");
 
                 await _tcpValidationServer.Stop();
 
@@ -123,7 +124,7 @@ namespace Resonance.Discovery
 
                 _timer.Stop();
                 IsStarted = false;
-                Log.Info($"{this}: Stopped...");
+                Logger.LogInformation("Stopped.");
             }
         }
 
@@ -131,7 +132,7 @@ namespace Resonance.Discovery
         {
             try
             {
-                Log.Debug($"{this}: Broadcasting discovery message...");
+                Logger.LogDebug("Broadcasting discovery message...");
 
                 UdpClient client = new UdpClient();
                 client.EnableBroadcast = true;
@@ -153,7 +154,7 @@ namespace Resonance.Discovery
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error broadcasting discovery message.");
+                Logger.LogError(ex, "Error broadcasting discovery message.");
             }
         }
 

@@ -31,7 +31,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Udp_Discovery()
         {
-            Init();
+
 
             ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder> service =
                 new ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder>(new DiscoveryInfo()
@@ -55,7 +55,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Udp_Multi_Discovery()
         {
-            Init();
+
 
             List<DiscoveryInfo> infos = new List<DiscoveryInfo>();
             List<ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder>> services = new List<ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder>>();
@@ -98,7 +98,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Udp_Discovery_Service_Lost()
         {
-            Init();
+
 
             ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder> service =
                 new ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder>(new DiscoveryInfo()
@@ -136,7 +136,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Udp_Discovery_And_Tcp_Transporter_Connection()
         {
-            Init();
+
 
             ResonanceUdpDiscoveryService<DiscoveryInfoTransporter, JsonEncoder> service =
                 new ResonanceUdpDiscoveryService<DiscoveryInfoTransporter, JsonEncoder>(new DiscoveryInfoTransporter()

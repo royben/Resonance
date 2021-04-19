@@ -20,7 +20,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Builder()
         {
-            Init();
+
 
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
@@ -107,7 +107,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Usb_Adapter_Builder()
         {
-            Init();
+
 
             IResonanceTransporter usbTransporter = ResonanceTransporter.Builder
                .Create()
@@ -135,7 +135,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void SignalR_Adapter_Builder()
         {
-            Init();
+
 
             IResonanceTransporter signalRTransporter = ResonanceTransporter.Builder
                .Create()

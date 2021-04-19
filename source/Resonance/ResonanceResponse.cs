@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -19,6 +20,24 @@ namespace Resonance
         /// Gets or sets the response message.
         /// </summary>
         public object Message { get; set; }
+
+        private String _messageTypeName;
+        /// <summary>
+        /// Gets the name of the message type.
+        /// </summary>
+        [JsonIgnore]
+        internal String MessageTypeName
+        {
+            get
+            {
+                if (_messageTypeName == null)
+                {
+                    _messageTypeName = Message?.GetType().Name;
+                }
+
+                return _messageTypeName;
+            }
+        }
     }
 
     /// <summary>

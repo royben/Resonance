@@ -12,6 +12,8 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonancePendingRequest" />
     public class ResonancePendingContinuousRequest : IResonancePendingRequest
     {
+        public bool IsCompleted { get; private set; }
+
         /// <summary>
         /// Gets or sets the Resonance request.
         /// </summary>
@@ -31,5 +33,22 @@ namespace Resonance
         /// Gets or sets the request cancellation token.
         /// </summary>
         public CancellationToken CancellationToken { get; set; }
+
+        public void OnNext(Object response)
+        {
+            ContinuousObservable.OnNext(response);
+        }
+
+        public void OnError(Exception exception)
+        {
+            IsCompleted = true;
+            ContinuousObservable.OnError(exception);
+        }
+
+        public void OnCompleted()
+        {
+            IsCompleted = true;
+            ContinuousObservable.OnCompleted();
+        }
     }
 }

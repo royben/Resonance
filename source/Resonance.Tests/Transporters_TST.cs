@@ -20,8 +20,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request()
         {
-            Init();
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -36,7 +34,7 @@ namespace Resonance.Tests
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request,new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content }).GetAwaiter().GetResult();
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -47,7 +45,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Error()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -68,12 +66,14 @@ namespace Resonance.Tests
 
             t1.Dispose(true);
             t2.Dispose(true);
+
+            Dispose();
         }
 
         [TestMethod]
         public void Send_And_Receive_Continuous_Request()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -133,7 +133,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Compression()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -162,7 +162,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Encryption()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -216,7 +216,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Continuous_Request_With_Error()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -287,7 +287,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Request_Timeout_Throws_Exception()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -319,7 +319,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Failes_With_Adapter()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = true;
@@ -327,7 +327,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
-            Assert.ThrowsException<KeyNotFoundException>(() =>
+            Assert.ThrowsException<ResonanceAdapterFailedException>(() =>
             {
                 var response = t1.SendRequest(request).GetAwaiter().GetResult();
             });
@@ -342,7 +342,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Does_Not_Fail_With_Adapter()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = false;
@@ -363,7 +363,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Disposes_Adapter()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.NotifyOnDisconnect = false; //This is set so the adapter will not fail on disconnect request and thus will not be disposed but failed.
@@ -379,7 +379,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Request_Cancellation_Token_Throws_Exception()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -406,7 +406,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Incorrect_Response_Throws_Exception()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -434,7 +434,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Decoder_Exception_Throws_Exception()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.Decoder = new CorruptedDecoder();
@@ -464,7 +464,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Fails_Transporter()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -501,7 +501,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Does_Not_Fails_Transporter()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -543,7 +543,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Auto_Response()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -579,7 +579,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Retries()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 
@@ -616,12 +616,14 @@ namespace Resonance.Tests
 
             t1.Dispose(true);
             t2.Dispose(true);
+
+            Dispose();
         }
 
         [TestMethod]
         public void Disconnection_Request()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -650,7 +652,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_Object_Without_Expecting_Response()
         {
-            Init();
+
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
@@ -680,7 +682,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Manual_Begin_Handshake()
         {
-            Init();
+
 
             var t1 = ResonanceTransporter.Builder
                 .Create()

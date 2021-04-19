@@ -19,7 +19,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void HandShake_Transcoder_Encoding_Decoding()
         {
-            Init();
+
 
             ResonanceHandShakeMessage handshake = new ResonanceHandShakeMessage();
             handshake.ClientId = 4;
@@ -39,7 +39,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void HandShake_Negotiator_Provides_Symmetric_Password_Oneway()
         {
-            Init();
+
 
             for (int i = 0; i < 10; i++)
             {
@@ -107,7 +107,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void HandShake_Negotiator_Provides_Symmetric_Password_Twoway()
         {
-            Init();
+
 
             for (int i = 0; i < 10; i++)
             {
@@ -176,7 +176,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void HandShake_Negotiator_Does_Not_Provide_Symmetric_Password_Oneway()
         {
-            Init();
+
 
             for (int i = 0; i < 10; i++)
             {
@@ -242,7 +242,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void HandShake_Negotiator_Does_Not_Provide_Symmetric_Password_Twoway()
         {
-            Init();
+
 
             for (int i = 0; i < 10; i++)
             {
@@ -311,7 +311,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void Handshake_With_Different_Encryption_Configuration_And_Conditions()
         {
-            Init();
+
 
             if (IsRunningOnAzurePipelines) return;
 

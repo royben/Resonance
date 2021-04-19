@@ -1,4 +1,5 @@
-﻿using Resonance.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Resonance.Logging;
 using Resonance.Threading;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Resonance.ExtensionMethods;
 
 namespace Resonance.Adapters.Usb
 {
@@ -152,7 +154,7 @@ namespace Resonance.Adapters.Usb
                 {
                     if (!source.Task.IsCompleted)
                     {
-                        source.SetException(Log.Error(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again.")));
+                        source.SetException(Logger.LogErrorThrow(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again.")));
                     }
 
                 }, TimeSpan.FromSeconds(5));
@@ -208,7 +210,7 @@ namespace Resonance.Adapters.Usb
 
                     if (!source.Task.IsCompleted)
                     {
-                        Log.Fatal(new IOException($"{this}: The serial port seems to be in a froze state. Reinitialize the port and try again."));
+                        Logger.LogCritical(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again."));
                         State = ResonanceComponentState.Disconnected;
                         source.SetResult(true);
                     }
@@ -259,7 +261,7 @@ namespace Resonance.Adapters.Usb
 
                     if (expectedSize > MaxExpectedSize || expectedSize < 1)
                     {
-                        Log.Warning($"Invalid expected size received on USB adapter ({expectedSize} bytes). Discarding buffers...");
+                        Logger.LogWarning($"Invalid expected size received on USB adapter ({expectedSize} bytes). Discarding buffers...");
 
                         byte[] falseData = new byte[_serialPort.BytesToRead];
                         _serialPort.Read(falseData, 0, falseData.Length);
@@ -296,7 +298,7 @@ namespace Resonance.Adapters.Usb
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"{this}: Error occurred while trying to read from the serial port.");
+                Logger.LogError(ex, $"Error occurred while trying to read from the serial port.");
             }
         }
 

@@ -358,6 +358,66 @@ The following example demonstrate how to report an error from one side while han
             }
         }
 ```
+<br/>
+
+# Logging
+The Resonance library takes advantage of structured logs and makes it easy to track the full path of each request.
+You can easily trace all communication using your favorite logging library by providing an instance of ILoggingFactory.
+
+**Hooking Resonance to Serilog**
+
+```c#
+        public void InitLogging()
+        {
+            var loggerFactory = new LoggerFactory();
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.Seq("http://localhost:5341")
+                .CreateLogger();
+
+            loggerFactory.AddSerilog(logger);
+
+            ResonanceGlobalSettings.Default.LoggerFactory = loggerFactory;
+        }
+```
+<br/>
+
+**Specifying logging degree per request**
+
+<br/>
+
+```c#
+        public async void Demo()
+        {
+            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+               .Create().WithTcpAdapter()
+               .WithAddress("127.0.0.1")
+               .WithPort(8888)
+               .WithJsonTranscoding()
+               .WithKeepAlive()
+               .NoEncryption()
+               .WithCompression()
+               .Build();
+
+            await transporter1.Connect();
+
+            CalculateRequest request = new CalculateRequest() { A = 10, B = 5 };
+
+            //Log request and response names
+            var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(request,
+                new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Title });
+
+            //Log request and response names and content
+            response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(request,
+                new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
+        }
+```
+
+<br/>
+
+**Viewing and tracking a request using Seq and the request Token property.**
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png)
 
 <br/>
 <br/>
