@@ -17,7 +17,6 @@ namespace Resonance.Tests.Common
     public class ResonanceTest
     {
         private Serilog.Core.Logger _logger;
-        private static object syncLock = new object();
 
         private TestContext testContextInstance;
         /// <summary>
