@@ -42,7 +42,6 @@ namespace Resonance.Adapters.InMemory
         /// <returns></returns>
         protected override Task OnConnect()
         {
-            State = ResonanceComponentState.Connected;
             return Task.FromResult(new object());
         }
 
@@ -53,7 +52,6 @@ namespace Resonance.Adapters.InMemory
         protected override Task OnDisconnect()
         {
             InMemoryAdaptersManager.UnregisterAdapter(this);
-            State = ResonanceComponentState.Disconnected;
             return Task.FromResult(true);
         }
 

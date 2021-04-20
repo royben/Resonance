@@ -188,7 +188,6 @@ namespace Resonance.Adapters.Tcp
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                State = ResonanceComponentState.Disconnected;
                 _socket.Close();
             }));
         }

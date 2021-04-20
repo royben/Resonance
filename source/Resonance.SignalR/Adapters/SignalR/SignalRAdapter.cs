@@ -110,121 +110,113 @@ namespace Resonance.Adapters.SignalR
 
         protected override Task OnConnect()
         {
-            if (State != ResonanceComponentState.Connected)
+            bool completed = false;
+
+            TaskCompletionSource<object> completionSource = new TaskCompletionSource<object>();
+
+            Task.Factory.StartNew(() =>
             {
-                bool completed = false;
-
-                TaskCompletionSource<object> completionSource = new TaskCompletionSource<object>();
-
-                Task.Factory.StartNew(() =>
+                try
                 {
-                    try
+                    _client = SignalRClientFactory.Default.Create(Mode, Url);
+                    _client.Start().GetAwaiter().GetResult();
+
+                    if (Role == SignalRAdapterRole.Connect)
                     {
-                        _client = SignalRClientFactory.Default.Create(Mode, Url);
-                        _client.Start().GetAwaiter().GetResult();
-
-                        if (Role == SignalRAdapterRole.Connect)
+                        _client.On(ResonanceHubMethods.Connected, () =>
                         {
-                            _client.On(ResonanceHubMethods.Connected, () =>
+                            try
                             {
-                                try
+                                if (!completed)
                                 {
-                                    if (!completed)
-                                    {
-                                        completed = true;
-
-                                        State = ResonanceComponentState.Connected;
-                                        completionSource.SetResult(true);
-                                    }
+                                    completed = true;
+                                    completionSource.SetResult(true);
                                 }
-                                catch (Exception ex)
-                                {
-                                    if (!completed)
-                                    {
-                                        Logger.LogError(ex, "Error occurred after successful connection.");
-                                        completed = true;
-                                        completionSource.SetException(ex);
-                                    }
-                                }
-                            });
-
-                            _client.On(ResonanceHubMethods.Declined, () =>
+                            }
+                            catch (Exception ex)
                             {
-                                try
+                                if (!completed)
                                 {
-                                    if (!completed)
-                                    {
-                                        completed = true;
-
-                                        var ex = new ConnectionDeclinedException();
-
-                                        Logger.LogError(ex, "Error occurred after session created.");
-                                        completionSource.SetException(ex);
-                                    }
+                                    Logger.LogError(ex, "Error occurred after successful connection.");
+                                    completed = true;
+                                    completionSource.SetException(ex);
                                 }
-                                catch (Exception ex)
-                                {
-                                    if (!completed)
-                                    {
-                                        Logger.LogError(ex, "Error occurred after session created.");
-                                        completed = true;
-                                        completionSource.SetException(ex);
-                                    }
-                                }
-                            });
-                        }
+                            }
+                        });
 
-                        _client.On(ResonanceHubMethods.Disconnected, () =>
+                        _client.On(ResonanceHubMethods.Declined, () =>
                         {
+                            try
+                            {
+                                if (!completed)
+                                {
+                                    completed = true;
+
+                                    var ex = new ConnectionDeclinedException();
+
+                                    Logger.LogError(ex, "Error occurred after session created.");
+                                    completionSource.SetException(ex);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (!completed)
+                                {
+                                    Logger.LogError(ex, "Error occurred after session created.");
+                                    completed = true;
+                                    completionSource.SetException(ex);
+                                }
+                            }
+                        });
+                    }
+
+                    _client.On(ResonanceHubMethods.Disconnected, () =>
+                    {
                             //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
                             //Maybe just raise an event..
                         });
 
-                        Logger.LogInformation("Authenticating with the remote hub...");
-                        _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
+                    Logger.LogInformation("Authenticating with the remote hub...");
+                    _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
 
-                        if (Role == SignalRAdapterRole.Connect)
-                        {
-                            Logger.LogInformation("Connecting to service ({ServiceId})...");
-                            SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
-                        }
-                        else
-                        {
-                            Logger.LogInformation($"Accepting connection ({SessionId})...");
-                            _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
-
-                            if (!completed)
-                            {
-                                completed = true;
-                                State = ResonanceComponentState.Connected;
-                                completionSource.SetResult(true);
-                            }
-                        }
-
-                        _client.On<byte[]>(ResonanceHubMethods.DataAvailable, (data) => { OnDataAvailable(data); });
-                    }
-                    catch (Exception ex)
+                    if (Role == SignalRAdapterRole.Connect)
                     {
-                        completed = true;
-                        Logger.LogError(ex, "Error occurred while trying to connect.");
-                        completionSource.SetException(ex);
+                        Logger.LogInformation("Connecting to service ({ServiceId})...");
+                        SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                     }
-                });
+                    else
+                    {
+                        Logger.LogInformation($"Accepting connection ({SessionId})...");
+                        _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
 
-                TimeoutTask.StartNew(() =>
+                        if (!completed)
+                        {
+                            completed = true;
+                            completionSource.SetResult(true);
+                        }
+                    }
+
+                    _client.On<byte[]>(ResonanceHubMethods.DataAvailable, (data) => { OnDataAvailable(data); });
+                }
+                catch (Exception ex)
                 {
-                    if (!completed)
-                    {
-                        completed = true;
-                        completionSource.SetException(new TimeoutException("Could not connect after the given timeout."));
-                    }
+                    completed = true;
+                    Logger.LogError(ex, "Error occurred while trying to connect.");
+                    completionSource.SetException(ex);
+                }
+            });
 
-                }, ConnectionTimeout);
+            TimeoutTask.StartNew(() =>
+            {
+                if (!completed)
+                {
+                    completed = true;
+                    completionSource.SetException(new TimeoutException("Could not connect after the given timeout."));
+                }
 
-                return completionSource.Task;
-            }
+            }, ConnectionTimeout);
 
-            return Task.FromResult(true);
+            return completionSource.Task;
         }
 
         protected override Task OnDisconnect()
@@ -251,7 +243,6 @@ namespace Resonance.Adapters.SignalR
                 }
 
                 Logger.LogInformation("Disconnected.");
-                State = ResonanceComponentState.Disconnected;
 
                 if (!notify)
                 {

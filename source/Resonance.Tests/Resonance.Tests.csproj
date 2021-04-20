@@ -81,6 +81,7 @@
     <Compile Include="Transcoding_TST.cs" />
     <Compile Include="HandShake_TST.cs" />
     <Compile Include="ComponentCounter_TST.cs" />
+    <Compile Include="WebRTC_TST.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -101,6 +102,10 @@
     <ProjectReference Include="..\Resonance.USB\Resonance.USB.csproj">
       <Project>{737d3507-e83d-4620-8b99-7325749ae85d}</Project>
       <Name>Resonance.USB</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Resonance.WebRTC\Resonance.WebRTC.csproj">
+      <Project>{3d016bc8-a82d-4f72-97a3-66728cfc29a0}</Project>
+      <Name>Resonance.WebRTC</Name>
     </ProjectReference>
     <ProjectReference Include="..\Resonance\Resonance.csproj">
       <Project>{67f02cfb-010f-47f2-8752-2d615cef135f}</Project>

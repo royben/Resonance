@@ -104,7 +104,6 @@ namespace Resonance.Adapters.Udp
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                State = ResonanceComponentState.Disconnected;
                 _socket.Close();
             }));
         }

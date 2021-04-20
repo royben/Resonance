@@ -111,58 +111,49 @@ namespace Resonance.Adapters.Usb
         {
             TaskCompletionSource<object> source = new TaskCompletionSource<object>();
 
-            if (State != ResonanceComponentState.Connected)
+            ThreadFactory.StartNew(() =>
             {
-                ThreadFactory.StartNew(() =>
+                try
                 {
-                    try
+                    if (_serialPort != null)
                     {
-                        if (_serialPort != null)
-                        {
-                            _serialPort.DataReceived -= OnSerialPortDataReceived;
-                        }
-
-                        _serialPort = new SerialPort();
-                        _serialPort.BaudRate = BaudRate;
-                        _serialPort.PortName = Port;
-                        _serialPort.ReadBufferSize = MaxBufferSize;
-                        _serialPort.WriteBufferSize = MaxBufferSize;
-                        _serialPort.Open();
-
-                        _serialPort.DiscardInBuffer();
-                        _serialPort.DiscardOutBuffer();
-
-                        _serialPort.DataReceived += OnSerialPortDataReceived;
-
-                        State = ResonanceComponentState.Connected;
-
-                        if (!source.Task.IsCompleted)
-                        {
-                            source.SetResult(true);
-                        }
+                        _serialPort.DataReceived -= OnSerialPortDataReceived;
                     }
-                    catch (Exception ex)
+
+                    _serialPort = new SerialPort();
+                    _serialPort.BaudRate = BaudRate;
+                    _serialPort.PortName = Port;
+                    _serialPort.ReadBufferSize = MaxBufferSize;
+                    _serialPort.WriteBufferSize = MaxBufferSize;
+                    _serialPort.Open();
+
+                    _serialPort.DiscardInBuffer();
+                    _serialPort.DiscardOutBuffer();
+
+                    _serialPort.DataReceived += OnSerialPortDataReceived;
+
+                    if (!source.Task.IsCompleted)
                     {
-                        if (!source.Task.IsCompleted)
-                        {
-                            source.SetException(ex);
-                        }
+                        source.SetResult(true);
                     }
-                });
-
-                TimeoutTask.StartNew(() =>
+                }
+                catch (Exception ex)
                 {
                     if (!source.Task.IsCompleted)
                     {
-                        source.SetException(Logger.LogErrorThrow(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again.")));
+                        source.SetException(ex);
                     }
+                }
+            });
 
-                }, TimeSpan.FromSeconds(5));
-            }
-            else
+            TimeoutTask.StartNew(() =>
             {
-                source.SetResult(true);
-            }
+                if (!source.Task.IsCompleted)
+                {
+                    source.SetException(Logger.LogErrorThrow(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again.")));
+                }
+
+            }, TimeSpan.FromSeconds(5));
 
             return source.Task;
         }
@@ -175,52 +166,43 @@ namespace Resonance.Adapters.Usb
         {
             TaskCompletionSource<object> source = new TaskCompletionSource<object>();
 
-            if (State == ResonanceComponentState.Connected)
+            ThreadFactory.StartNew(() =>
             {
-                ThreadFactory.StartNew(() =>
+                try
                 {
-                    try
+                    if (_serialPort != null)
                     {
-                        if (_serialPort != null)
-                        {
-                            _serialPort.DataReceived -= OnSerialPortDataReceived;
-                        }
-
-                        _serialPort.Close();
-                        _serialPort.Dispose();
                         _serialPort.DataReceived -= OnSerialPortDataReceived;
-                        State = ResonanceComponentState.Disconnected;
-
-                        if (!source.Task.IsCompleted)
-                        {
-                            source.SetResult(true);
-                        }
                     }
-                    catch (Exception ex)
-                    {
-                        if (!source.Task.IsCompleted)
-                        {
-                            source.SetException(ex);
-                        }
-                    }
-                });
 
-                TimeoutTask.StartNew(() =>
-                {
+                    _serialPort.Close();
+                    _serialPort.Dispose();
+                    _serialPort.DataReceived -= OnSerialPortDataReceived;
 
                     if (!source.Task.IsCompleted)
                     {
-                        Logger.LogCritical(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again."));
-                        State = ResonanceComponentState.Disconnected;
                         source.SetResult(true);
                     }
+                }
+                catch (Exception ex)
+                {
+                    if (!source.Task.IsCompleted)
+                    {
+                        source.SetException(ex);
+                    }
+                }
+            });
 
-                }, TimeSpan.FromSeconds(5));
-            }
-            else
+            TimeoutTask.StartNew(() =>
             {
-                source.SetResult(true);
-            }
+
+                if (!source.Task.IsCompleted)
+                {
+                    Logger.LogCritical(new IOException($"The serial port seems to be in a froze state. Reinitialize the port and try again."));
+                    source.SetResult(true);
+                }
+
+            }, TimeSpan.FromSeconds(5));
 
             return source.Task;
         }

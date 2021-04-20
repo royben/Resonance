@@ -279,6 +279,8 @@ namespace Resonance
 
                     Logger.LogInformation("Adapter Connected.");
 
+                    State = ResonanceComponentState.Connected;
+
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {
                         _pushQueue = new ProducerConsumerQueue<byte[]>();
@@ -309,6 +311,8 @@ namespace Resonance
                     Logger.LogInformation("Disconnecting Adapter...");
 
                     await OnDisconnect();
+
+                    State = ResonanceComponentState.Disconnected;
 
                     if (WriteMode == ResonanceAdapterWriteMode.Queue)
                     {

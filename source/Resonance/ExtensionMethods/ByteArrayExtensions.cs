@@ -23,5 +23,35 @@ namespace Resonance.ExtensionMethods
             double num = Math.Round(bytes / Math.Pow(1024, place), 1);
             return (Math.Sign(size) * num).ToString() + " " + suf[place];
         }
+
+        /// <summary>
+        /// Chunk this array to segments.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="chunkSize">Size of the chunk.</param>
+        /// <returns></returns>
+        public static List<byte[]> ToChunks(this byte[] data, int chunkSize)
+        {
+            List<byte[]> segments = new List<byte[]>();
+            int index = 0;
+
+            while (index < data.Length)
+            {
+                int count = Math.Min(chunkSize, data.Length - index);
+                byte[] chunk = new byte[count];
+                Buffer.BlockCopy(data, index, chunk, 0, count);
+                segments.Add(chunk);
+                index += count;
+            }
+
+            return segments;
+        }
+
+        public static byte[] TakeFrom(this byte[] data, int index)
+        {
+            byte[] chunk = new byte[data.Length - index];
+            Buffer.BlockCopy(data, index, chunk, 0, chunk.Length);
+            return chunk;
+        }
     }
 }
