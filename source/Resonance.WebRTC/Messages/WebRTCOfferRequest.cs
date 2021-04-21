@@ -7,6 +7,11 @@ namespace Resonance.WebRTC.Messages
 {
     public class WebRTCOfferRequest
     {
-        public RTCSessionDescriptionInit Offer { get; set; }
+        public WebRTCSessionDescription Offer { get; set; }
+
+        public WebRTCOfferRequest()
+        {
+            Offer = new WebRTCSessionDescription();
+        }
     }
 }

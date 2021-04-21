@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Resonance.Adapters.WebRTC
 {
+    /// <summary>
+    /// Represents a <see cref="WebRTCAdapter"/> role.
+    /// </summary>
     public enum WebRTCAdapterRole
     {
         /// <summary>

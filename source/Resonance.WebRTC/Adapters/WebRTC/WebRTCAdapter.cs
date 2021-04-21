@@ -31,7 +31,7 @@ namespace Resonance.Adapters.WebRTC
         private bool _canSendIceCandidates;
         private WebRTCOfferRequest _offerRequest;
         private String _offerRequestToken;
-        private const int MAX_MSG_SIZE = 16000; //Bytes
+        private const int MAX_MSG_SIZE = 16000; //~16 KB + segments count and checksum.
         private List<byte[]> _receivedSegments;
         private int _expectedSegments;
         private byte[] _expectedSegmentsCheckSum;
@@ -62,6 +62,22 @@ namespace Resonance.Adapters.WebRTC
         /// </summary>
         public ResonanceMessageLoggingMode LoggingMode { get; set; }
 
+        /// <summary>
+        /// Gets a value indicating whether this adapter was initialized by an offer request.
+        /// </summary>
+        public bool InitializedByOffer
+        {
+            get { return _offerRequest != null; }
+        }
+
+        /// <summary>
+        /// Gets the signaling transporter of this adapter, used to exchange session description and ice candidates.
+        /// </summary>
+        public IResonanceTransporter SignalingTransporter
+        {
+            get { return _signalingTransporter; }
+        }
+
         #endregion
 
         #region Constructors
@@ -74,15 +90,7 @@ namespace Resonance.Adapters.WebRTC
             ConnectionTimeout = TimeSpan.FromSeconds(10);
             _pendingCandidates = new List<RTCIceCandidate>();
             _incomingQueue = new ProducerConsumerQueue<byte[]>();
-            IceServers = new List<WebRTCIceServer>()
-            {
-                 new WebRTCIceServer() { Url = "stun:stun.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun1.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun2.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun3.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "turn:numb.viagenie.ca:3478", UserName = "roy.mail.net@gmail.com", Credentials = "X7jPGh8Y@BjTi8G" },
-            };
+            IceServers = new List<WebRTCIceServer>();
         }
 
         /// <summary>
@@ -168,16 +176,16 @@ namespace Resonance.Adapters.WebRTC
 
                         var response = await _signalingTransporter.SendRequest<WebRTCOfferRequest, WebRTCOfferResponse>(new WebRTCOfferRequest()
                         {
-                            Offer = offer
+                            Offer = WebRTCSessionDescription.FromSessionDescription(offer)
                         }, new ResonanceRequestConfig()
                         {
                             Timeout = TimeSpan.FromSeconds(30),
                             LoggingMode = LoggingMode
                         });
 
-                        if (response.Answer.type == RTCSdpType.answer)
+                        if (response.Answer.InternalType == RTCSdpType.answer)
                         {
-                            var result = _connection.setRemoteDescription(response.Answer);
+                            var result = _connection.setRemoteDescription(response.Answer.ToSessionDescription());
 
                             if (result != SetDescriptionResultEnum.OK)
                             {
@@ -301,20 +309,20 @@ namespace Resonance.Adapters.WebRTC
             {
                 InitConnection();
 
-                var result = _connection.setRemoteDescription(request.Offer);
+                var result = _connection.setRemoteDescription(request.Offer.ToSessionDescription());
 
                 if (result != SetDescriptionResultEnum.OK)
                 {
                     throw new Exception("Error setting remote description.");
                 }
 
-                if (request.Offer.type == RTCSdpType.offer)
+                if (request.Offer.InternalType == RTCSdpType.offer)
                 {
                     var answer = _connection.createAnswer(null);
                     _connection.setLocalDescription(answer).GetAwaiter().GetResult();
 
                     return new ResonanceActionResult<WebRTCOfferResponse>(
-                        new WebRTCOfferResponse() { Answer = answer },
+                        new WebRTCOfferResponse() { Answer = WebRTCSessionDescription.FromSessionDescription(answer) },
                         new ResonanceResponseConfig() { LoggingMode = LoggingMode });
                 }
 
@@ -440,7 +448,7 @@ namespace Resonance.Adapters.WebRTC
                         }
                         else
                         {
-                            //TODO: Log Warning..
+                            Logger.LogError("Message check sum failed. The message will be ignored.");
                         }
                     }
                     else
@@ -474,7 +482,7 @@ namespace Resonance.Adapters.WebRTC
                         }
                         else
                         {
-                            //TODO: Log Warning..
+                            Logger.LogError("Message check sum failed. The message will be ignored.");
                         }
                     }
                 }
