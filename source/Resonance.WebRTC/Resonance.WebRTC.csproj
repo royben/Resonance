@@ -4,6 +4,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Roy Ben Shabat</Authors>
+    <Description>WebRTC Adapter for Resonance.
+
+Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods. This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/royben/Resonance</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
+    <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +21,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\visuals\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
