@@ -15,7 +15,10 @@ This library provides an intuitive API for asynchronous communication between ma
 | Resonance | ![Nuget](https://img.shields.io/nuget/v/Resonance) | Provides support for TCP, UDP and NamedPipes communication. | .NET Standard 2.0 |
 | Resonance.USB | ![Nuget](https://img.shields.io/nuget/v/Resonance.USB) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
 | Resonance.SignalR | ![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
-| Resonance.WebRTC | ![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC) | WebRTC Adapter support. | .NET Standard 2.0 |
+| Resonance.WebRTC | ![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
+
+<br/>
+<br/>
 
 ## Overview
 Resonance is a request-response based communication framework.
