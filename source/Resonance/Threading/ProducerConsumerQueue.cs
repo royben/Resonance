@@ -8,7 +8,7 @@ namespace Resonance.Threading
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <seealso cref="System.Collections.Concurrent.BlockingCollection{T}" />
-    internal class ProducerConsumerQueue<T> : BlockingCollection<T>
+    public class ProducerConsumerQueue<T> : BlockingCollection<T>
     {
         /// <summary>
         /// Initializes a new instance of the ProducerConsumerQueue, Use Add and TryAdd for Enqueue and TryEnqueue and Take and TryTake for Dequeue and TryDequeue functionality

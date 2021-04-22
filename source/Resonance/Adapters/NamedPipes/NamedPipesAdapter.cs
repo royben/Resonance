@@ -70,22 +70,19 @@ namespace Resonance.Adapters.NamedPipes
         {
             return Task.Factory.StartNew(() =>
             {
-                if (State != ResonanceComponentState.Connected)
+                if (_pipeStream == null)
                 {
-                    if (_pipeStream == null)
-                    {
-                        _client = new NamedPipeClientStream(ServerName, PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-                        _pipeStream = _client;
-                        _client.Connect(5000);
-                    }
-
-                    State = ResonanceComponentState.Connected;
-
-                    Task.Factory.StartNew(() =>
-                    {
-                        WaitForData();
-                    }, TaskCreationOptions.LongRunning);
+                    _client = new NamedPipeClientStream(ServerName, PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                    _pipeStream = _client;
+                    _client.Connect(5000);
                 }
+
+                State = ResonanceComponentState.Connected;
+
+                Task.Factory.StartNew(() =>
+                {
+                    WaitForData();
+                }, TaskCreationOptions.LongRunning);
             });
         }
 
@@ -93,12 +90,8 @@ namespace Resonance.Adapters.NamedPipes
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                if (State == ResonanceComponentState.Connected)
-                {
-                    State = ResonanceComponentState.Disconnected;
-                    _pipeStream.WaitForPipeDrain();
-                    _pipeStream.Close();
-                }
+                _pipeStream.WaitForPipeDrain();
+                _pipeStream.Close();
             }));
         }
 

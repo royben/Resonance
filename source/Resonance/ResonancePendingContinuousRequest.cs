@@ -1,8 +1,10 @@
 ﻿using Resonance.Reactive;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Resonance
 {
@@ -12,6 +14,8 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonancePendingRequest" />
     public class ResonancePendingContinuousRequest : IResonancePendingRequest
     {
+        private ResonanceContinuousResponseDispatcher _dispatcher;
+
         public bool IsCompleted { get; private set; }
 
         /// <summary>
@@ -34,21 +38,64 @@ namespace Resonance
         /// </summary>
         public CancellationToken CancellationToken { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonancePendingContinuousRequest"/> class.
+        /// </summary>
+        public ResonancePendingContinuousRequest()
+        {
+            _dispatcher = new ResonanceContinuousResponseDispatcher();
+        }
+
+        /// <summary>
+        /// Enqueues a response.
+        /// </summary>
+        /// <param name="response">The response.</param>
         public void OnNext(Object response)
         {
-            ContinuousObservable.OnNext(response);
+            if (!IsCompleted)
+            {
+                _dispatcher.Enqueue(() =>
+                {
+                    ContinuousObservable.OnNext(response);
+                });
+            }
         }
 
+        /// <summary>
+        /// Enqueues an error response.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
         public void OnError(Exception exception)
         {
-            IsCompleted = true;
-            ContinuousObservable.OnError(exception);
+            if (!IsCompleted)
+            {
+                IsCompleted = true;
+
+                _dispatcher.Enqueue(() =>
+                {
+                    ContinuousObservable.OnError(exception);
+                });
+
+                _dispatcher.Dispose();
+            }
         }
 
+        /// <summary>
+        /// Enqueues a completion signal.
+        /// </summary>
         public void OnCompleted()
         {
-            IsCompleted = true;
-            ContinuousObservable.OnCompleted();
+            if (!IsCompleted)
+            {
+                IsCompleted = true;
+
+                _dispatcher.Enqueue(() =>
+                {
+                    ContinuousObservable.OnCompleted();
+                });
+
+                _dispatcher.Dispose();
+            }
         }
     }
 }

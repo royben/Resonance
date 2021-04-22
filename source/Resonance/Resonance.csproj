@@ -6,15 +6,16 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Roy Ben Shabat</Authors>
     <Company>Roy Ben Shabat</Company>
-    <Description>Resonance is a high performance real-time communication library with support for multiple protocols and end points.</Description>
+    <Description>Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods. This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.</Description>
     <PackageProjectUrl>https://github.com/royben/Resonance</PackageProjectUrl>
     <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
-    <PackageTags>Communication;RealTime;TCP;USB</PackageTags>
+    <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Configurations>Debug;Release;AzureBuild</Configurations>
     <PackageIcon>icon.png</PackageIcon>
+    <Version>1.0.0-beta</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

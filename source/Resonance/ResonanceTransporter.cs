@@ -258,18 +258,25 @@ namespace Resonance
         {
             String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
 
-            Logger.LogDebug("Registering request handler for 'Message' on '{Handler}'...", typeof(Request).Name, handlerDescription);
+            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            ResonanceRequestHandler handler = new ResonanceRequestHandler();
-            handler.RequestType = typeof(Request);
-            handler.RegisteredCallback = callback;
-            handler.RegisteredCallbackDescription = handlerDescription;
-            handler.Callback = (transporter, resonanceRequest) =>
+            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request>) == callback))
             {
-                callback?.Invoke(transporter, resonanceRequest as ResonanceRequest<Request>);
-            };
+                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                handler.RequestType = typeof(Request);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.Callback = (transporter, resonanceRequest) =>
+                {
+                    callback?.Invoke(transporter, resonanceRequest as ResonanceRequest<Request>);
+                };
 
-            _requestHandlers.Add(handler);
+                _requestHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
+            }
         }
 
         /// <summary>
@@ -298,19 +305,26 @@ namespace Resonance
         {
             String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
 
-            Logger.LogDebug("Registering request handler for 'Message' on '{Handler}'...", typeof(Request).Name, handlerDescription);
+            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            ResonanceRequestHandler handler = new ResonanceRequestHandler();
-            handler.HasResponse = true;
-            handler.RequestType = typeof(Request);
-            handler.RegisteredCallback = callback;
-            handler.RegisteredCallbackDescription = handlerDescription;
-            handler.ResponseCallback = (request) =>
+            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback))
             {
-                return (ResonanceActionResult<Response>)callback.Invoke(request as Request);
-            };
+                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                handler.HasResponse = true;
+                handler.RequestType = typeof(Request);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.ResponseCallback = (request) =>
+                {
+                    return (ResonanceActionResult<Response>)callback.Invoke(request as Request);
+                };
 
-            _requestHandlers.Add(handler);
+                _requestHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
+            }
         }
 
         /// <summary>
@@ -1430,10 +1444,7 @@ namespace Resonance
 
             if (info.HasDecodingException && info.Token != null)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    pendingContinuousRequest.OnError(info.DecoderException);
-                });
+                pendingContinuousRequest.OnError(info.DecoderException);
             }
             else if (!info.HasError)
             {
@@ -1443,34 +1454,25 @@ namespace Resonance
 
                 if (!info.Completed)
                 {
-                    Task.Factory.StartNew(() =>
-                    {
-                        pendingContinuousRequest.OnNext(info.Message);
-                        OnResponseReceived(response);
-                    });
+                    pendingContinuousRequest.OnNext(info.Message);
+                    OnResponseReceived(response);
                 }
                 else
                 {
                     _pendingRequests.Remove(pendingContinuousRequest);
 
-                    Task.Factory.StartNew(() =>
-                    {
-                        pendingContinuousRequest.OnNext(info.Message);
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Request.MessageTypeName);
-                        pendingContinuousRequest.OnCompleted();
-                        OnResponseReceived(response);
-                    });
+                    pendingContinuousRequest.OnNext(info.Message);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Request.MessageTypeName);
+                    pendingContinuousRequest.OnCompleted();
+                    OnResponseReceived(response);
                 }
             }
             else
             {
                 _pendingRequests.Remove(pendingContinuousRequest);
 
-                Task.Factory.StartNew(() =>
-                {
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Request.MessageTypeName);
-                    pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
-                });
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Request.MessageTypeName);
+                pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
             }
         }
 

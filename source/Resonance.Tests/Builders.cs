@@ -4,10 +4,12 @@ using Resonance.Adapters.SignalR;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
+using Resonance.Adapters.WebRTC;
 using Resonance.SignalR;
 using Resonance.Tests.Common;
 using Resonance.Tests.SignalR;
 using Resonance.Transcoding.Json;
+using Resonance.WebRTC.Messages;
 using System;
 using System.Net;
 
@@ -161,6 +163,61 @@ namespace Resonance.Tests
             Assert.IsTrue(signalRTransporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(signalRTransporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(signalRTransporter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void WebRTC_Adapter_Builder()
+        {
+            IResonanceTransporter signaling = new ResonanceTransporter();
+
+            IResonanceTransporter webRtcAdapter = ResonanceTransporter.Builder
+                .Create()
+                .WithWebRTCAdapter()
+                .WithSignalingTransporter(signaling)
+                .WithRole(WebRTCAdapterRole.Connect)
+                .WithIceServer("some ice server")
+                .WithTranscoding<JsonEncoder, JsonDecoder>()
+                .NoKeepAlive()
+                .WithEncryption()
+                .WithCompression()
+                .Build();
+
+            Assert.IsNotNull(webRtcAdapter);
+            Assert.IsInstanceOfType(webRtcAdapter.Adapter, typeof(WebRTCAdapter));
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).IceServers[0].Url == "some ice server");
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).Role == WebRTCAdapterRole.Connect);
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).SignalingTransporter == signaling);
+            Assert.IsInstanceOfType(webRtcAdapter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(webRtcAdapter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(webRtcAdapter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.Decoder.CompressionConfiguration.Enabled);
+
+            webRtcAdapter = ResonanceTransporter.Builder
+                .Create()
+                .WithWebRTCAdapter()
+                .WithSignalingTransporter(signaling)
+                .WithOfferRequest(new WebRTCOfferRequest(), "token")
+                .WithIceServer("some ice server")
+                .WithTranscoding<JsonEncoder, JsonDecoder>()
+                .NoKeepAlive()
+                .WithEncryption()
+                .WithCompression()
+                .Build();
+
+            Assert.IsNotNull(webRtcAdapter);
+            Assert.IsInstanceOfType(webRtcAdapter.Adapter, typeof(WebRTCAdapter));
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).IceServers[0].Url == "some ice server");
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).Role == WebRTCAdapterRole.Accept);
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).InitializedByOffer);
+            Assert.IsTrue((webRtcAdapter.Adapter as WebRTCAdapter).SignalingTransporter == signaling);
+            Assert.IsInstanceOfType(webRtcAdapter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(webRtcAdapter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(webRtcAdapter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(webRtcAdapter.Decoder.CompressionConfiguration.Enabled);
         }
     }
 }
