@@ -127,7 +127,7 @@ namespace Resonance.NugetDependencyCleaner
                 String file = GetNugetFileFromProjectOutput(projectOutput);
 
                 ZipFile = new ZipFile(file);
-                var entry = ZipFile.Entries.First(x => x.FileName.EndsWith("nuspec"));
+                var entry = ZipFile.Entries.Last(x => x.FileName.EndsWith("nuspec"));
                 _entryName = entry.FileName;
 
                 _reader = entry.OpenReader();

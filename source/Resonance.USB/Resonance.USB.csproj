@@ -14,6 +14,7 @@ Resonance is a high-performance real-time C# communication library with built-in
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
     <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
+    <Version>1.0.0-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
