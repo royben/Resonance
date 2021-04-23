@@ -2,7 +2,7 @@
   <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png" />    
 </p>
 
-# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png" /> [![Build Status](https://sirilix.visualstudio.com/Resonance/_apis/build/status/royben.Resonance?branchName=main)](https://sirilix.visualstudio.com/Resonance/_build/latest?definitionId=1&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg)
+# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png" /> [![Build Status](https://sirilix.visualstudio.com/Resonance/_apis/build/status/royben.Resonance?branchName=main)](https://sirilix.visualstudio.com/Resonance/_build/latest?definitionId=1&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/1) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
 
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
@@ -12,7 +12,7 @@ This library provides an intuitive API for asynchronous communication between ma
 
 | Module | Nuget | Description | Target Framework
 |:---------------------------------------------|:---------|:--------|:--------|
-| Resonance | ![Nuget](https://img.shields.io/nuget/v/Resonance) | Provides support for TCP, UDP and NamedPipes. | .NET Standard 2.0 |
+| Resonance | ![Nuget](https://img.shields.io/nuget/v/Resonance) | Provides support for TCP, UDP and Named Pipes. | .NET Standard 2.0 |
 | Resonance.Protobuf | ![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf) | Protobuf Encoder & Decoder | .NET Standard 2.0 |
 | Resonance.USB | ![Nuget](https://img.shields.io/nuget/v/Resonance.USB) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
 | Resonance.SignalR | ![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |

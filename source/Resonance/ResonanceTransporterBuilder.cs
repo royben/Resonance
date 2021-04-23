@@ -1,4 +1,5 @@
 ﻿using Resonance.Adapters.InMemory;
+using Resonance.Adapters.SharedMemory;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Transcoding.Bson;
@@ -29,6 +30,7 @@ namespace Resonance
         IUdpRemoteEndPointBuilder,
         ITcpAdapterPortBuilder,
         IInMemoryAdapterBuilder,
+        ISharedMemoryAdapterBuilder,
         ITranscodingBuilder,
         IKeepAliveBuilder,
         IEncryptionBuilder,
@@ -62,6 +64,11 @@ namespace Resonance
             /// Sets the transporter adapter to <see cref="InMemoryAdapter"/>.
             /// </summary>
             IInMemoryAdapterBuilder WithInMemoryAdapter();
+
+            /// <summary>
+            /// Sets the transporter adapter to <see cref="SharedMemoryAdapter"/>.
+            /// </summary>
+            ISharedMemoryAdapterBuilder WithSharedMemoryAdapter();
 
             /// <summary>
             /// Sets the transporter adapter.
@@ -117,6 +124,15 @@ namespace Resonance
             /// Sets the In-Memory adapter address.
             /// </summary>
             /// <param name="address">The address.</param>
+            ITranscodingBuilder WithAddress(String address);
+        }
+
+        public interface ISharedMemoryAdapterBuilder
+        {
+            /// <summary>
+            /// Sets the Shared Memory adapter address.
+            /// </summary>
+            /// <param name="address">A unique address name (must match with the other-side adapter).</param>
             ITranscodingBuilder WithAddress(String address);
         }
 
@@ -280,6 +296,17 @@ namespace Resonance
         ITranscodingBuilder IInMemoryAdapterBuilder.WithAddress(string address)
         {
             Transporter.Adapter = new InMemoryAdapter(address);
+            return this;
+        }
+
+        public ISharedMemoryAdapterBuilder WithSharedMemoryAdapter()
+        {
+            return this;
+        }
+
+        ITranscodingBuilder ISharedMemoryAdapterBuilder.WithAddress(string address)
+        {
+            Transporter.Adapter = new SharedMemoryAdapter(address);
             return this;
         }
 

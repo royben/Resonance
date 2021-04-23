@@ -1247,7 +1247,7 @@ namespace Resonance
                             }
                             else
                             {
-                                Logger.LogWarningToken("A response message with no awaiting request was received. Token: {Token}. Ignoring...", info.Token);
+                                Logger.LogWarningToken(info.Token,"A response message with no awaiting request was received. Token: {Token}. Ignoring...");
                             }
                         }
                     }
