@@ -27,9 +27,10 @@ steps:
     platform: '$(buildPlatform)'
     configuration: 'AzureBuild'
 
-- task: VSTest@2
+
+
+- task: PublishBuildArtifacts@1
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: 'AzureBuild'
-    overrideTestrunParameters: -IsFromAzure true
-    runInParallel: false
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
