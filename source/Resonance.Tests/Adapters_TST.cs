@@ -18,6 +18,7 @@ using Resonance.Servers.NamedPipes;
 using Resonance.Adapters.NamedPipes;
 using Resonance.Adapters.InMemory;
 using System.Threading.Tasks;
+using Resonance.Adapters.SharedMemory;
 
 namespace Resonance.Tests
 {
@@ -82,8 +83,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Usb_Adapter_Writing_Reading()
         {
-
-
             if (IsRunningOnAzurePipelines)
             {
                 return;
@@ -139,6 +138,19 @@ namespace Resonance.Tests
             TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
 
             server.Dispose();
+        }
+
+        [TestMethod]
+        public void Shared_Memory_Adapter_Writing_Reading()
+        {
+            TestUtils.Read_Write_Test(
+                this,
+                new SharedMemoryAdapter("TST"),
+                new SharedMemoryAdapter("TST"),
+                false,
+                false,
+                1000,
+                2);
         }
     }
 }

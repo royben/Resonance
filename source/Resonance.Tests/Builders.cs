@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
+using Resonance.Adapters.SharedMemory;
 using Resonance.Adapters.SignalR;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
@@ -100,10 +101,30 @@ namespace Resonance.Tests
             Assert.IsTrue((usbTransporter.Adapter as UsbAdapter).BaudRate == (int)BaudRates.BR_115200);
             Assert.IsInstanceOfType(usbTransporter.Encoder, typeof(JsonEncoder));
             Assert.IsInstanceOfType(usbTransporter.Decoder, typeof(JsonDecoder));
-            Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
+            Assert.IsFalse(usbTransporter.KeepAliveConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
+
+            IResonanceTransporter sharedMemoryTransporter = ResonanceTransporter.Builder
+                .Create()
+                .WithSharedMemoryAdapter()
+                .WithAddress("TEST")
+                .WithTranscoding<JsonEncoder, JsonDecoder>()
+                .NoKeepAlive()
+                .WithEncryption()
+                .WithCompression()
+                .Build();
+
+            Assert.IsNotNull(sharedMemoryTransporter);
+            Assert.IsInstanceOfType(sharedMemoryTransporter.Adapter, typeof(SharedMemoryAdapter));
+            Assert.IsTrue((sharedMemoryTransporter.Adapter as SharedMemoryAdapter).Address == "TEST");
+            Assert.IsInstanceOfType(sharedMemoryTransporter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(sharedMemoryTransporter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(sharedMemoryTransporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(sharedMemoryTransporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(sharedMemoryTransporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(sharedMemoryTransporter.Decoder.CompressionConfiguration.Enabled);
         }
 
         [TestMethod]
