@@ -26,15 +26,3 @@ steps:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: 'AzureBuild'
-
-- task: NuGetCommand@2
-  inputs:
-    command: 'pack'
-    packagesToPack: '**\*.Resonance.csproj'
-    versioningScheme: 'byBuildNumber'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
