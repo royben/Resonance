@@ -33,10 +33,3 @@ steps:
     configuration: 'AzureBuild'
     overrideTestrunParameters: -IsFromAzure true
     runInParallel: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-    nuGetFeedType: 'external'
-    publishFeedCredentials: 'NugetPublish'
