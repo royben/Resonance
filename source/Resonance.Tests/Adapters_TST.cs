@@ -112,7 +112,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void NamedPipes_Adapter_Writing_Reading()
         {
-
+            if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new NamedPipesAdapter("Resonance"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
