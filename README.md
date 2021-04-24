@@ -12,11 +12,11 @@ This library provides an intuitive API for asynchronous communication between ma
 
 | Module | Nuget | Description | Target Framework
 |:---------------------------------------------|:---------|:--------|:--------|
-| Resonance | ![Nuget](https://img.shields.io/nuget/v/Resonance) | Provides support for TCP, UDP and Named Pipes. | .NET Standard 2.0 |
-| Resonance.Protobuf | ![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf) | Protobuf Encoder & Decoder | .NET Standard 2.0 |
-| Resonance.USB | ![Nuget](https://img.shields.io/nuget/v/Resonance.USB) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
-| Resonance.SignalR | ![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
-| Resonance.WebRTC | ![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
+| Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) | Provides support for TCP, UDP and Named Pipes. | .NET Standard 2.0 |
+| Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | .NET Standard 2.0 |
+| Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
+| Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
+| Resonance.WebRTC | [![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC)](https://www.nuget.org/packages/Resonance.WebRTC/) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
 
 <br/>
 <br/>
