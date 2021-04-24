@@ -203,9 +203,6 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
-
             t2.RequestReceived += (x, e) =>
             {
                 t2.SendResponse(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
@@ -268,9 +265,6 @@ namespace Resonance.Tests
                 .WithAdapter(adapter2)
                 .WithJsonTranscoding()
                 .Build();
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t2.RequestReceived += (x, e) =>
             {
@@ -337,9 +331,6 @@ namespace Resonance.Tests
                 .WithAdapter(adapter2)
                 .WithJsonTranscoding()
                 .Build();
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t2.RequestReceived += (x, e) =>
             {

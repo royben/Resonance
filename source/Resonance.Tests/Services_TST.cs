@@ -16,13 +16,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Request_And_Get_Notified_About_State_Changes()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.Connect().GetAwaiter().GetResult();
             t2.Connect().GetAwaiter().GetResult();
@@ -118,13 +113,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Task_Result()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.Connect().GetAwaiter().GetResult();
             t2.Connect().GetAwaiter().GetResult();

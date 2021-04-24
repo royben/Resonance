@@ -42,11 +42,6 @@ namespace Resonance
         public TimeSpan DefaultRequestTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
         /// <summary>
-        /// Gets or sets a value indicating whether to disable all handshakes and thus all encryption.
-        /// </summary>
-        public bool DisableHandShake { get; set; }
-
-        /// <summary>
         /// Gets or sets the default keep alive configuration.
         /// </summary>
         public Func<ResonanceKeepAliveConfiguration> DefaultKeepAliveConfiguration { get; set; } = () => new ResonanceKeepAliveConfiguration();

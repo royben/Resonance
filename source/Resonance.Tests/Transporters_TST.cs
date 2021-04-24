@@ -45,8 +45,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Error()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -73,8 +71,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Continuous_Request()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -133,8 +129,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Compression()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -162,8 +156,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Standard_Request_With_Encryption()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -216,8 +208,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_And_Receive_Continuous_Request_With_Error()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -287,8 +277,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Request_Timeout_Throws_Exception()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -319,8 +307,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Failes_With_Adapter()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = true;
             t1.Connect().GetAwaiter().GetResult();
@@ -345,8 +331,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Does_Not_Fail_With_Adapter()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = false;
             t1.Connect().GetAwaiter().GetResult();
@@ -366,11 +350,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Transporter_Disposes_Adapter()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.NotifyOnDisconnect = false; //This is set so the adapter will not fail on disconnect request and thus will not be disposed but failed.
-            t1.DisableHandShake = true;
 
             t1.Connect().GetAwaiter().GetResult();
             t1.Dispose(true);
@@ -382,8 +363,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Request_Cancellation_Token_Throws_Exception()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -409,8 +388,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Incorrect_Response_Throws_Exception()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -437,8 +414,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Decoder_Exception_Throws_Exception()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.Decoder = new CorruptedDecoder();
 
@@ -467,15 +442,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Fails_Transporter()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
@@ -504,15 +474,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Does_Not_Fails_Transporter()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
@@ -546,15 +511,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Auto_Response()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
@@ -582,15 +542,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void KeepAlive_Timeout_Retries()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(0.5);
 
@@ -626,8 +581,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Disconnection_Request()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -655,8 +608,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Send_Object_Without_Expecting_Response()
         {
-
-
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
@@ -685,8 +636,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void Manual_Begin_Handshake()
         {
-
-
             var t1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()

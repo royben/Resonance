@@ -32,8 +32,7 @@ namespace Resonance.Tests
             TestUtils.Read_Write_Test(
                 this, 
                 new InMemoryAdapter("TST"), 
-                new InMemoryAdapter("TST"), 
-                false, 
+                new InMemoryAdapter("TST"),
                 false, 
                 1000, 
                 2);
@@ -60,7 +59,7 @@ namespace Resonance.Tests
                 Thread.Sleep(10);
             }
 
-            TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
+            TestUtils.Read_Write_Test(this, t1, t2, false, 1000, 5);
 
             server.Dispose();
         }
@@ -74,7 +73,6 @@ namespace Resonance.Tests
                 this, 
                 new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)), 
                 new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)), 
-                false, 
                 false, 
                 1000, 
                 5);
@@ -104,7 +102,6 @@ namespace Resonance.Tests
                 new UsbAdapter(virtualPort1, BaudRates.BR_19200),
                 new UsbAdapter(virtualPort2, BaudRates.BR_19200),
                 false,
-                false,
                 1000,
                 10);
         }
@@ -116,9 +113,6 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new NamedPipesAdapter("Resonance"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
-
-            t1.DisableHandShake = true;
-            t2.DisableHandShake = true;
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
             server.Start().GetAwaiter().GetResult();
@@ -135,7 +129,7 @@ namespace Resonance.Tests
                 Thread.Sleep(10);
             }
 
-            TestUtils.Read_Write_Test(this, t1, t2, false, false, 1000, 5);
+            TestUtils.Read_Write_Test(this, t1, t2, false, 1000, 5);
 
             server.Dispose();
         }
@@ -147,7 +141,6 @@ namespace Resonance.Tests
                 this,
                 new SharedMemoryAdapter("TST"),
                 new SharedMemoryAdapter("TST"),
-                false,
                 false,
                 1000,
                 2);

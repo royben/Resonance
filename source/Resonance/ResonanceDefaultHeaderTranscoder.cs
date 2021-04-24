@@ -23,7 +23,7 @@ namespace Resonance
         /// <param name="info">The encoding information.</param>
         public virtual void Encode(BinaryWriter writer, ResonanceEncodingInformation info)
         {
-            writer.Write(ProtocolVersion);
+            writer.Write(ProtocolVersion); //None zero byte must be written here to not confuse with Handshake messages !
             writer.Write(info.Transcoding ?? String.Empty);
             writer.Write(info.IsCompressed);
             writer.Write(info.Token);

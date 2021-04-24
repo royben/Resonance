@@ -119,7 +119,7 @@ namespace Resonance.Tests
                 Thread.Sleep(10);
             }
 
-            TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, false, 1000, 20);
+            TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, 1000, 20);
         }
     }
 }
