@@ -12,7 +12,7 @@ pool:
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
-  buildConfiguration: 'AzureBuild'
+  buildConfiguration: 'Release'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -25,18 +25,11 @@ steps:
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    configuration: '$(BuildConfiguration)'
+    configuration: 'AzureBuild'
 
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+- task: VSTest@2
   inputs:
-    SourceFolder: '$(system.defaultworkingdirectory)'
-    Contents: '**\bin\$(BuildConfiguration)\**'
-    TargetFolder: '$(build.artifactstagingdirectory)'
-  condition: succeededOrFailed()
-
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
-  condition: succeededOrFailed()
+    platform: '$(buildPlatform)'
+    configuration: 'AzureBuild'
+    overrideTestrunParameters: -IsFromAzure true
+    runInParallel: false
