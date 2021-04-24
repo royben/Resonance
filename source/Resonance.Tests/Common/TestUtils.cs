@@ -14,17 +14,17 @@ namespace Resonance.Tests.Common
 {
     public static class TestUtils
     {
-        public static void Read_Write_Test(ResonanceTest test, IResonanceEncoder encoder, IResonanceDecoder decoder, bool enableHandShake, bool enableCryptography, int count, int maxOutliersPercentage)
+        public static void Read_Write_Test(ResonanceTest test, IResonanceEncoder encoder, IResonanceDecoder decoder, bool enableCryptography, int count, int maxOutliersPercentage)
         {
-            Read_Write_Test(test, new InMemoryAdapter("TST"), new InMemoryAdapter("TST"), encoder, decoder, enableHandShake, enableCryptography, count, maxOutliersPercentage);
+            Read_Write_Test(test, new InMemoryAdapter("TST"), new InMemoryAdapter("TST"), encoder, decoder , enableCryptography, count, maxOutliersPercentage);
         }
 
-        public static void Read_Write_Test(ResonanceTest test, IResonanceAdapter adapter1, IResonanceAdapter adapter2, bool enableHandShake, bool enableCryptography, int count, int maxOutliersPercentage)
+        public static void Read_Write_Test(ResonanceTest test, IResonanceAdapter adapter1, IResonanceAdapter adapter2, bool enableCryptography, int count, int maxOutliersPercentage)
         {
-            Read_Write_Test(test, adapter1, adapter2, new JsonEncoder(), new JsonDecoder(), enableHandShake, enableCryptography, count, maxOutliersPercentage);
+            Read_Write_Test(test, adapter1, adapter2, new JsonEncoder(), new JsonDecoder(), enableCryptography, count, maxOutliersPercentage);
         }
 
-        public static void Read_Write_Test(ResonanceTest test, IResonanceAdapter adapter1, IResonanceAdapter adapter2, IResonanceEncoder encoder, IResonanceDecoder decoder, bool enableHandShake, bool enableCryptography, int count, int maxOutliersPercentage)
+        public static void Read_Write_Test(ResonanceTest test, IResonanceAdapter adapter1, IResonanceAdapter adapter2, IResonanceEncoder encoder, IResonanceDecoder decoder, bool enableCryptography, int count, int maxOutliersPercentage)
         {
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -40,14 +40,11 @@ namespace Resonance.Tests.Common
                 .NoKeepAlive()
                 .Build();
 
-            Read_Write_Test(test, t1, t2, enableHandShake, enableCryptography, count, maxOutliersPercentage);
+            Read_Write_Test(test, t1, t2, enableCryptography, count, maxOutliersPercentage);
         }
 
-        public static void Read_Write_Test(ResonanceTest test, IResonanceTransporter t1, IResonanceTransporter t2, bool enableHandShake, bool enableCryptography, int count, int maxOutliersPercentage)
+        public static void Read_Write_Test(ResonanceTest test, IResonanceTransporter t1, IResonanceTransporter t2, bool enableCryptography, int count, int maxOutliersPercentage)
         {
-            t1.DisableHandShake = !enableHandShake;
-            t2.DisableHandShake = !enableHandShake;
-
             t1.CryptographyConfiguration.Enabled = enableCryptography;
             t2.CryptographyConfiguration.Enabled = enableCryptography;
 

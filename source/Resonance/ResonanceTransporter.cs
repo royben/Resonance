@@ -27,7 +27,6 @@ namespace Resonance
     {
         private readonly int _componentCounter;
         private DateTime _lastIncomingMessageTime;
-
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingRequest> _pendingRequests;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
@@ -38,6 +37,7 @@ namespace Resonance
         private Thread _keepAliveThread;
         private bool _clearedQueues;
         private bool _isDisposing;
+        private bool _preventHandshake;
 
         #region Events
 
@@ -139,12 +139,6 @@ namespace Resonance
         public IResonanceHandShakeNegotiator HandShakeNegotiator { get; set; }
 
         /// <summary>
-        /// Disable the startup handshake.
-        /// This will prevent any encryption from happening, and will fail to communicate with Handshake enabled transporters.
-        /// </summary>
-        public bool DisableHandShake { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether to send a disconnection notification to the other side when disconnecting.
         /// </summary>
         public bool NotifyOnDisconnect { get; set; }
@@ -230,8 +224,6 @@ namespace Resonance
             _services = new List<IResonanceService>();
 
             _lastIncomingMessageTime = DateTime.Now;
-
-            DisableHandShake = ResonanceGlobalSettings.Default.DisableHandShake;
 
             NotifyOnDisconnect = true;
 
@@ -525,21 +517,24 @@ namespace Resonance
                             catch { }
                         }
 
-                        if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                        if (HandShakeNegotiator.State != ResonanceHandShakeState.Idle)
                         {
-                            Logger.LogInformation("Waiting for handshake completion...");
-
-                            bool cancel = false;
-
-                            TimeoutTask.StartNew(() =>
+                            if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed)
                             {
-                                cancel = true;
-                                Logger.LogWarning("Could not detect handshake completion within 5 seconds.");
-                            }, TimeSpan.FromSeconds(5));
+                                Logger.LogInformation("Waiting for handshake completion...");
 
-                            while (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake && !cancel)
-                            {
-                                Thread.Sleep(2);
+                                bool cancel = false;
+
+                                TimeoutTask.StartNew(() =>
+                                {
+                                    cancel = true;
+                                    Logger.LogWarning("Could not detect handshake completion within 5 seconds.");
+                                }, TimeSpan.FromSeconds(5));
+
+                                while (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !cancel)
+                                {
+                                    Thread.Sleep(2);
+                                }
                             }
                         }
                     }
@@ -1123,7 +1118,7 @@ namespace Resonance
         {
             if (Encoder != null && Adapter != null)
             {
-                if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                if (!_preventHandshake && CryptographyConfiguration.Enabled && HandShakeNegotiator.State != ResonanceHandShakeState.Completed)
                 {
                     HandShakeNegotiator.BeginHandShake();
                 }
@@ -1167,7 +1162,7 @@ namespace Resonance
 
                     try
                     {
-                        if (HandShakeNegotiator.State != ResonanceHandShakeState.Completed && !DisableHandShake)
+                        if (data[0] == 0 && HandShakeNegotiator.State != ResonanceHandShakeState.Completed) //When first byte is zero, must be a Handshake message.
                         {
                             try
                             {
@@ -1178,6 +1173,10 @@ namespace Resonance
                             {
                                 throw Logger.LogErrorThrow(new ResonanceHandshakeException("Could not initiate a proper handshake.", ex));
                             }
+                        }
+                        else if (TotalIncomingMessages == 0)
+                        {
+                            _preventHandshake = true;
                         }
 
                         TotalIncomingMessages++;
@@ -1247,7 +1246,7 @@ namespace Resonance
                             }
                             else
                             {
-                                Logger.LogWarningToken(info.Token,"A response message with no awaiting request was received. Token: {Token}. Ignoring...");
+                                Logger.LogWarningToken(info.Token, "A response message with no awaiting request was received. Token: {Token}. Ignoring...");
                             }
                         }
                     }

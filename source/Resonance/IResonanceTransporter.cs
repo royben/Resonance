@@ -108,12 +108,6 @@ namespace Resonance
         bool IsChannelSecure { get; }
 
         /// <summary>
-        /// Disable the startup handshake.
-        /// This will prevent any encryption from happening, and will fail to communicate with Handshake enabled transporters.
-        /// </summary>
-        bool DisableHandShake { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether the transporter will get in to a failed state if the <see cref="Adapter"/> fails.
         /// </summary>
         bool FailsWithAdapter { get; set; }

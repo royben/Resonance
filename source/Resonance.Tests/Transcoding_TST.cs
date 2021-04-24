@@ -133,14 +133,14 @@ namespace Resonance.Tests
         public void Xml_Transcoding()
         {
 
-            TestUtils.Read_Write_Test(this, new XmlEncoder(), new XmlDecoder(), false, false, 1, 0);
+            TestUtils.Read_Write_Test(this, new XmlEncoder(), new XmlDecoder(), false, 1, 0);
         }
 
         [TestMethod]
         public void Json_Transcoding()
         {
 
-            TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, false, 1, 0);
+            TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, 1, 0);
         }
 
         [TestMethod]

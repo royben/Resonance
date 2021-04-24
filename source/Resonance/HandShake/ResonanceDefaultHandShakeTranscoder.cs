@@ -23,6 +23,7 @@ namespace Resonance.HandShake
             {
                 using (BinaryWriter writer = new BinaryWriter(ms))
                 {
+                    writer.Write((byte)0); //This empty byte is used to distinguish between handshake message and standard message.
                     writer.Write((byte)message.Type);
                     writer.Write(message.ClientId);
                     writer.Write(message.RequireEncryption);
@@ -51,6 +52,7 @@ namespace Resonance.HandShake
                 {
                     var message = new ResonanceHandShakeMessage();
 
+                    reader.ReadByte();  //This empty byte is used to distinguish between handshake message and standard message.
                     message.Type = (ResonanceHandShakeMessageType)reader.ReadByte();
                     message.ClientId = reader.ReadInt32();
                     message.RequireEncryption = reader.ReadBoolean();
