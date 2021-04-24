@@ -70,13 +70,13 @@ namespace Resonance.NugetDependencyCleaner
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Nuget package modified successfully.");
 
-                Thread.Sleep(5000);
+                Thread.Sleep(2000);
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(ex);
-                Console.ReadLine();
+                Thread.Sleep(5000);
             }
         }
 
