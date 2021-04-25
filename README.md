@@ -555,7 +555,7 @@ The handshake negotiation is done by the *IHandshakeNegotiator* interface.<br/>
 In order to secure a communication channel each participant needs to create an *Asymmetric* RSA private-public key pair, then share the public key with the remote peer along with a random password that is encrypted using the same RSA provider.<br/>
 Once the password is acquired by both participants, they can start send and receive messages using a faster *Symmetric* encryption based on shared random password.
 
-
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png)
 
 # Logging
 The Resonance library takes advantage of structured logs and makes it easy to track the full path of each request.
