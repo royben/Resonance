@@ -555,14 +555,59 @@ The handshake negotiation is done by the *IHandshakeNegotiator* interface.<br/>
 In order to secure a communication channel each participant needs to create an *Asymmetric* RSA private-public key pair, then share the public key with the remote peer along with a random password that is encrypted using the same RSA provider.<br/>
 Once the password is acquired by both participants, they can start send and receive messages using a faster *Symmetric* encryption based on shared random password.
 
+<br/>
+
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png)
 
-# Logging
-The Resonance library takes advantage of structured logs and makes it easy to track the full path of each request.
-You can easily trace all communication using your favorite logging library by providing an instance of ILoggingFactory.
+<br/>
 
-**Hooking Resonance to Serilog**
+Due to Resonance being a client-client transporting library rather than a client-server communication protocol, there is no real "connection" point where one client tries to reach some server. That is why implementing the encryption handshake was a bit tricky.<br/>
+Actually, the handshake does not occur once a Transporter tries to "Connect", but only before the first message sending attempt.<br/>
+Since both Transporter can start sending message at the exact time, there is the issue of who is the "manager"  of the negotiation, which side determines the Symmetric encryption password?<br/>
+In order to determine who is the "manager" the negotiation, each *HandshakeNegotiator* object generates a unique random number (ClientID) that is shared to the other side at the first step of the negotiation.<br/>
+The one with the highest ClientID gets to decide about the Symmetric encryption password.
 
+<br/>
+
+After we understand what happens behind the scenes, let's see how to configure a Transporter encrypt messages.
+
+```c#
+    IResonanceTransporter t = new ResonanceTransporter();
+    t.CryptographyConfiguration.Enabled = true; //Enable encryption.
+```
+<br/>
+
+You can also configure the encryption using the fluent builder.
+
+```c#
+   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+       .Create().WithTcpAdapter()
+       .WithAddress("127.0.0.1")
+       .WithPort(8888)
+       .WithJsonTranscoding()
+       .WithKeepAlive()
+       .WithEncryption() //Enable encryption.
+       .Build();
+```
+<br/>
+
+In order to establish secure communication, both Transporters *CryptographyConfiguration* must be enabled.<br/>
+
+In case encryption is disabled on both transporters, no handshake will occur at all.
+
+<br/>
+
+## Logging
+It is very important to be able to trace your communication through logs.<br/>
+The Resonance library takes advantage of structured logs by attaching log properties
+that can later be used to trace and aggregate each request and response.<Br/>
+
+Communication logs are delivered using Microsoft's Logging.Abstractions interfaces.</br>
+That makes it easy to hook up your favorite logging library to expose Resonance communication logs.<br/>
+
+In order to route Resonance logging to your logging infrastructure, you need to provide an instance of *ILoggerFactory* .<br/>
+
+Here is how you can hookup Resonance to *Serilog* logging library.
 ```c#
         public void InitLogging()
         {
@@ -580,9 +625,19 @@ You can easily trace all communication using your favorite logging library by pr
 ```
 <br/>
 
-**Specifying logging degree per request**
+Once you have your logging configured, you can also specify each request logging mode through the *RequestConfig* object.<br/>
+
+The logging mode of a request determines whether the request and its response should be logged and how.<br/>
+
+- None (will no log the request)
+- Title (logs the request and its response message name)
+- Content (logs the request and its response message name along with the actual message content)
+
+Note, when the minimum log level is "Debug" request and response messages will always be logged in "Title" mode, unless the "Content" logging mode was specified.
 
 <br/>
+
+Here is how you would configure the logging mode of a request.
 
 ```c#
         public async void Demo()
@@ -613,14 +668,15 @@ You can easily trace all communication using your favorite logging library by pr
 
 <br/>
 
-**Viewing and tracking a request using Seq and the request Token property.**
+The recommended way of viewing the Resonance communication logs is using  [Seq](https://datalust.co/) with the [Serilog](https://github.com/serilog/serilog) Seq sink.<br/>
+The Seq logs viewer supports structured logs that fits nicely with Resonance logging implementation.<br/>
+
+Here is a screenshot of a request being traced using its "Token" property through Seq.<br/>
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png)
 
 <br/>
-<br/>
-<br/>
 
-# Benchmarks
+## Performance Benchmarks
 >1000 Roundtrips (request -> response), Intel Core i7-6700HQ CPU 2.60GHz (Skylake)
 
 **Transcoding**
