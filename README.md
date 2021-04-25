@@ -69,39 +69,28 @@ The following diagram described a simple request-response scenario.
 
 <br/>
 
-# Usage Examples
+## Getting Started
+The first step is deciding about the communication and transcoding methods that we are going to use.
+For this demonstration, we are going to use JSON transcoding over TCP/IP as the means of communication between two Transporters.
 
-<br/>
-
-#### Create a Transporter and send a message.
+Here is how we can create the first Transporter with JSON encoding/decoding and TCP/IP adapter.
 ```c#
-        public async void Demo_Standard()
+        public async void Init()
         {
             IResonanceTransporter transporter = new ResonanceTransporter();
 
             transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
             transporter.Encoder = new JsonEncoder();
             transporter.Decoder = new JsonDecoder();
-            transporter.KeepAliveConfiguration.Enabled = true;
-            transporter.Encoder.CompressionConfiguration.Enabled = true;
-            transporter.CryptographyConfiguration.Enabled = true;
 
             await transporter.Connect();
-
-            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
-            {
-                A = 10,
-                B = 5
-            });
-
-            Console.WriteLine(response.Sum);
         }
 ```
 <br/>
 
-#### Using Fluent Builder.
+A Transporter can also be instantiated using the fluent syntax builder.
 ```c#
-        public async void Demo()
+        public async void Init()
         {
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
@@ -109,173 +98,278 @@ The following diagram described a simple request-response scenario.
                 .WithAddress("127.0.0.1")
                 .WithPort(8888)
                 .WithJsonTranscoding()
-                .WithKeepAlive()
-                .NoEncryption()
-                .WithCompression()
                 .Build();
 
             await transporter.Connect();
-
-            var response = await transporter.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
-            {
-                A = 10,
-                B = 5
-            });
-
-            Console.WriteLine(response.Sum);
         }
 ```
 <br/>
 
-#### Connecting between Transporters using a TCP server.
+Now, since we are using TCP/IP as the means of communication, we need a TCP server/listener to accept incoming connections.<br/>
+For that, we are going to use the built-in *ResonanceTcpServer* class.
+Although, you can use any other TCP/IP listener.
+
+Here, we are going to create a new TCP server and wait for incoming connections.<br/>
+Once a new connection is available, the *ConnectionRequest* event will be triggered.<br/>
+The event arguments contains the *Accept* and *Decline* methods for accepting or declining the new connection.<br/>
+The accept method returns an initialized *TcpAdapter* that can be used to create the "other side" second Transporter.
 ```c#
-        public async void Demo()
+        public async void Init_TcpServer()
         {
             ResonanceTcpServer server = new ResonanceTcpServer(8888);
-            server.Start();
-            server.ClientConnected += Server_ClientConnected;
-
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder.Create()
-                .WithTcpAdapter()
-                .WithAddress("127.0.0.1")
-                .WithPort(8888)
-                .WithJsonTranscoding()
-                .Build();
-
-            await transporter1.Connect();
-
-            var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
-            {
-                A = 10,
-                B = 5
-            });
-
-            Console.WriteLine(response.Sum);
+            server.ConnectionRequest += Server_ConnectionRequest;
+            await server.Start();
         }
-
-        private async void Server_ClientConnected(object sender, ResonanceTcpServerClientConnectedEventArgs e)
+        
+        private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
         {
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder.Create()
-                .WithTcpAdapter()
-                .FromTcpClient(e.TcpClient)
+            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+                .Create()
+                .WithAdapter(e.Accept()) //Call the Accept method to get a new TcpAdapter.
                 .WithJsonTranscoding()
                 .Build();
                 
-            transporter2.RequestReceived += Transporter2_RequestReceived;                
-
             await transporter2.Connect();
         }
-
-        private void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
-        {
-            CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-            (sender as IResonanceTransporter).SendResponse(new CalculateResponse() 
-            {
-                Sum = receivedRequest.A + receivedRequest.B 
-            }, e.Request.Token);
-        }
 ```
 <br/>
 
-#### Registering a Request Handler.
+Now that we have both transporters connected, we can start sending messages.<br/>
+Let's define two simple request and response messages.<Br/>
+
+*CalculateRequest*:
 ```c#
-        public async void Demo()
-        {
-            IResonanceTransporter transporter = ResonanceTransporter.Builder
-                .Create().WithTcpAdapter()
-                .WithAddress("127.0.0.1")
-                .WithPort(8888)
-                .WithJsonTranscoding()
-                .Build();
-
-            transporter.RegisterRequestHandler<CalculateRequest>(HandleCalculateRequest);
-
-            await transporter.Connect();
-        }
-
-        private async void HandleCalculateRequest(IResonanceTransporter transporter, ResonanceRequest<CalculateRequest> request)
-        {
-            await transporter.SendResponse(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
-        }
+    public class CalculateRequest
+    {
+        public double A { get; set; }
+        public double B { get; set; }
+    }
 ```
 <br/>
 
-# Services
-The Transporter also supports registering a service instance as an easy request handling mechanism.
-
-#### Registering a Resonance Service.
+*CalculateResponse*:
 ```c#
-        public async void Demo()
+    public class CalculateResponse
+    {
+        public double Sum { get; set; }
+    }
+```
+<br/>
+
+Here is how we can send a *CalculateRequest* from the first Transporter while expecting a *CalculateResponse* from the "other-side" second Transporter.
+```c#
+    var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+    {
+        A = 10,
+        B = 5
+    });
+
+    Console.WriteLine(response.Sum);
+```
+<Br/>
+
+Finally, we need to handle the incoming *CalculateRequest* on the second Transporter.<br/>
+
+Handling incoming requests can be achieved using any of the following method:
+- Registering a *RequestReceived* event handler.
+- Registering a request handler using the *RegisterRequestHandler* method.
+- Registering an *IResonanceService* using the *RegisterService* method.
+
+We are going to cover each of the above methods.
+
+<br/>
+
+**Handling incoming requests using the *RequestReceived* event:**
+<Br/>
+
+Let's go back to where we accepted the first Transporter connection and initialized the second one.
+<Br/>
+
+Here is how we would register for the *RequestReceived* event and respond to the *CalculateRequest* with a *CalculateResponse*.
+```c#
+    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+    {
+        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+            .Create()
+            .WithAdapter(e.Accept())
+            .WithJsonTranscoding()
+            .Build();
+        
+        //Register an event handler..
+        transporter2.RequestReceived += Transporter2_RequestReceived;
+
+        await transporter2.Connect();
+    }
+    
+    private async void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
+    {
+        if (e.Request.Message is CalculateRequest calculateRequest)
         {
-            IResonanceTransporter transporter = ResonanceTransporter.Builder
-                .Create()
-                .WithTcpAdapter()
-                .WithAddress("127.0.0.1")
-                .WithPort(8888)
-                .WithJsonTranscoding()
-                .Build();
-
-            transporter.RegisterService(new MyResonanceService());
-
-            await transporter.Connect();
-        }
-
-        private class MyResonanceService : IResonanceService
-        {
-            public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
+            if (calculateRequest.A > 0 && calculateRequest.B > 0)
             {
-                return new CalculateResponse() { Sum = request.A + request.B };
-            }
-
-            public void OnTransporterStateChanged(ResonanceComponentState state)
-            {
-                if (state == ResonanceComponentState.Failed)
+                await e.Transporter.SendResponse(new CalculateResponse()
                 {
-                    //Connection lost
-                }
+                    Sum = calculateRequest.A + calculateRequest.B
+                }, e.Request.Token);
+            }
+            else
+            {
+                await e.Transporter.SendErrorResponse("A & B must be greater than zero", e.Request.Token);
             }
         }
+    }
 ```
+<Br/>
 
+Notice, when using this method, we need to explicitly call the Transporter *SendResponse* method while specifying the request token.<br/>
+If there are any errors, we can trigger an exception on the other-side Transporter by calling the *SendErrorResponse* method.
+<br/>
 <br/>
 
-# In-Memory Testing
-Communication testing can easily be done using the **InMemory** adapter.
-Notice how both transporters are using the In-Memory adapter with the same address.
+**Handling incoming request using a *Request Handler*:**
+<br/>
+
+A better and more intuitive approach is to register a request handler method that will require far less coding, filtering and error handling.
+
+<Br/>
+
+Let's go back again and see how we might register a request handler.
 
 ```c#
-        public async void Demo()
+    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+    {
+        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+            .Create()
+            .WithAdapter(e.Accept())
+            .WithJsonTranscoding()
+            .Build();
+        
+        //Register a request handler method...
+        transporter2.RegisterRequestHandler<CalculateRequest, CalculateResponse>(HandleCalculateRequest);
+
+        await transporter2.Connect();
+    }
+
+
+    private ResonanceActionResult<CalculateResponse> HandleCalculateRequest(CalculateRequest request)
+    {
+        if (request.A > 0 && request.B > 0)
         {
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TEST")
-                .WithJsonTranscoding()
-                .Build();
-
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TEST")
-                .WithJsonTranscoding()
-                .Build();
-
-            await transporter1.Connect();
-            await transporter2.Connect();
+            return new CalculateResponse() { Sum = request.A + request.B };
         }
+        else
+        {
+            throw new ArgumentException("A & B must be greater than zero");
+        }
+    }
+
 ```
+<Br/>
+
+Notice, when using this method, we don't need to specify the request token,<br/>
+and, we are just returning a *CalculateResponse* as the result of the method.
+Also, we don't need to explicitly report any errors, we can just throw an exception.
+Actually, any exception that occurs while handling a request, will trigger an automatic error response.
 
 <br/>
 
-# Continuous Response
-The Resonance library supports the concept of a continuous response where one transporter sends a single request
-while expecting multiple response messages. This method works best when you want to report about some progress being made,
-or to send large amount of data with less overhead.
+**Handling incoming requests using a Service:**
+<br/>
 
-Sending a continuous request can be done using the **SendContinuousRequest** method and providing an **observer**.
+The last approach for handling incoming requests is to register an instance of *IResonanceService* as a service.<br/>
+A Service is basically just a class that contains methods that can handle requests, just like the previous request handler example.
+<br/>
+
+Only method that meet the below criteria will be registered as request handlers.
+- Accepts only one argument with the request type.
+- Returns:
+  - void.
+  - A generic ResonanceActionResult where T is the type of the response.
+  - A generic Task with a generic ResonanceActionResult as the task result.
+  
+<br/>
+
+Let's create our Calculation Service class.
 
 ```c#
-        public async void Demo()
+    private class CalculationService : IResonanceService
+    {
+        public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
+        {
+            return new CalculateResponse() { Sum = request.A + request.B };
+        }
+
+        public void OnTransporterStateChanged(ResonanceComponentState state)
+        {
+            if (state == ResonanceComponentState.Failed)
+            {
+                //Connection lost
+            }
+        }
+    }
+```
+<Br/>
+
+Let's go back again and see how we might register our service.
+
+```c#
+    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+    {
+        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+            .Create()
+            .WithAdapter(e.Accept())
+            .WithJsonTranscoding()
+            .Build();
+        
+        //Register a service...
+        transporter2.RegisterService(new CalculationService());
+
+        await transporter2.Connect();
+    }
+```
+<Br/>
+
+**Congratulations!** we have successfully completed a fully working request-response pattern.
+
+You can continue reading if you want to explore some more advanced topics.
+
+<br/>
+
+## Continuous Response
+The continuous response pattern is simply the concept of sending a single request and expecting multiple response messages.<br/>
+We are basically opening a constant stream of response messages.<br/>
+This pattern is useful if we want to track some state of a remote application.<br/>
+
+In this example, we are going to track a simple made up progress.<br/>
+The first Transporter will send a *ProgressRequest* using the *SendContinuousRequest* method.<br/>
+
+Continuous request tracking is made using the Reactive programming style. Meaning, the request sender will need to *Subscribe* and provide *Next*, *Error* and *Completed* callbacks.
+
+First, let's create our *ProgressRequest* and *ProgressResponse* messages.
+
+*ProgressRequest*:
+```c#
+    public class ProgressRequest
+    {
+        public int Count { get; set; }
+        public TimeSpan Interval { get; set; }
+    }
+```
+<br/>
+
+*ProgressResponse*:
+```c#
+    public class ProgressResponse
+    {
+        public int Value { get; set; }
+    }
+```
+<br/>
+
+Now, we are going to initialize two Transporters, send a continuous request from the first one, and respond with multiple response messages from the other.
+
+```c#
+        public async void Send_Continuous_Request()
         {
             IResonanceTransporter transporter1 = ResonanceTransporter.Builder
                .Create()
@@ -322,19 +416,20 @@ Sending a continuous request can be done using the **SendContinuousRequest** met
 
 <br/>
 
-# Error Handling
-The Resonance library supports an automatic error handling mechanism which makes it easy to report and handle errors.
-The following example demonstrate how to report an error from one side while handling it on the other.
+
+## In-Memory Testing
+Testing your communication is easier without initializing an actual known communication method. The library implements a special In-Memory Adapter which can be used for testing.<br/>
+All you need to do is assign each of the adapters the same address.
 
 ```c#
         public async void Demo()
         {
             IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-               .Create()
-               .WithInMemoryAdapter()
-               .WithAddress("TEST")
-               .WithJsonTranscoding()
-               .Build();
+                .Create()
+                .WithInMemoryAdapter()
+                .WithAddress("TEST")
+                .WithJsonTranscoding()
+                .Build();
 
             IResonanceTransporter transporter2 = ResonanceTransporter.Builder
                 .Create()
@@ -345,31 +440,122 @@ The following example demonstrate how to report an error from one side while han
 
             await transporter1.Connect();
             await transporter2.Connect();
-
-            transporter1.RegisterRequestHandler<CalculateRequest>(async (t, request) => 
-            {
-                try
-                {
-                    double sum = request.Message.A / request.Message.B;
-                }
-                catch (DivideByZeroException ex)
-                {
-                    await t.SendErrorResponse(ex, request.Token);
-                }
-            });
-
-
-            try
-            {
-                var response = await transporter2.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
         }
 ```
+
 <br/>
+
+## Message Configuration
+In all previous example we used the Transporter to send request and response message by providing the request or response objects, but actually, we can specify additional configuration to each request or response message.<br/>
+
+For example, by specifying a request configuration, we can change the default timeout for the request or priority of the message.<br/>
+
+Here is how you would specify the configuration of a simple request message.
+```c#
+    var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+    {
+        A = 10,
+        B = 5
+    }, new ResonanceRequestConfig()
+    {
+        //After 5 seconds and no response, a TimeoutException will be thrown.
+        Timeout = TimeSpan.FromSeconds(5),
+        
+        //This message has high priority in the message queue.
+        Priority = Threading.QueuePriority.High,
+    });
+
+```
+A continuous request configuration also allows specifying the continuous timeout, meaning, the maximum time interval between each message.
+
+<br/>
+
+## Keep Alive
+The Resonance library implements an automatic internal keep alive mechanism.<br/>
+The keep alive mechanism helps to detect lost connection between adapters.<br/>
+
+We can enable/disable and control a Transporter's keep alive behavior by changing its *KeepAliveConfiguration* property.<br/>
+
+Here is how we would change a Transporter's keep alive configuration.
+```c#
+     IResonanceTransporter t = new ResonanceTransporter();
+
+     //Enable keep alive.
+     t.KeepAliveConfiguration.Enabled = true;
+
+     //Frequency of keep alive messages.
+     t.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(5);
+
+     //Maximum failed attempts.
+     t.KeepAliveConfiguration.Retries = 4;
+
+     //Respond to the other-side transporter keep alive messages.
+     t.KeepAliveConfiguration.EnableAutoResponse = true;
+
+     //Transporter state will change to 'Failed' when keep alive times out.
+     t.KeepAliveConfiguration.FailTransporterOnTimeout = true;
+```
+<br/>
+
+Here is how you can configure the keep alive using the Transporter fluent builder.
+```c#
+    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+        .Create()
+        .WithTcpAdapter()
+        .WithAddress("127.0.0.1")
+        .WithPort(8888)
+        .WithJsonTranscoding()
+        .WithKeepAlive(interval: TimeSpan.FromSeconds(5), retries: 4)
+        .Build();
+```
+<br/>
+
+
+## Compression
+The Resonance transcoding system provides the ability to compress messages and reduce network bandwidth.<Br/>
+Compression and decompression is performed by the Transporter's *Encoder* and *Decoder*.
+To enable the encoder compression, you can access the encoder's *CompressionConfiguration*.
+
+```c#
+   IResonanceTransporter t = new ResonanceTransporter();
+   t.Encoder = new JsonEncoder();
+   t.Encoder.CompressionConfiguration.Enabled = true; //Enable compression.
+```
+<br/>
+
+Or, using the fluent builder...
+
+```c#
+   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+       .Create()
+       .WithInMemoryAdapter()
+       .WithAddress("TST")
+       .WithJsonTranscoding()
+       .NoKeepAlive()
+       .NoEncryption()
+       .WithCompression() //Enable compression
+       .Build();
+```
+<br/>
+
+Once the Encoder is configured for compression, all sent messages will be compressed.<br/>
+There is no need to configure the receiving Decoder as it automatically detects the compression from the message header.<br/>
+
+The library currently uses GZip for fast compression, but you can implement your own compressor by inheriting from *IResonanceCompressor* and assigning an instance to the CompressionConfiguration "Compressor" property.
+
+<br/>
+
+## Encryption
+The Resonance transcoding system also provides the ability to encrypt and decrypt outgoing and incoming messages.<br/>
+Although some of the adapters already supports their internal encryption like the SignalR and WebRTC adapters, you might want to implement your own.<br/>
+
+The Resonance library implements its own automatic SSL style encryption using a handshake that is initiated in order to exchange encryption information.<br/>
+The handshake negotiation is done by the *IHandshakeNegotiator* interface.<br/>
+
+In order to secure a communication channel each participant needs to create an *Asymmetric* RSA private-public key pair, then share the public key with the remote peer along with a random password that is encrypted using the same RSA provider.<br/>
+Once the password is acquired by both participants, they can start send and receive messages using a faster *Symmetric* encryption based on shared random password.
+
+
 
 # Logging
 The Resonance library takes advantage of structured logs and makes it easy to track the full path of each request.

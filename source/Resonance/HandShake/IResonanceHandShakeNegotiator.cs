@@ -18,7 +18,7 @@ namespace Resonance.HandShake
         /// <summary>
         /// Occurs when the symmetric encryption password is available.
         /// </summary>
-        event EventHandler<ResonanceHandShakeSymmetricPasswordAvailableEventArgs> SymmetricPasswordAvailable;
+        event EventHandler<ResonanceHandShakeSymmetricPasswordAcquiredEventArgs> SymmetricPasswordAcquired;
 
         /// <summary>
         /// Occurs when the hand shake has completed.
