@@ -33,7 +33,7 @@ namespace Resonance.HandShake
         /// <summary>
         /// Occurs when the symmetric encryption password is available.
         /// </summary>
-        public event EventHandler<ResonanceHandShakeSymmetricPasswordAvailableEventArgs> SymmetricPasswordAvailable;
+        public event EventHandler<ResonanceHandShakeSymmetricPasswordAcquiredEventArgs> SymmetricPasswordAcquired;
 
         /// <summary>
         /// Occurs when the hand shake has completed.
@@ -261,12 +261,12 @@ namespace Resonance.HandShake
         }
 
         /// <summary>
-        /// Raises the <see cref="SymmetricPasswordAvailable"/> event.
+        /// Raises the <see cref="SymmetricPasswordAcquired"/> event.
         /// </summary>
         /// <param name="symmetricPassword">The symmetric password.</param>
         protected virtual void OnSymmetricPasswordAvailable(String symmetricPassword)
         {
-            SymmetricPasswordAvailable?.Invoke(this, new ResonanceHandShakeSymmetricPasswordAvailableEventArgs(symmetricPassword));
+            SymmetricPasswordAcquired?.Invoke(this, new ResonanceHandShakeSymmetricPasswordAcquiredEventArgs(symmetricPassword));
         }
 
         /// <summary>

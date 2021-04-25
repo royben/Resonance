@@ -20,9 +20,10 @@ namespace Resonance
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceRequestFailedEventArgs"/> class.
         /// </summary>
+        /// <param name="transporter">The request transporter.</param>
         /// <param name="request">The request.</param>
         /// <param name="exception">The exception.</param>
-        public ResonanceRequestFailedEventArgs(ResonanceRequest request, Exception exception) : base(request)
+        public ResonanceRequestFailedEventArgs(IResonanceTransporter transporter, ResonanceRequest request, Exception exception) : base(transporter, request)
         {
             Exception = exception;
         }

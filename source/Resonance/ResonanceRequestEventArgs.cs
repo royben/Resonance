@@ -11,16 +11,23 @@ namespace Resonance
     public class ResonanceRequestEventArgs : EventArgs
     {
         /// <summary>
+        /// Gets or sets the request transporter.
+        /// </summary>
+        public IResonanceTransporter Transporter { get; }
+
+        /// <summary>
         /// Gets or sets the request.
         /// </summary>
-        public ResonanceRequest Request { get; set; }
+        public ResonanceRequest Request { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceRequestEventArgs"/> class.
         /// </summary>
+        /// <param name="transporter">The request transporter</param>
         /// <param name="request">The request.</param>
-        public ResonanceRequestEventArgs(ResonanceRequest request)
+        public ResonanceRequestEventArgs(IResonanceTransporter transporter, ResonanceRequest request)
         {
+            Transporter = transporter;
             Request = request;
         }
     }

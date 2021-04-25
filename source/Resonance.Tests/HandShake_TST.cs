@@ -62,12 +62,12 @@ namespace Resonance.Tests
                     adapter2.Write(e.Data);
                 };
 
-                negotiator1.SymmetricPasswordAvailable += (x, e) =>
+                negotiator1.SymmetricPasswordAcquired += (x, e) =>
                 {
                     symmetricPassword1 = e.SymmetricPassword;
                 };
 
-                negotiator2.SymmetricPasswordAvailable += (x, e) =>
+                negotiator2.SymmetricPasswordAcquired += (x, e) =>
                 {
                     symmetricPassword2 = e.SymmetricPassword;
                 };
@@ -130,12 +130,12 @@ namespace Resonance.Tests
                     adapter2.Write(e.Data);
                 };
 
-                negotiator1.SymmetricPasswordAvailable += (x, e) =>
+                negotiator1.SymmetricPasswordAcquired += (x, e) =>
                 {
                     symmetricPassword1 = e.SymmetricPassword;
                 };
 
-                negotiator2.SymmetricPasswordAvailable += (x, e) =>
+                negotiator2.SymmetricPasswordAcquired += (x, e) =>
                 {
                     symmetricPassword2 = e.SymmetricPassword;
                 };
@@ -199,13 +199,13 @@ namespace Resonance.Tests
                     adapter2.Write(e.Data);
                 };
 
-                negotiator1.SymmetricPasswordAvailable += (x, e) =>
+                negotiator1.SymmetricPasswordAcquired += (x, e) =>
                 {
                     Assert.Fail();
                     symmetricPassword1 = e.SymmetricPassword;
                 };
 
-                negotiator2.SymmetricPasswordAvailable += (x, e) =>
+                negotiator2.SymmetricPasswordAcquired += (x, e) =>
                 {
                     Assert.Fail();
                     symmetricPassword2 = e.SymmetricPassword;
@@ -265,13 +265,13 @@ namespace Resonance.Tests
                     adapter2.Write(e.Data);
                 };
 
-                negotiator1.SymmetricPasswordAvailable += (x, e) =>
+                negotiator1.SymmetricPasswordAcquired += (x, e) =>
                 {
                     Assert.Fail();
                     symmetricPassword1 = e.SymmetricPassword;
                 };
 
-                negotiator2.SymmetricPasswordAvailable += (x, e) =>
+                negotiator2.SymmetricPasswordAcquired += (x, e) =>
                 {
                     Assert.Fail();
                     symmetricPassword2 = e.SymmetricPassword;
