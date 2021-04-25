@@ -456,10 +456,10 @@ namespace Resonance
                 ValidateConnection();
 
                 HandShakeNegotiator.WriteHandShake -= HandShakeNegotiator_WriteHandShake;
-                HandShakeNegotiator.SymmetricPasswordAvailable -= HandShakeNegotiator_SymmetricPasswordAvailable;
+                HandShakeNegotiator.SymmetricPasswordAcquired -= HandShakeNegotiator_SymmetricPasswordAcquired;
                 HandShakeNegotiator.Completed -= HandShakeNegotiator_Completed;
                 HandShakeNegotiator.WriteHandShake += HandShakeNegotiator_WriteHandShake;
-                HandShakeNegotiator.SymmetricPasswordAvailable += HandShakeNegotiator_SymmetricPasswordAvailable;
+                HandShakeNegotiator.SymmetricPasswordAcquired += HandShakeNegotiator_SymmetricPasswordAcquired;
                 HandShakeNegotiator.Completed += HandShakeNegotiator_Completed;
                 HandShakeNegotiator.Reset(CryptographyConfiguration.Enabled, CryptographyConfiguration.CryptographyProvider);
 
@@ -1607,9 +1607,9 @@ namespace Resonance
             Adapter?.Write(e.Data);
         }
 
-        private void HandShakeNegotiator_SymmetricPasswordAvailable(object sender, ResonanceHandShakeSymmetricPasswordAvailableEventArgs e)
+        private void HandShakeNegotiator_SymmetricPasswordAcquired(object sender, ResonanceHandShakeSymmetricPasswordAcquiredEventArgs e)
         {
-            Logger.LogDebug($"Symmetric password obtained: {e.SymmetricPassword}");
+            Logger.LogDebug($"Symmetric password acquired: {e.SymmetricPassword}");
             Encoder?.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
             Decoder?.EncryptionConfiguration.EnableEncryption(e.SymmetricPassword);
         }
@@ -1803,7 +1803,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         protected virtual void OnRequestReceived(ResonanceRequest request)
         {
-            RequestReceived?.Invoke(this, new ResonanceRequestReceivedEventArgs(request));
+            RequestReceived?.Invoke(this, new ResonanceRequestReceivedEventArgs(this, request));
         }
 
         /// <summary>
@@ -1812,7 +1812,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         protected virtual void OnRequestSent(ResonanceRequest request)
         {
-            RequestSent?.Invoke(this, new ResonanceRequestEventArgs(request));
+            RequestSent?.Invoke(this, new ResonanceRequestEventArgs(this, request));
         }
 
         /// <summary>
@@ -1822,7 +1822,7 @@ namespace Resonance
         /// <param name="exception">The exception.</param>
         protected virtual void OnRequestFailed(ResonanceRequest request, Exception exception)
         {
-            RequestFailed?.Invoke(this, new ResonanceRequestFailedEventArgs(request, exception));
+            RequestFailed?.Invoke(this, new ResonanceRequestFailedEventArgs(this, request, exception));
         }
 
         /// <summary>
@@ -1831,7 +1831,7 @@ namespace Resonance
         /// <param name="response">The response.</param>
         protected virtual void OnResponseSent(ResonanceResponse response)
         {
-            ResponseSent?.Invoke(this, new ResonanceResponseEventArgs(response));
+            ResponseSent?.Invoke(this, new ResonanceResponseEventArgs(this, response));
         }
 
         /// <summary>
@@ -1840,7 +1840,7 @@ namespace Resonance
         /// <param name="response">The response.</param>
         protected virtual void OnResponseReceived(ResonanceResponse response)
         {
-            ResponseReceived?.Invoke(this, new ResonanceResponseEventArgs(response));
+            ResponseReceived?.Invoke(this, new ResonanceResponseEventArgs(this, response));
         }
 
         /// <summary>
@@ -1850,7 +1850,7 @@ namespace Resonance
         /// <param name="exception">The exception.</param>
         protected virtual void OnResponseFailed(ResonanceResponse response, Exception exception)
         {
-            ResponseFailed?.Invoke(this, new ResonanceResponseFailedEventArgs(response, exception));
+            ResponseFailed?.Invoke(this, new ResonanceResponseFailedEventArgs(this, response, exception));
         }
 
         /// <summary>

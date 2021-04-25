@@ -20,8 +20,9 @@ namespace Resonance
         /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceRequestReceivedEventArgs"/> class.
         /// </summary>
+        /// <param name="transporter">The request transporter</param>
         /// <param name="request">The request.</param>
-        public ResonanceRequestReceivedEventArgs(ResonanceRequest request) : base(request)
+        public ResonanceRequestReceivedEventArgs(IResonanceTransporter transporter, ResonanceRequest request) : base(transporter, request)
         {
 
         }
