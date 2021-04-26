@@ -25,8 +25,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void SignalR_Legacy_Reading_Writing()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             String hostUrl = "http://localhost:8080";
@@ -41,8 +39,6 @@ namespace Resonance.Tests
         [TestMethod]
         public void SignalR_Core_Reading_Writing()
         {
-
-
             if (IsRunningOnAzurePipelines) return;
 
             String webApiProjectPath = Path.Combine(TestHelper.GetSolutionFolder(), "Resonance.Tests.SignalRCore.WebAPI");
@@ -60,23 +56,36 @@ namespace Resonance.Tests
             String expected = "Resonance SignalR Core Unit Test Feedback Service";
             String result = String.Empty;
 
-            while (result != expected)
+            try
+            {
+                while (result != expected)
+                {
+                    try
+                    {
+                        using (HttpClient http = new HttpClient())
+                        {
+                            result = http.GetStringAsync("http://localhost:27210/home").GetAwaiter().GetResult();
+                        }
+                    }
+                    catch { }
+
+                    Thread.Sleep(1000);
+                }
+
+                SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
             {
                 try
                 {
-                    using (HttpClient http = new HttpClient())
-                    {
-                        result = http.GetStringAsync("http://localhost:27210/home").GetAwaiter().GetResult();
-                    }
+                    cmd.Kill();
                 }
                 catch { }
-
-                Thread.Sleep(1000);
             }
-
-            SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
-
-            cmd.Kill();
         }
 
         private void SignalR_Reading_Writing(String url, SignalRMode mode)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,11 +27,17 @@ namespace Resonance.SignalR.Clients
         public bool IsStarted { get; private set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to use the MessagePack protocol over json.
+        /// </summary>
+        public bool UseMessagePackProtocol { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SignalRCoreClient"/> class.
         /// </summary>
         /// <param name="url">The hub URL.</param>
         public SignalRCoreClient(String url)
         {
+            UseMessagePackProtocol = true;
             Url = url;
         }
 
@@ -42,7 +49,16 @@ namespace Resonance.SignalR.Clients
         {
             if (IsStarted) return;
 
-            _connection = new HubConnectionBuilder().WithUrl(Url).Build();
+
+            var builder = new HubConnectionBuilder().WithUrl(Url).WithAutomaticReconnect();
+
+            if (UseMessagePackProtocol)
+            {
+                builder = builder.AddMessagePackProtocol();
+            }
+
+            _connection = builder.Build();
+
             await _connection.StartAsync();
             IsStarted = true;
         }

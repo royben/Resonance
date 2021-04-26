@@ -29,7 +29,11 @@ namespace Resonance.Tests.SignalRCore.WebAPI
             services.AddTransient<IResonanceHubRepository<TestServiceInformation>, ResonanceHubMemoryRepository<TestServiceInformation>>();
             services.AddTransient<IResonanceHubProxy<TestCredentials, TestServiceInformation, TestServiceInformation, TestAdapterInformation>, TestHubProxy>();
             services.AddControllers();
-            services.AddSignalR((x) => x.EnableDetailedErrors = true);
+
+
+            services
+                .AddSignalR((x) => x.EnableDetailedErrors = true)
+                .AddMessagePackProtocol(); //Add MessagePack protocol !
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
