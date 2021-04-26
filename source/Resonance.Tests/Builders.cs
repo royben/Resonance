@@ -6,6 +6,8 @@ using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
 using Resonance.Adapters.WebRTC;
+using Resonance.MessagePack.Transcoding.MessagePack;
+using Resonance.Protobuf.Transcoding.Protobuf;
 using Resonance.SignalR;
 using Resonance.Tests.Common;
 using Resonance.Tests.SignalR;
@@ -21,10 +23,8 @@ namespace Resonance.Tests
     public class Builders : ResonanceTest
     {
         [TestMethod]
-        public void Transporter_Builder()
+        public void Transporter_Builder_With_Tcp_Adapter()
         {
-
-
             IResonanceTransporter transporter = ResonanceTransporter.Builder
                 .Create()
                 .WithTcpAdapter()
@@ -48,30 +48,37 @@ namespace Resonance.Tests
             Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
+        }
 
-            transporter.CreateBuilder()
-                .WithUdpAdapter()
-                .WithLocalEndPoint(new IPEndPoint(IPAddress.Parse("192.168.1.1"), 1))
-                .WithRemoteEndPoint(new IPEndPoint(IPAddress.Parse("192.168.1.2"), 2))
-                .WithTranscoding(new JsonEncoder(), new JsonDecoder())
+        [TestMethod]
+        public void Transporter_Builder_With_Shared_Memory_Adapter()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+                .Create()
+                .WithSharedMemoryAdapter()
+                .WithAddress("TEST")
+                .WithTranscoding<JsonEncoder, JsonDecoder>()
                 .NoKeepAlive()
-                .NoEncryption()
-                .NoCompression()
+                .WithEncryption()
+                .WithCompression()
                 .Build();
 
-            Assert.IsInstanceOfType(transporter.Adapter, typeof(UdpAdapter));
-            Assert.IsTrue((transporter.Adapter as UdpAdapter).LocalEndPoint.Address.ToString() == "192.168.1.1");
-            Assert.IsTrue((transporter.Adapter as UdpAdapter).LocalEndPoint.Port == 1);
-            Assert.IsTrue((transporter.Adapter as UdpAdapter).RemoteEndPoint.Address.ToString() == "192.168.1.2");
-            Assert.IsTrue((transporter.Adapter as UdpAdapter).RemoteEndPoint.Port == 2);
+            Assert.IsNotNull(transporter);
+            Assert.IsInstanceOfType(transporter.Adapter, typeof(SharedMemoryAdapter));
+            Assert.IsTrue((transporter.Adapter as SharedMemoryAdapter).Address == "TEST");
             Assert.IsInstanceOfType(transporter.Encoder, typeof(JsonEncoder));
             Assert.IsInstanceOfType(transporter.Decoder, typeof(JsonDecoder));
             Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
-            Assert.IsFalse(transporter.CryptographyConfiguration.Enabled);
-            Assert.IsFalse(transporter.Encoder.CompressionConfiguration.Enabled);
-            Assert.IsFalse(transporter.Decoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
+        }
 
-            transporter.CreateBuilder()
+        [TestMethod]
+        public void Transporter_Builder_With_InMemory_Adapter()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+                .Create()
                 .WithInMemoryAdapter()
                 .WithAddress("TST")
                 .WithTranscoding(new JsonEncoder(), new JsonDecoder())
@@ -82,56 +89,11 @@ namespace Resonance.Tests
 
             Assert.IsInstanceOfType(transporter.Adapter, typeof(InMemoryAdapter));
             Assert.IsTrue((transporter.Adapter as InMemoryAdapter).Address == "TST");
-
-
-            IResonanceTransporter usbTransporter = ResonanceTransporter.Builder
-               .Create()
-               .WithUsbAdapter()
-               .WithPort("COM1")
-               .WithBaudRate(Adapters.Usb.BaudRates.BR_115200)
-               .WithTranscoding<JsonEncoder, JsonDecoder>()
-               .NoKeepAlive()
-               .WithEncryption()
-               .WithCompression()
-               .Build();
-
-            Assert.IsNotNull(usbTransporter);
-            Assert.IsInstanceOfType(usbTransporter.Adapter, typeof(UsbAdapter));
-            Assert.IsTrue((usbTransporter.Adapter as UsbAdapter).Port == "COM1");
-            Assert.IsTrue((usbTransporter.Adapter as UsbAdapter).BaudRate == (int)BaudRates.BR_115200);
-            Assert.IsInstanceOfType(usbTransporter.Encoder, typeof(JsonEncoder));
-            Assert.IsInstanceOfType(usbTransporter.Decoder, typeof(JsonDecoder));
-            Assert.IsFalse(usbTransporter.KeepAliveConfiguration.Enabled);
-            Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
-            Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
-            Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
-
-            IResonanceTransporter sharedMemoryTransporter = ResonanceTransporter.Builder
-                .Create()
-                .WithSharedMemoryAdapter()
-                .WithAddress("TEST")
-                .WithTranscoding<JsonEncoder, JsonDecoder>()
-                .NoKeepAlive()
-                .WithEncryption()
-                .WithCompression()
-                .Build();
-
-            Assert.IsNotNull(sharedMemoryTransporter);
-            Assert.IsInstanceOfType(sharedMemoryTransporter.Adapter, typeof(SharedMemoryAdapter));
-            Assert.IsTrue((sharedMemoryTransporter.Adapter as SharedMemoryAdapter).Address == "TEST");
-            Assert.IsInstanceOfType(sharedMemoryTransporter.Encoder, typeof(JsonEncoder));
-            Assert.IsInstanceOfType(sharedMemoryTransporter.Decoder, typeof(JsonDecoder));
-            Assert.IsFalse(sharedMemoryTransporter.KeepAliveConfiguration.Enabled);
-            Assert.IsTrue(sharedMemoryTransporter.CryptographyConfiguration.Enabled);
-            Assert.IsTrue(sharedMemoryTransporter.Encoder.CompressionConfiguration.Enabled);
-            Assert.IsTrue(sharedMemoryTransporter.Decoder.CompressionConfiguration.Enabled);
         }
 
         [TestMethod]
-        public void Usb_Adapter_Builder()
+        public void Transporter_Builder_With_Usb_Adapter()
         {
-
-
             IResonanceTransporter usbTransporter = ResonanceTransporter.Builder
                .Create()
                .WithUsbAdapter()
@@ -156,10 +118,8 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public void SignalR_Adapter_Builder()
+        public void Transporter_Builder_With_SignalR_Adapter()
         {
-
-
             IResonanceTransporter signalRTransporter = ResonanceTransporter.Builder
                .Create()
                .WithSignalRAdapter(SignalRMode.Legacy)
@@ -187,7 +147,7 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public void WebRTC_Adapter_Builder()
+        public void Transporter_Builder_With_WebRTC_Adapter()
         {
             IResonanceTransporter signaling = new ResonanceTransporter();
 
@@ -239,6 +199,54 @@ namespace Resonance.Tests
             Assert.IsTrue(webRtcAdapter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(webRtcAdapter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(webRtcAdapter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void Transporter_Builder_With_MessagePack_Transcoding()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+               .Create()
+               .WithInMemoryAdapter()
+               .WithAddress("TST")
+               .WithMessagePackTranscoding()
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithCompression()
+               .Build();
+
+            Assert.IsNotNull(transporter);
+            Assert.IsInstanceOfType(transporter.Adapter, typeof(InMemoryAdapter));
+            Assert.IsInstanceOfType(transporter.Encoder, typeof(MessagePackEncoder));
+            Assert.IsInstanceOfType(transporter.Decoder, typeof(MessagePackDecoder));
+            Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void Transporter_Builder_With_Protobuf_Transcoding()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+               .Create()
+               .WithInMemoryAdapter()
+               .WithAddress("TST")
+               .WithProtobufTranscoding()
+               .WithMessageTypeHeaderMethod(MessageTypeHeaderMethod.FullName)
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithCompression()
+               .Build();
+
+            Assert.IsNotNull(transporter);
+            Assert.IsInstanceOfType(transporter.Adapter, typeof(InMemoryAdapter));
+            Assert.IsInstanceOfType(transporter.Encoder, typeof(ProtobufEncoder));
+            Assert.IsInstanceOfType(transporter.Decoder, typeof(ProtobufDecoder));
+            Assert.IsTrue((transporter.Encoder as ProtobufEncoder).MessageTypeHeaderMethod == MessageTypeHeaderMethod.FullName);
+            Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
         }
     }
 }

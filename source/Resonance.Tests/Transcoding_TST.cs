@@ -12,6 +12,7 @@ using Resonance.Transcoding.Bson;
 using System.IO;
 using System.Threading.Tasks;
 using Resonance.Transcoding.Xml;
+using Resonance.MessagePack.Transcoding.MessagePack;
 
 namespace Resonance.Tests
 {
@@ -38,10 +39,6 @@ namespace Resonance.Tests
                 return type;
             }
         }
-
-
-
-
 
         [TestMethod]
         public void Default_Header_Transcoding()
@@ -139,8 +136,13 @@ namespace Resonance.Tests
         [TestMethod]
         public void Json_Transcoding()
         {
+            TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, 1 , 0);
+        }
 
-            TestUtils.Read_Write_Test(this, new JsonEncoder(), new JsonDecoder(), false, 1, 0);
+        [TestMethod]
+        public void MessagePack_Transcoding()
+        {
+            TestUtils.Read_Write_Test(this, new MessagePackEncoder(), new MessagePackDecoder(), false, 1, 0);
         }
 
         [TestMethod]

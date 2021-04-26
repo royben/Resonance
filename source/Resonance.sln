@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A23B3B1A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{5C102AD0-4697-47B1-8188-24FA8660E321}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.MessagePack", "Resonance.MessagePack\Resonance.MessagePack.csproj", "{CEAEEC5F-F712-4D84-81B9-89BB52888988}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		AzureBuild|Any CPU = AzureBuild|Any CPU
@@ -103,6 +105,12 @@ Global
 		{3D016BC8-A82D-4F72-97A3-66728CFC29A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D016BC8-A82D-4F72-97A3-66728CFC29A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D016BC8-A82D-4F72-97A3-66728CFC29A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.AzureBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.AzureBuild|Any CPU.Build.0 = Debug|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -119,6 +127,7 @@ Global
 		{51605A04-4DD9-453B-87D8-49F63EB382B1} = {A23B3B1A-8CEB-43A9-8CC2-E5C60C94F9A4}
 		{6C5D65F7-84EF-48A9-93B4-8D6908030C61} = {5C102AD0-4697-47B1-8188-24FA8660E321}
 		{3D016BC8-A82D-4F72-97A3-66728CFC29A0} = {E83CA78A-76E5-4DAA-9FE6-39FE93A7A1C9}
+		{CEAEEC5F-F712-4D84-81B9-89BB52888988} = {E83CA78A-76E5-4DAA-9FE6-39FE93A7A1C9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {742C7CB3-AF8C-42F7-A6DA-A1E67D1D7498}
