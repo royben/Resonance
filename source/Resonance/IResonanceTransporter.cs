@@ -14,6 +14,10 @@ namespace Resonance
 
     public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
 
+    public delegate ResonanceActionResult<Response> RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
+
+    public delegate Task<ResonanceActionResult<Response>> RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
+
     /// <summary>
     /// Represents a Resonance Transporter capable of sending and receiving request/response messages.
     /// </summary>
@@ -56,6 +60,12 @@ namespace Resonance
         /// Occurs when the keep alive mechanism is enabled and has failed by reaching the given timeout and retries.
         /// </summary>
         event EventHandler KeepAliveFailed;
+
+        /// <summary>
+        /// Occurs when the Transporter has lost the connection either because the connection has failed, adapter failed 
+        /// or the remote peer has disconnected and Disconnect request was received.
+        /// </summary>
+        event EventHandler<ResonanceConnectionLostEventArgs> ConnectionLost;
 
         /// <summary>
         /// Gets or sets the Resonance adapter used to send and receive actual encoded data.
@@ -151,6 +161,22 @@ namespace Resonance
         /// Unregisters a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void RegisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
         void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
 
@@ -161,6 +187,22 @@ namespace Resonance
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
         void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Registers an instance of <see cref="IResonanceService"/> as a request handler service.

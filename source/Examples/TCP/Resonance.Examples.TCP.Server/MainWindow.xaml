@@ -1,0 +1,30 @@
+﻿<Window x:Class="Resonance.Examples.TCP.Server.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Resonance.Examples.TCP.Server"
+        xmlns:logging="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Common"
+        mc:Ignorable="d"
+        Title="Resonance TCP Server - Demo" Height="450" Width="800" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}">
+    <Grid Margin="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" FontSize="40">Resonance TCP Server</TextBlock>
+
+            <DockPanel DockPanel.Dock="Bottom" Height="40">
+                <DockPanel VerticalAlignment="Center">
+                    <TextBlock>PORT:</TextBlock>
+                    <TextBox Margin="5 0 0 0" Width="100" Text="{Binding Port,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+
+                    <TextBlock Margin="20 0 0 0">SERVICE NAME:</TextBlock>
+                    <TextBox Margin="5 0 0 0" Width="100" Text="{Binding ServiceName,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Width="180" Command="{Binding StopCommand}">STOP</Button>
+                    <Button Width="180" Margin="5 0 0 0" Command="{Binding StartCommand}">START</Button>
+                </StackPanel>
+            </DockPanel>
+            <logging:LogViewer Margin="0 10" />
+        </DockPanel>
+    </Grid>
+</Window>

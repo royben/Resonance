@@ -81,6 +81,12 @@ namespace Resonance
         /// </summary>
         public event EventHandler KeepAliveFailed;
 
+        /// <summary>
+        /// Occurs when the Transporter has lost the connection either because the connection has failed, adapter failed 
+        /// or the remote peer has disconnected and Disconnect request was received.
+        /// </summary>
+        public event EventHandler<ResonanceConnectionLostEventArgs> ConnectionLost;
+
         #endregion
 
         #region Properties
@@ -235,6 +241,8 @@ namespace Resonance
             _arrivedMessages = new ProducerConsumerQueue<byte[]>();
 
             DefaultRequestTimeout = ResonanceGlobalSettings.Default.DefaultRequestTimeout;
+
+            FailsWithAdapter = true;
         }
 
         #endregion
@@ -334,6 +342,99 @@ namespace Resonance
             {
                 _requestHandlers.Remove(handler);
             }
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void RegisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
+
+            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
+
+            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback))
+            {
+                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                handler.HasResponse = true;
+                handler.RequestType = typeof(Request);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.ResponseCallback = (request) =>
+                {
+                    return (ResonanceActionResult<Response>)callback.Invoke(this, request as Request);
+                };
+
+                _requestHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
+
+            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback);
+            if (handler != null)
+            {
+                _requestHandlers.Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
+
+            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
+
+            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback))
+            {
+                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                handler.HasResponse = true;
+                handler.RequestType = typeof(Request);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.ResponseCallback = (request) =>
+                {
+                    return callback.Invoke(this, request as Request).GetAwaiter().GetResult() as ResonanceActionResult<Response>;
+                };
+
+                _requestHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -1280,12 +1381,6 @@ namespace Resonance
 
             Task.Factory.StartNew(() =>
             {
-                try
-                {
-                    OnRequestReceived(request);
-                }
-                catch { } //TODO: Log exception here.
-
                 var handlers = _requestHandlers.ToList().Where(x => x.RequestType == request.Message.GetType()).ToList();
 
                 foreach (var handler in handlers)
@@ -1327,6 +1422,15 @@ namespace Resonance
                             Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
                         }
                     }
+                }
+
+                try
+                {
+                    OnRequestReceived(request);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogErrorToken(info.Token, ex, "Error occurred on request received event for message {Message}", info.Message.GetType().Name);
                 }
             });
         }
@@ -1693,14 +1797,20 @@ namespace Resonance
         /// Called when the transporter has failed.
         /// </summary>
         /// <param name="exception">The failed exception.</param>
-        protected virtual async void OnFailed(Exception exception)
+        /// <param name="failTransporter">Determines whether to disconnect and fail the transporter.</param>
+        protected virtual async void OnFailed(Exception exception, bool failTransporter = true)
         {
             if (State != ResonanceComponentState.Failed)
             {
-                FailedStateException = exception;
-                Logger.LogError(exception, "Transporter failed.");
-                State = ResonanceComponentState.Failed;
-                await FinalizeDisconnection(exception);
+                var args = OnConnectionLost(exception, failTransporter);
+
+                if (args.FailTransporter)
+                {
+                    FailedStateException = exception;
+                    Logger.LogError(exception, "Transporter failed.");
+                    State = ResonanceComponentState.Failed;
+                    await FinalizeDisconnection(exception);
+                }
             }
         }
 
@@ -1859,6 +1969,18 @@ namespace Resonance
         protected virtual void OnKeepAliveFailed()
         {
             KeepAliveFailed?.Invoke(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Called when the Transporter connection has been lost.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="failTransporter">Sets a value indicating whether fail the transporter after this loss of connection</param>
+        protected virtual ResonanceConnectionLostEventArgs OnConnectionLost(Exception exception, bool failTransporter)
+        {
+            var args = new ResonanceConnectionLostEventArgs(exception, failTransporter);
+            ConnectionLost?.Invoke(this, args);
+            return args;
         }
 
         #endregion

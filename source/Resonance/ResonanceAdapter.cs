@@ -133,10 +133,17 @@ namespace Resonance
         /// <param name="message">Logging message.</param>
         protected virtual void OnFailed(Exception ex, String message)
         {
-            FailedStateException = ex;
-            Logger.LogError(ex, message);
-            Disconnect().GetAwaiter().GetResult();
-            State = ResonanceComponentState.Failed;
+            if (State == ResonanceComponentState.Connected)
+            {
+                FailedStateException = ex;
+                Logger.LogError(ex, message);
+                try
+                {
+                    Disconnect().GetAwaiter().GetResult();
+                }
+                catch { }
+                State = ResonanceComponentState.Failed;
+            }
         }
 
         /// <summary>
