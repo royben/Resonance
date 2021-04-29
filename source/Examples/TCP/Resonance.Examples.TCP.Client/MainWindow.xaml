@@ -1,0 +1,77 @@
+﻿<Window x:Class="Resonance.Examples.TCP.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Resonance.Examples.TCP.Client"
+        xmlns:logging="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Common"
+        mc:Ignorable="d"
+        Title="Resonance TCP Client - Demo" Height="450" Width="1000" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}">
+    <Grid Margin="10" IsEnabled="{Binding IsFree}">
+        <DockPanel>
+            <DockPanel DockPanel.Dock="Top">
+                <TextBlock FontSize="40">Resonance TCP Client</TextBlock>
+
+                <DockPanel VerticalAlignment="Center" HorizontalAlignment="Right" IsEnabled="{Binding IsConnected,Converter={StaticResource BooleanInverseConverter}}">
+                    <TextBlock VerticalAlignment="Center">CLIENT ID:</TextBlock>
+                    <TextBox VerticalAlignment="Center" Margin="5 0 0 0" Width="180" Text="{Binding ClientID,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </DockPanel>
+            </DockPanel>
+
+            <Grid Margin="0 10 0 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="137*"/>
+                        <RowDefinition Height="120*"/>
+                        <RowDefinition Height="69*"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top">Discovered Services:</TextBlock>
+                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="30">
+                            <Button Margin="0 0 5 0" Command="{Binding DisconnectCommand}">DISCONNECT</Button>
+                            <Button Margin="5 0 0 0" Command="{Binding ConnectCommand}">CONNECT</Button>
+                        </UniformGrid>
+                        <ProgressBar DockPanel.Dock="Bottom" Margin="0 5 0 0" IsIndeterminate="{Binding IsConnected,Converter={StaticResource BooleanInverseConverter}}" />
+                        <DataGrid IsEnabled="{Binding IsConnected,Converter={StaticResource BooleanInverseConverter}}" Margin="0 5 0 0" ItemsSource="{Binding DiscoveredServices}" SelectedItem="{Binding SelectedService,UpdateSourceTrigger=PropertyChanged}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HeadersVisibility="Column">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding Address}" />
+                                <DataGridTextColumn Header="Port" Binding="{Binding DiscoveryInfo.Port}" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding DiscoveryInfo.ServiceName}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0 10 0 0">
+                        <TextBlock DockPanel.Dock="Top">Connected Clients:</TextBlock>
+                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="30">
+                            <Button Margin="0 0 5 0" Command="{Binding LeaveSessionCommand}">LEAVE SESSION</Button>
+                            <Button Margin="5 0 0 0" Command="{Binding JoinSessionCommand}">JOIN SESSION</Button>
+                        </UniformGrid>
+                        <ListBox IsEnabled="{Binding InSession,Converter={StaticResource BooleanInverseConverter}}" Margin="0 5 0 0" ItemsSource="{Binding ConnectedClients}" SelectedItem="{Binding SelectedClient}">
+                            
+                        </ListBox>
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="2" Margin="0 20 0 0" IsEnabled="{Binding InSession}">
+                        <TextBlock DockPanel.Dock="Top">Send Message:</TextBlock>
+                        <DockPanel Margin="0 5 0 0">
+                            <Button DockPanel.Dock="Right" Width="80" Command="{Binding SendMessageCommand}">SEND</Button>
+                            <TextBox VerticalContentAlignment="Center" Text="{Binding Message}"></TextBox>
+                        </DockPanel>
+                    </DockPanel>
+                </Grid>
+
+                <GridSplitter HorizontalAlignment="Center" Width="5" VerticalAlignment="Stretch" Grid.Column="1" />
+
+                <logging:LogViewer Margin="5" Grid.Column="2" />
+            </Grid>
+        </DockPanel>
+    </Grid>
+</Window>

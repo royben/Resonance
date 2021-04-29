@@ -46,10 +46,10 @@ namespace Resonance.Discovery
         public bool IsStarted { get; private set; }
 
         /// <summary>
-        /// Gets the remote discovery service port.
+        /// Gets or sets the remote discovery service port.
         /// Default is 2021.
         /// </summary>
-        public int Port { get; }
+        public int Port { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether validate the discovered service existence using TCP connection.
@@ -84,6 +84,15 @@ namespace Resonance.Discovery
         /// <param name="port">The remote discovery service port.</param>
         /// <param name="discoveredServiceCompareFunc">The discovered service compare function.</param>
         public ResonanceUdpDiscoveryClient(int port, Func<ResonanceUdpDiscoveredService<TDiscoveryInfo>, ResonanceUdpDiscoveredService<TDiscoveryInfo>, bool> discoveredServiceCompareFunc) : this(port)
+        {
+            _discoveredServiceCompareFunc = discoveredServiceCompareFunc;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceUdpDiscoveryClient{TDiscoveryInfo, TDecoder}"/> class.
+        /// </summary>
+        /// <param name="discoveredServiceCompareFunc">The discovered service compare function.</param>
+        public ResonanceUdpDiscoveryClient(Func<ResonanceUdpDiscoveredService<TDiscoveryInfo>, ResonanceUdpDiscoveredService<TDiscoveryInfo>, bool> discoveredServiceCompareFunc) : this()
         {
             _discoveredServiceCompareFunc = discoveredServiceCompareFunc;
         }
@@ -247,7 +256,10 @@ namespace Resonance.Discovery
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Error occurred on discovery method.");
+                    if (ex.Message != "A blocking operation was interrupted by a call to WSACancelBlockingCall")
+                    {
+                        Logger.LogError(ex, "Error occurred on discovery method.");
+                    }
                 }
             }
         }

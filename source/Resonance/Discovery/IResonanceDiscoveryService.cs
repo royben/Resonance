@@ -20,9 +20,9 @@ namespace Resonance.Discovery
         event EventHandler<TDiscoveryInfo> BeforeBroadcasting;
 
         /// <summary>
-        /// Gets the current discovery information instance.
+        /// Gets or sets the current discovery information instance.
         /// </summary>
-        TDiscoveryInfo DiscoveryInfo { get; }
+        TDiscoveryInfo DiscoveryInfo { get; set; }
 
         /// <summary>
         /// Gets the encoder that is used to encode the discovery information message.
