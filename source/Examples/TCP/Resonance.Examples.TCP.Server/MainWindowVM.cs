@@ -19,9 +19,15 @@ namespace Resonance.Examples.TCP.Server
         private ResonanceUdpDiscoveryService<DiscoveryInfo, JsonEncoder> _discoveryService;
         private List<ResonanceTcpClient> _clients;
 
+        /// <summary>
+        /// Gets or sets the TCP server port.
+        /// </summary>
         public int Port { get; set; }
 
         private String _serviceName;
+        /// <summary>
+        /// Gets or sets the service name.
+        /// </summary>
         public String ServiceName
         {
             get { return _serviceName; }
@@ -29,16 +35,28 @@ namespace Resonance.Examples.TCP.Server
         }
 
         private bool _isStarted;
+        /// <summary>
+        /// Gets or sets a value indicating whether the service has started.
+        /// </summary>
         public bool IsStarted
         {
             get { return _isStarted; }
             set { _isStarted = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
+        /// <summary>
+        /// Gets or sets the start command.
+        /// </summary>
         public RelayCommand StartCommand { get; set; }
 
+        /// <summary>
+        /// Gets or sets the stop command.
+        /// </summary>
         public RelayCommand StopCommand { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindowVM"/> class.
+        /// </summary>
         public MainWindowVM()
         {
             Port = 8888;
@@ -51,38 +69,58 @@ namespace Resonance.Examples.TCP.Server
             _clients = new List<ResonanceTcpClient>();
         }
 
+        /// <summary>
+        /// Starts the service.
+        /// </summary>
         private async void Start()
         {
             if (!IsStarted)
             {
+                //Start the TCP server.
                 IsStarted = true;
                 _server = new ResonanceTcpServer(Port);
-                _server.ConnectionRequest += _server_ConnectionRequest;
+                _server.ConnectionRequest += OnConnectionRequest;
                 await _server.Start();
 
+                //Start the discovery service.
                 _discoveryService.DiscoveryInfo = new DiscoveryInfo() { ServiceName = ServiceName, Port = Port };
                 await _discoveryService.Start();
             }
         }
 
+        /// <summary>
+        /// Stops the service.
+        /// </summary>
         private async void Stop()
         {
             if (IsStarted)
             {
+                //Stop the tcp server.
                 await _server.Stop();
+
+                //Stop the discovery service.
                 await _discoveryService.Stop();
                 IsStarted = false;
 
+                //Disconnect all clients.
                 _clients.ToList().ForEach(async x => await x.Disconnect());
-
                 _clients.Clear();
             }
         }
 
-        private async void _server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<Adapters.Tcp.TcpAdapter> e)
+        /// <summary>
+        /// Handles incoming connections.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="ResonanceListeningServerConnectionRequestEventArgs{Adapters.Tcp.TcpAdapter}"/> instance containing the event data.</param>
+        private async void OnConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<Adapters.Tcp.TcpAdapter> e)
         {
             ResonanceTcpClient newClient = new ResonanceTcpClient();
+
+            //Enable keep alive so we are aware of clients losing contact.
             newClient.KeepAliveConfiguration.Enabled = true;
+
+            //Configure the transporter fail when the keep alive determines no connection.
             newClient.KeepAliveConfiguration.FailTransporterOnTimeout = true;
 
             newClient.CreateBuilder()
@@ -98,6 +136,46 @@ namespace Resonance.Examples.TCP.Server
             await newClient.Connect();
         }
 
+        /// <summary>
+        /// Handles clients login request.
+        /// </summary>
+        /// <param name="transporter">The transporter.</param>
+        /// <param name="request">The request.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">Client {request.ClientID} is already taken.</exception>
+        private ResonanceActionResult<LoginResponse> OnClientLoginRequest(IResonanceTransporter transporter, LoginRequest request)
+        {
+            ResonanceTcpClient client = transporter as ResonanceTcpClient;
+
+            if (_clients.Exists(x => x.ClientID == request.ClientID))
+            {
+                throw new Exception($"Client {request.ClientID} is already taken.");
+            }
+
+            client.ClientID = request.ClientID;
+            _clients.Add(client);
+
+            Logger.LogInformation($"{client.ClientID} is now connected.");
+
+            UpdateClientsList();
+
+            return new LoginResponse();
+        }
+
+        /// <summary>
+        /// Handles clients "join session" request.
+        /// </summary>
+        /// <param name="transporter">The transporter.</param>
+        /// <param name="request">The request.</param>
+        /// <returns></returns>
+        /// <exception cref="AuthenticationException">Please login first.</exception>
+        /// <exception cref="System.Exception">
+        /// Cannot create a loop-back session!
+        /// or
+        /// Client {request.ClientID} was not found.
+        /// or
+        /// Client {request.ClientID} is already in session with another client.
+        /// </exception>
         private ResonanceActionResult<JoinSessionResponse> OnClientJoinSessionRequest(IResonanceTransporter transporter, JoinSessionRequest request)
         {
             ResonanceTcpClient client = transporter as ResonanceTcpClient;
@@ -142,6 +220,11 @@ namespace Resonance.Examples.TCP.Server
             return new JoinSessionResponse();
         }
 
+        /// <summary>
+        /// Handles clients "leave session" request.
+        /// </summary>
+        /// <param name="transporter">The transporter.</param>
+        /// <param name="request">The request.</param>
         private async void OnClientLeaveSessionRequest(IResonanceTransporter transporter, ResonanceRequest<LeaveSessionRequest> request)
         {
             ResonanceTcpClient client = transporter as ResonanceTcpClient;
@@ -164,25 +247,11 @@ namespace Resonance.Examples.TCP.Server
             }
         }
 
-        private ResonanceActionResult<LoginResponse> OnClientLoginRequest(IResonanceTransporter transporter, LoginRequest request)
-        {
-            ResonanceTcpClient client = transporter as ResonanceTcpClient;
-
-            if (_clients.Exists(x => x.ClientID == request.ClientID))
-            {
-                throw new Exception($"Client {request.ClientID} is already taken.");
-            }
-
-            client.ClientID = request.ClientID;
-            _clients.Add(client);
-
-            Logger.LogInformation($"{client.ClientID} is now connected.");
-
-            UpdateClientsList();
-
-            return new LoginResponse();
-        }
-
+        /// <summary>
+        /// Handles a client's stage changed event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="ResonanceComponentStateChangedEventArgs"/> instance containing the event data.</param>
         private async void OnClientStateChanged(object sender, ResonanceComponentStateChangedEventArgs e)
         {
             ResonanceTcpClient client = sender as ResonanceTcpClient;
@@ -206,6 +275,9 @@ namespace Resonance.Examples.TCP.Server
             }
         }
 
+        /// <summary>
+        /// Updates all clients with the available connected clients.
+        /// </summary>
         private void UpdateClientsList()
         {
             _clients.ToList().ForEach(async x =>

@@ -52,6 +52,9 @@ namespace Resonance.Examples.Common
             OnApplicationReady();
         }
 
+        /// <summary>
+        /// Called when the application window has finished first rendering.
+        /// </summary>
         protected virtual void OnApplicationReady()
         {
 
@@ -109,6 +112,10 @@ namespace Resonance.Examples.Common
             }
         }
 
+        /// <summary>
+        /// Displays an error message to the user.
+        /// </summary>
+        /// <param name="message">The message.</param>
         protected virtual Task ShowErrorMessage(String message)
         {
             TaskCompletionSource<object> completion = new TaskCompletionSource<object>();
@@ -122,6 +129,10 @@ namespace Resonance.Examples.Common
             return completion.Task;
         }
 
+        /// <summary>
+        /// Displays an information message to the user.
+        /// </summary>
+        /// <param name="message">The message.</param>
         protected virtual Task ShowInfoMessage(String message)
         {
             TaskCompletionSource<object> completion = new TaskCompletionSource<object>();
@@ -135,6 +146,10 @@ namespace Resonance.Examples.Common
             return completion.Task;
         }
 
+        /// <summary>
+        /// Displays a question message to the user and return true when 'Yes' pressed.
+        /// </summary>
+        /// <param name="message">The message.</param>
         protected virtual Task<bool> ShowQuestionMessage(String message)
         {
             TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();

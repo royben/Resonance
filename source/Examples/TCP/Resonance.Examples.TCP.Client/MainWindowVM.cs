@@ -19,6 +19,9 @@ namespace Resonance.Examples.TCP.Client
         private ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> _discoveryClient;
 
         private bool _isConnected;
+        /// <summary>
+        /// Gets or sets a value indicating whether the client is connected to the remote server.
+        /// </summary>
         public bool IsConnected
         {
             get { return _isConnected; }
@@ -26,24 +29,39 @@ namespace Resonance.Examples.TCP.Client
         }
 
         private String _clientID;
+        /// <summary>
+        /// Gets or sets the client unique identifier.
+        /// </summary>
         public String ClientID
         {
             get { return _clientID; }
             set { _clientID = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
+        /// <summary>
+        /// Gets or sets the available services discovered by the discovery client.
+        /// </summary>
         public ObservableCollection<ResonanceUdpDiscoveredService<DiscoveryInfo>> DiscoveredServices { get; set; }
 
         private ResonanceUdpDiscoveredService<DiscoveryInfo> selectedService;
+        /// <summary>
+        /// Gets or sets the selected service to connect to.
+        /// </summary>
         public ResonanceUdpDiscoveredService<DiscoveryInfo> SelectedService
         {
             get { return selectedService; }
             set { selectedService = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
+        /// <summary>
+        /// Gets or sets the available connected clients fetched from the server.
+        /// </summary>
         public ObservableCollection<String> ConnectedClients { get; set; }
 
         private String _selectedClient;
+        /// <summary>
+        /// Gets or sets the selected client to create a session with.
+        /// </summary>
         public String SelectedClient
         {
             get { return _selectedClient; }
@@ -51,24 +69,48 @@ namespace Resonance.Examples.TCP.Client
         }
 
         private bool _inSession;
+        /// <summary>
+        /// Gets or sets a value indicating whether the client is currently in session with a remote client.
+        /// </summary>
         public bool InSession
         {
             get { return _inSession; }
             set { _inSession = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
+        /// <summary>
+        /// Gets or sets the message to send.
+        /// </summary>
         public String Message { get; set; }
 
+        /// <summary>
+        /// Gets or sets the connect command.
+        /// </summary>
         public RelayCommand ConnectCommand { get; set; }
 
+        /// <summary>
+        /// Gets or sets the disconnect command.
+        /// </summary>
         public RelayCommand DisconnectCommand { get; set; }
 
+        /// <summary>
+        /// Gets or sets the join session command.
+        /// </summary>
         public RelayCommand JoinSessionCommand { get; set; }
 
+        /// <summary>
+        /// Gets or sets the leave session command.
+        /// </summary>
         public RelayCommand LeaveSessionCommand { get; set; }
 
+        /// <summary>
+        /// Gets or sets the send message command.
+        /// </summary>
         public RelayCommand SendMessageCommand { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindowVM"/> class.
+        /// </summary>
         public MainWindowVM()
         {
             ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID) && SelectedService != null);
@@ -82,6 +124,12 @@ namespace Resonance.Examples.TCP.Client
             _discoveryClient.ServiceDiscovered += ServiceDiscovered;
             _discoveryClient.ServiceLost += ServiceLost;
             ConnectedClients = new ObservableCollection<string>();
+        }
+
+        protected async override void OnApplicationReady()
+        {
+            base.OnApplicationReady();
+            await _discoveryClient.Start();
         }
 
         private void ServiceDiscovered(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceUdpDiscoveredService<DiscoveryInfo>, DiscoveryInfo> e)
@@ -98,12 +146,6 @@ namespace Resonance.Examples.TCP.Client
             {
                 DiscoveredServices.Remove(e.DiscoveredService);
             });
-        }
-
-        protected async override void OnApplicationReady()
-        {
-            base.OnApplicationReady();
-            await _discoveryClient.Start();
         }
 
         private async void Connect()
