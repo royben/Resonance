@@ -17,6 +17,18 @@ Resonance is a high-performance real-time C# communication library with built-in
     <Configurations>Debug;Release;AzureBuild</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.WebRTC\bin\Debug\Resonance.WebRTC.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.WebRTC\bin\Release\Resonance.WebRTC.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AzureBuild|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.WebRTC\bin\AzureBuild\Resonance.WebRTC.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="SIPSorcery" Version="5.1.6-pre" />
   </ItemGroup>
