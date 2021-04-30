@@ -17,11 +17,24 @@ Resonance is a high-performance real-time C# communication library with built-in
     <Version>1.0.0</Version>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Debug\Resonance.SignalR.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Release\Resonance.SignalR.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='AzureBuild|net461|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\AzureBuild\Resonance.SignalR.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

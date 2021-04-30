@@ -42,7 +42,7 @@ namespace Resonance.Discovery
         public override bool Equals(object obj)
         {
             ResonanceUdpDiscoveredService<TDiscoveryInfo> other = obj as ResonanceUdpDiscoveredService<TDiscoveryInfo>;
-            if (obj == null || this == null) return false;
+            if (obj == null || this == null || other == null) return false;
             return (other.Address == this.Address);
         }
 

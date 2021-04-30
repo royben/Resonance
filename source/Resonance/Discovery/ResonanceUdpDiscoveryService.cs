@@ -32,7 +32,7 @@ namespace Resonance.Discovery
         /// <summary>
         /// Gets the current discovery information instance.
         /// </summary>
-        public TDiscoveryInfo DiscoveryInfo { get; private set; }
+        public TDiscoveryInfo DiscoveryInfo { get; set; }
 
         /// <summary>
         /// Gets or sets the interval in which the discovery message will be sent.
@@ -49,7 +49,7 @@ namespace Resonance.Discovery
         /// Gets the UDP/TCP port number to operate on.
         /// The default is 2021.
         /// </summary>
-        public int Port { get; private set; }
+        public int Port { get; set; }
 
         /// <summary>
         /// Gets the encoder that is used to encode the discovery information message.

@@ -90,7 +90,6 @@ namespace Resonance.Adapters.Tcp
                 {
                     _size_buffer = new byte[4];
                     _socket.GetStream().BeginRead(_size_buffer, 0, _size_buffer.Length, EndReading, _socket.GetStream());
-
                 }
             }
             catch (Exception ex)
@@ -188,6 +187,7 @@ namespace Resonance.Adapters.Tcp
         {
             return Task.Factory.StartNew((Action)(() =>
             {
+                State = ResonanceComponentState.Disconnected;
                 _socket.Close();
             }));
         }

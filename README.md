@@ -14,6 +14,7 @@ This library provides an intuitive API for asynchronous communication between ma
 |:---------------------------------------------|:---------|:--------|:--------|
 | Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) | Provides support for TCP, UDP and Named Pipes. | .NET Standard 2.0 |
 | Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | .NET Standard 2.0 |
+| Resonance.MessagePack | [![Nuget](https://img.shields.io/nuget/v/Resonance.MessagePack)](https://www.nuget.org/packages/Resonance.MessagePack/) | MessagePack Encoder & Decoder | .NET Standard 2.0 |
 | Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
 | Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
 | Resonance.WebRTC | [![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC)](https://www.nuget.org/packages/Resonance.WebRTC/) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
@@ -39,7 +40,7 @@ The following diagram provides a basic overview of a message being sent.
 The resonance library might be described by these 3 basic layers:
 
 ### Transporting
-A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the necessary information to other components.
+A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the required information to other components.
 
 ### Transcoding
 Encoders and Decoders are components that can be plugged to a transporter, they determine how outgoing/incoming messages should be encoded and whether the data should be encrypted and/or compressed.
@@ -47,6 +48,7 @@ The Following built-in transcoding methods are currently supported by the librar
 *	Json
 *	Bson
 *	Protobuf
+*	MessagePack
 *	Xml
 
 ### Adapters
@@ -156,7 +158,7 @@ Let's define two simple request and response messages.<Br/>
 ```
 <br/>
 
-Here is how we can send a *CalculateRequest* from the first Transporter while expecting a *CalculateResponse* from the "other-side" second Transporter.
+Here is how we can send a *CalculateRequest* from the first Transporter, while expecting a *CalculateResponse* from the "other-side" second Transporter.
 ```c#
     var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
     {
@@ -280,7 +282,7 @@ The last approach for handling incoming requests is to register an instance of *
 A Service is basically just a class that contains methods that can handle requests, just like the previous request handler example.
 <br/>
 
-Only method that meet the below criteria will be registered as request handlers.
+Only methods that meets the below criteria will be registered as request handlers.
 - Accepts only one argument with the request type.
 - Returns:
   - void.
@@ -446,9 +448,9 @@ All you need to do is assign each of the adapters the same address.
 <br/>
 
 ## Message Configuration
-In all previous example we used the Transporter to send request and response message by providing the request or response objects, but actually, we can specify additional configuration to each request or response message.<br/>
+In all previous example we used the Transporter to send request and response messages by providing the request or response objects, but actually, we can specify additional configuration to each request or response message.<br/>
 
-For example, by specifying a request configuration, we can change the default timeout for the request or priority of the message.<br/>
+For example, by specifying a request configuration, we can change the default timeout for the request, or priority of the message.<br/>
 
 Here is how you would specify the configuration of a simple request message.
 ```c#
@@ -466,13 +468,13 @@ Here is how you would specify the configuration of a simple request message.
     });
 
 ```
-A continuous request configuration also allows specifying the continuous timeout, meaning, the maximum time interval between each message.
+A continuous request configuration also allows specifying the continuous timeout, meaning, the maximum time interval between each response.
 
 <br/>
 
 ## Keep Alive
 The Resonance library implements an automatic internal keep alive mechanism.<br/>
-The keep alive mechanism helps to detect lost connection between adapters.<br/>
+The keep alive mechanism helps detect lost connection between adapters.<br/>
 
 We can enable/disable and control a Transporter's keep alive behavior by changing its *KeepAliveConfiguration* property.<br/>
 
@@ -552,8 +554,11 @@ Although some of the adapters already supports their internal encryption like th
 The Resonance library implements its own automatic SSL style encryption using a handshake that is initiated in order to exchange encryption information.<br/>
 The handshake negotiation is done by the *IHandshakeNegotiator* interface.<br/>
 
-In order to secure a communication channel each participant needs to create an *Asymmetric* RSA private-public key pair, then share the public key with the remote peer along with a random password that is encrypted using the same RSA provider.<br/>
-Once the password is acquired by both participants, they can start send and receive messages using a faster *Symmetric* encryption based on shared random password.
+In order to secure a communication channel, each participant needs to create an *Asymmetric* RSA private-public key pair, then share that public key with the remote peer.<br/>
+Next, both participants needs to agree on a *Symmetric* encryption configuration based on a shared password.<br/>
+The actual password is shared and encrypted using the initial RSA public key.<br/>
+
+Once the password is acquired by both participants, they can start send and receive messages using the faster *Symmetric* encryption based on the shared password.
 
 <br/>
 
@@ -563,13 +568,13 @@ Once the password is acquired by both participants, they can start send and rece
 
 Due to Resonance being a client-client transporting library rather than a client-server communication protocol, there is no real "connection" point where one client tries to reach some server. That is why implementing the encryption handshake was a bit tricky.<br/>
 Actually, the handshake does not occur once a Transporter tries to "Connect", but only before the first message sending attempt.<br/>
-Since both Transporter can start sending message at the exact time, there is the issue of who is the "manager"  of the negotiation, which side determines the Symmetric encryption password?<br/>
-In order to determine who is the "manager" the negotiation, each *HandshakeNegotiator* object generates a unique random number (ClientID) that is shared to the other side at the first step of the negotiation.<br/>
+Since both transporters can start sending message at the exact same time, there is the issue of, who is the "manager" of the negotiation?, which side determines the Symmetric encryption password?<br/>
+In order to determine who is the "manager" of the negotiation, each *HandshakeNegotiator* object generates a unique random number (ClientID) that is shared to the other side at the first step of the negotiation.<br/>
 The one with the highest ClientID gets to decide about the Symmetric encryption password.
 
 <br/>
 
-After we understand what happens behind the scenes, let's see how to configure a Transporter encrypt messages.
+After we understand what happens behind the scenes, let's see how to configure a Transporter to encrypt messages.
 
 ```c#
     IResonanceTransporter t = new ResonanceTransporter();
@@ -577,7 +582,7 @@ After we understand what happens behind the scenes, let's see how to configure a
 ```
 <br/>
 
-You can also configure the encryption using the fluent builder.
+You can also configure encryption using the fluent builder.
 
 ```c#
    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
@@ -591,7 +596,7 @@ You can also configure the encryption using the fluent builder.
 ```
 <br/>
 
-In order to establish secure communication, both Transporters *CryptographyConfiguration* must be enabled.<br/>
+In order to establish a secure communication, both Transporters *CryptographyConfiguration* must be enabled.<br/>
 
 In case encryption is disabled on both transporters, no handshake will occur at all.
 
@@ -600,7 +605,7 @@ In case encryption is disabled on both transporters, no handshake will occur at 
 ## Logging
 It is very important to be able to trace your communication through logs.<br/>
 The Resonance library takes advantage of structured logs by attaching log properties
-that can later be used to trace and aggregate each request and response.<Br/>
+that can later be used to trace and aggregate each request and response path.<Br/>
 
 Communication logs are delivered using Microsoft's Logging.Abstractions interfaces.</br>
 That makes it easy to hook up your favorite logging library to expose Resonance communication logs.<br/>
@@ -629,7 +634,7 @@ Once you have your logging configured, you can also specify each request logging
 
 The logging mode of a request determines whether the request and its response should be logged and how.<br/>
 
-- None (will no log the request)
+- None (will not log the request)
 - Title (logs the request and its response message name)
 - Content (logs the request and its response message name along with the actual message content)
 
