@@ -17,6 +17,18 @@ Resonance is a high-performance real-time C# communication library with built-in
     <Configurations>Debug;Release;AzureBuild</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.MessagePack\bin\Debug\Resonance.MessagePack.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.MessagePack\bin\Release\Resonance.MessagePack.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AzureBuild|AnyCPU'">
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.MessagePack\bin\AzureBuild\Resonance.MessagePack.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="2.2.85" />
   </ItemGroup>
