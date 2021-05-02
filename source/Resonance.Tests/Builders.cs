@@ -6,6 +6,7 @@ using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
 using Resonance.Adapters.WebRTC;
+using Resonance.Compressors;
 using Resonance.MessagePack.Transcoding.MessagePack;
 using Resonance.Protobuf.Transcoding.Protobuf;
 using Resonance.SignalR;
@@ -247,6 +248,31 @@ namespace Resonance.Tests
             Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
             Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
             Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
+        }
+
+        [TestMethod]
+        public void Transporter_Builder_With_LZ4_Compression()
+        {
+            IResonanceTransporter transporter = ResonanceTransporter.Builder
+               .Create()
+               .WithInMemoryAdapter()
+               .WithAddress("TST")
+               .WithJsonTranscoding()
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithLZ4Compression()
+               .Build();
+
+            Assert.IsNotNull(transporter);
+            Assert.IsInstanceOfType(transporter.Adapter, typeof(InMemoryAdapter));
+            Assert.IsInstanceOfType(transporter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(transporter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(transporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(transporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(transporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
+            Assert.IsInstanceOfType(transporter.Encoder.CompressionConfiguration.Compressor, typeof(LZ4Compressor));
+            Assert.IsInstanceOfType(transporter.Decoder.CompressionConfiguration.Compressor, typeof(LZ4Compressor));
         }
     }
 }
