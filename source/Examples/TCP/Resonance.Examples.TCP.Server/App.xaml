@@ -4,6 +4,6 @@
              xmlns:local="clr-namespace:Resonance.Examples.TCP.Server"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary Source="pack://application:,,,/Resonance.Examples.Common;component/Themes/Generic.xaml" />
     </Application.Resources>
 </Application>
