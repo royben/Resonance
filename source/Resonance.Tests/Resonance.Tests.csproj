@@ -63,6 +63,7 @@
     <Compile Include="Common\TestUtils.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoderException.cs" />
+    <Compile Include="LZ4_TST.cs" />
     <Compile Include="SignalR\SignalRServer.cs" />
     <Compile Include="SignalR\Startup.cs" />
     <Compile Include="SignalR\TestAdapterInformation.cs" />
@@ -88,6 +89,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.LZ4\Resonance.LZ4.csproj">
+      <Project>{4862d1a2-55ab-4de4-bc8b-a05ee7fc6e43}</Project>
+      <Name>Resonance.LZ4</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resonance.MessagePack\Resonance.MessagePack.csproj">
       <Project>{ceaeec5f-f712-4d84-81b9-89bb52888988}</Project>
       <Name>Resonance.MessagePack</Name>

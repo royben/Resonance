@@ -19,14 +19,6 @@ namespace Resonance.Tests
     {
         #region Helpers
 
-        private byte[] GetRandomByteArray(int sizeInKb)
-        {
-            Random rnd = new Random();
-            byte[] b = new byte[sizeInKb * 1024];
-            rnd.NextBytes(b);
-            return b;
-        }
-
         public class LargeMessageRequest
         {
             public byte[] Data { get; set; }
@@ -211,7 +203,7 @@ namespace Resonance.Tests
             t1.Connect().GetAwaiter().GetResult();
             t2.Connect().GetAwaiter().GetResult();
 
-            byte[] data = GetRandomByteArray(200);
+            byte[] data = TestHelper.GetRandomByteArray(200);
 
             var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
 
@@ -278,7 +270,7 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 100; i++)
             {
-                byte[] data = GetRandomByteArray(60);
+                byte[] data = TestHelper.GetRandomByteArray(60);
                 var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
                 Assert.IsTrue(data.SequenceEqual(response.Data));
             }
@@ -344,7 +336,7 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 100; i++)
             {
-                byte[] data = GetRandomByteArray(2);
+                byte[] data = TestHelper.GetRandomByteArray(2);
                 var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
                 Assert.IsTrue(data.SequenceEqual(response.Data));
             }
