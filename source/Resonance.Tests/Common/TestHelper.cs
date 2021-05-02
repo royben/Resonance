@@ -31,5 +31,13 @@ namespace Resonance.Tests.Common
             var path = Path.GetFullPath("../../../");
             return path;
         }
+
+        public static byte[] GetRandomByteArray(int sizeInKb)
+        {
+            Random rnd = new Random();
+            byte[] b = new byte[sizeInKb * 1024];
+            rnd.NextBytes(b);
+            return b;
+        }
     }
 }

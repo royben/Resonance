@@ -542,8 +542,18 @@ Or, using the fluent builder...
 Once the Encoder is configured for compression, all sent messages will be compressed.<br/>
 There is no need to configure the receiving Decoder as it automatically detects the compression from the message header.<br/>
 
-The library currently uses GZip for fast compression, but you can implement your own compressor by inheriting from *IResonanceCompressor* and assigning an instance to the CompressionConfiguration "Compressor" property.
-
+The base library uses GZip for compression, but you can use the faster LZ4 compression algorithm by installing the *Resonance.LZ4* nuget package and specifying it as the Encoder's compressor.
+```c#
+   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+       .Create()
+       .WithInMemoryAdapter()
+       .WithAddress("TST")
+       .WithJsonTranscoding()
+       .NoKeepAlive()
+       .NoEncryption()
+       .WithLZ4Compression() //Enable LZ4 compression.
+       .Build();
+```
 <br/>
 
 ## Encryption
