@@ -21,6 +21,7 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 AzureBuild/
+Build/
 [Rr]eleases/
 x64/
 x86/
