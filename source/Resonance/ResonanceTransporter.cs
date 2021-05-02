@@ -2,7 +2,6 @@
 using Resonance.Exceptions;
 using Resonance.ExtensionMethods;
 using Resonance.HandShake;
-using Resonance.Logging;
 using Resonance.Reactive;
 using Resonance.Threading;
 using Resonance.Tokens;

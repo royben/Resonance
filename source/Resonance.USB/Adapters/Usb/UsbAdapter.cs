@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Resonance.Logging;
 using Resonance.Threading;
 using System;
 using System.Collections.Generic;
