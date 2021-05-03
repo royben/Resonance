@@ -160,7 +160,7 @@ namespace Resonance.Discovery
         /// <param name="maxDuration">The maximum duration to perform the scan.</param>
         /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
         /// <returns></returns>
-        public async Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> Discover(TimeSpan maxDuration, int? maxServices = null)
+        public async Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> DiscoverAsync(TimeSpan maxDuration, int? maxServices = null)
         {
             await Start();
 
@@ -187,6 +187,17 @@ namespace Resonance.Discovery
                     return _discoveredServices.ToList();
                 }
             });
+        }
+
+        /// <summary>
+        /// Asynchronous method for collecting discovered services within the given duration.
+        /// </summary>
+        /// <param name="maxDuration">The maximum duration to perform the scan.</param>
+        /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
+        /// <returns></returns>
+        public List<ResonanceUdpDiscoveredService<TDiscoveryInfo>> Discover(TimeSpan maxDuration, int? maxServices = null)
+        {
+            return DiscoverAsync(maxDuration, maxServices).GetAwaiter().GetResult();
         }
 
         private void ReceiveThreadMethod()

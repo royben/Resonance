@@ -545,7 +545,7 @@ namespace Resonance
         /// Connects this transporter along with the underlying <see cref="Adapter"/>.
         /// </summary>
         /// <returns></returns>
-        public async Task Connect()
+        public async Task ConnectAsync()
         {
             if (State == ResonanceComponentState.Connected) return;
 
@@ -563,7 +563,7 @@ namespace Resonance
                 HandShakeNegotiator.Completed += HandShakeNegotiator_Completed;
                 HandShakeNegotiator.Reset(CryptographyConfiguration.Enabled, CryptographyConfiguration.CryptographyProvider);
 
-                await Adapter.Connect();
+                await Adapter.ConnectAsync();
 
                 State = ResonanceComponentState.Connected;
                 Logger.LogInformation("Transporter Connected.");
@@ -594,10 +594,19 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Connects this transporter along with the underlying <see cref="Adapter"/>.
+        /// </summary>
+        /// <returns></returns>
+        public void Connect()
+        {
+            ConnectAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
         /// </summary>
         /// <returns></returns>
-        public async Task Disconnect()
+        public async Task DisconnectAsync()
         {
             if (State == ResonanceComponentState.Connected)
             {
@@ -612,7 +621,7 @@ namespace Resonance
                             try
                             {
                                 Logger.LogInformation("Sending disconnection request.");
-                                var response = await SendRequest(new ResonanceDisconnectRequest());
+                                var response = await SendRequestAsync(new ResonanceDisconnectRequest());
                             }
                             catch { }
                         }
@@ -652,6 +661,15 @@ namespace Resonance
             }
         }
 
+        /// <summary>
+        /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
+        /// </summary>
+        /// <returns></returns>
+        public void Disconnect()
+        {
+            DisconnectAsync().GetAwaiter().GetResult();
+        }
+
         #endregion
 
         #region Send Request
@@ -664,9 +682,22 @@ namespace Resonance
         /// <param name="request">The request message.</param>
         /// <param name="config">Request configuration.</param>
         /// <returns></returns>
-        public async Task<Response> SendRequest<Request, Response>(Request request, ResonanceRequestConfig config = null)
+        public async Task<Response> SendRequestAsync<Request, Response>(Request request, ResonanceRequestConfig config = null)
         {
-            return (Response)await SendRequest(request, config);
+            return (Response)await SendRequestAsync(request, config);
+        }
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <typeparam name="Request">The type of the Request.</typeparam>
+        /// <typeparam name="Response">The type of the Response.</typeparam>
+        /// <param name="request">The request message.</param>
+        /// <param name="config">Request configuration.</param>
+        /// <returns></returns>
+        public Response SendRequest<Request, Response>(Request request, ResonanceRequestConfig config = null)
+        {
+            return SendRequestAsync<Request, Response>(request, config).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -676,13 +707,24 @@ namespace Resonance
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task<Object> SendRequest(Object request, ResonanceRequestConfig config = null)
+        public Task<Object> SendRequestAsync(Object request, ResonanceRequestConfig config = null)
         {
             ResonanceRequest resonanceRequest = new ResonanceRequest();
             resonanceRequest.Token = TokenGenerator.GenerateToken(request);
             resonanceRequest.Message = request;
 
-            return SendRequest(resonanceRequest, config);
+            return SendRequestAsync(resonanceRequest, config);
+        }
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        public Object SendRequest(Object request, ResonanceRequestConfig config = null)
+        {
+            return SendRequestAsync(request, config).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -692,7 +734,7 @@ namespace Resonance
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task<Object> SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null)
+        public Task<Object> SendRequestAsync(ResonanceRequest request, ResonanceRequestConfig config = null)
         {
             ValidateMessagingState(request);
 
@@ -727,6 +769,17 @@ namespace Resonance
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
             return completionSource.Task;
+        }
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        public Object SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null)
+        {
+            return SendRequestAsync(request, config).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -791,9 +844,21 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        public Task SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null)
+        public Task SendResponseAsync<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null)
         {
-            return SendResponse((ResonanceResponse)response, config);
+            return SendResponseAsync((ResonanceResponse)response, config);
+        }
+
+        /// <summary>
+        /// Sends a response message.
+        /// </summary>
+        /// <typeparam name="Response">The type of the Response.</typeparam>
+        /// <param name="response">The response message.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        public void SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null)
+        {
+            SendResponseAsync<Response>(response, config).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -803,9 +868,9 @@ namespace Resonance
         /// <param name="token">Request token.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        public Task SendResponse(Object message, String token, ResonanceResponseConfig config = null)
+        public Task SendResponseAsync(Object message, String token, ResonanceResponseConfig config = null)
         {
-            return SendResponse(new ResonanceResponse()
+            return SendResponseAsync(new ResonanceResponse()
             {
                 Message = message,
                 Token = token
@@ -815,13 +880,36 @@ namespace Resonance
         /// <summary>
         /// Sends the specified response message.
         /// </summary>
+        /// <param name="message">The response message.</param>
+        /// <param name="token">Request token.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        public void SendResponse(Object message, String token, ResonanceResponseConfig config = null)
+        {
+            SendResponseAsync(message, token, config).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Sends the specified response message.
+        /// </summary>
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null)
+        public Task SendResponseAsync(ResonanceResponse response, ResonanceResponseConfig config = null)
         {
             return SendResponse(response, false, config);
+        }
+
+        /// <summary>
+        /// Sends the specified response message.
+        /// </summary>
+        /// <param name="response">The response message.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        public void SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null)
+        {
+            SendResponseAsync(response, config).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -830,9 +918,20 @@ namespace Resonance
         /// <param name="exception">The exception.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
-        public Task SendErrorResponse(Exception exception, string token)
+        public Task SendErrorResponseAsync(Exception exception, string token)
         {
-            return SendErrorResponse(exception.Message, token);
+            return SendErrorResponseAsync(exception.Message, token);
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        public void SendErrorResponse(Exception exception, String token)
+        {
+            SendErrorResponseAsync(exception, token).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -841,13 +940,24 @@ namespace Resonance
         /// <param name="message">The error message.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
-        public Task SendErrorResponse(String message, string token)
+        public Task SendErrorResponseAsync(String message, string token)
         {
             ResonanceResponseConfig config = new ResonanceResponseConfig();
             config.HasError = true;
             config.ErrorMessage = message;
 
             return SendResponse(new ResonanceResponse() { Message = message, Token = token }, true, config);
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        public void SendErrorResponse(String message, string token)
+        {
+            SendErrorResponseAsync(message, token).GetAwaiter().GetResult();
         }
 
         private Task SendResponse(ResonanceResponse response, bool isError, ResonanceResponseConfig config = null)
@@ -916,7 +1026,7 @@ namespace Resonance
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task SendObject(object message, ResonanceRequestConfig config = null)
+        public Task SendObjectAsync(object message, ResonanceRequestConfig config = null)
         {
             ValidateMessagingState(message);
 
@@ -954,6 +1064,16 @@ namespace Resonance
             _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
             return completionSource.Task;
+        }
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        public void SendObject(Object message, ResonanceRequestConfig config = null)
+        {
+            SendObjectAsync(message, config).GetAwaiter().GetResult();
         }
 
         #endregion
@@ -1395,7 +1515,7 @@ namespace Resonance
                             if (result != null && result.Response != null)
                             {
                                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Request handler '{Handler}' completed. Sending response...", handler.RegisteredCallbackDescription);
-                                SendResponse(result.Response, request.Token, result.Config).GetAwaiter().GetResult();
+                                SendResponse(result.Response, request.Token, result.Config);
                             }
                             else
                             {
@@ -1414,7 +1534,7 @@ namespace Resonance
                         try
                         {
                             if (ex.InnerException != null) ex = ex.InnerException;
-                            SendErrorResponse(ex, request.Token).GetAwaiter().GetResult();
+                            SendErrorResponse(ex, request.Token);
                         }
                         catch (Exception exx)
                         {
@@ -1590,7 +1710,7 @@ namespace Resonance
 
                 try
                 {
-                    await SendResponse(new ResonanceKeepAliveResponse(), info.Token);
+                    await SendResponseAsync(new ResonanceKeepAliveResponse(), info.Token);
                 }
                 catch (Exception ex)
                 {
@@ -1651,7 +1771,7 @@ namespace Resonance
                         var response = SendRequest<ResonanceKeepAliveRequest, ResonanceKeepAliveResponse>(new ResonanceKeepAliveRequest(), new ResonanceRequestConfig()
                         {
                             Priority = QueuePriority.Low
-                        }).GetAwaiter().GetResult();
+                        });
 
                         retryCounter = 0;
                     }
@@ -1825,7 +1945,7 @@ namespace Resonance
 
             if (Adapter != null)
             {
-                await Adapter.Disconnect();
+                await Adapter.DisconnectAsync();
             }
 
             NotifyActiveMessagesAboutDisconnection(exception);
@@ -2119,7 +2239,7 @@ namespace Resonance
                 {
                     Logger.LogInformation("Disposing...");
                     _isDisposing = true;
-                    await Disconnect();
+                    await DisconnectAsync();
 
                     if (withAdapter)
                     {

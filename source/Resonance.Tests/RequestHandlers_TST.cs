@@ -20,13 +20,13 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RegisterRequestHandler<CalculateRequest>(CalculateRequest_Standard_Handler);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -42,13 +42,13 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RegisterRequestHandler<CalculateRequest, CalculateResponse>(CalculateRequest_Response_Handler);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -63,7 +63,7 @@ namespace Resonance.Tests
 
         private void CalculateRequest_Standard_Handler(IResonanceTransporter transporter, ResonanceRequest<CalculateRequest> request)
         {
-            transporter.SendResponse(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
+            transporter.SendResponseAsync(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
         }
     }
 }

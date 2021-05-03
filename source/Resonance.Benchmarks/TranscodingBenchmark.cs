@@ -33,19 +33,19 @@ namespace Resonance.Benchmarks
                 .WithJsonTranscoding()
                 .Build();
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);
@@ -106,19 +106,19 @@ namespace Resonance.Benchmarks
                 .WithProtobufTranscoding()
                 .Build();
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new Messages.Proto.CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);

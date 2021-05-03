@@ -78,33 +78,33 @@ For this demonstration, we are going to use JSON transcoding over TCP/IP as the 
 
 Here is how we can create the first Transporter with JSON encoding/decoding and TCP/IP adapter.
 ```c#
-        public async void Init()
-        {
-            IResonanceTransporter transporter = new ResonanceTransporter();
+public async void Init()
+{
+    IResonanceTransporter transporter = new ResonanceTransporter();
 
-            transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
-            transporter.Encoder = new JsonEncoder();
-            transporter.Decoder = new JsonDecoder();
+    transporter.Adapter = new TcpAdapter("127.0.0.1", 8888);
+    transporter.Encoder = new JsonEncoder();
+    transporter.Decoder = new JsonDecoder();
 
-            await transporter.Connect();
-        }
+    await transporter.ConnectAsync();
+}
 ```
 <br/>
 
 A Transporter can also be instantiated using the fluent syntax builder.
 ```c#
-        public async void Init()
-        {
-            IResonanceTransporter transporter = ResonanceTransporter.Builder
-                .Create()
-                .WithTcpAdapter()
-                .WithAddress("127.0.0.1")
-                .WithPort(8888)
-                .WithJsonTranscoding()
-                .Build();
+public async void Init()
+{
+    IResonanceTransporter transporter = ResonanceTransporter.Builder
+        .Create()
+        .WithTcpAdapter()
+        .WithAddress("127.0.0.1")
+        .WithPort(8888)
+        .WithJsonTranscoding()
+        .Build();
 
-            await transporter.Connect();
-        }
+    await transporter.ConnectAsync();
+}
 ```
 <br/>
 
@@ -117,23 +117,23 @@ Once a new connection is available, the *ConnectionRequest* event will be trigge
 The event arguments contains the *Accept* and *Decline* methods for accepting or declining the new connection.<br/>
 The accept method returns an initialized *TcpAdapter* that can be used to create the "other side" second Transporter.
 ```c#
-        public async void Init_TcpServer()
-        {
-            ResonanceTcpServer server = new ResonanceTcpServer(8888);
-            server.ConnectionRequest += Server_ConnectionRequest;
-            await server.Start();
-        }
+public async void Init_TcpServer()
+{
+    ResonanceTcpServer server = new ResonanceTcpServer(8888);
+    server.ConnectionRequest += Server_ConnectionRequest;
+    await server.StartAsync();
+}
+
+private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+{
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithAdapter(e.Accept()) //Call the Accept method to get a new TcpAdapter.
+        .WithJsonTranscoding()
+        .Build();
         
-        private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
-        {
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-                .Create()
-                .WithAdapter(e.Accept()) //Call the Accept method to get a new TcpAdapter.
-                .WithJsonTranscoding()
-                .Build();
-                
-            await transporter2.Connect();
-        }
+    await transporter2.ConnectAsync();
+}
 ```
 <br/>
 
@@ -142,32 +142,32 @@ Let's define two simple request and response messages.<Br/>
 
 *CalculateRequest*:
 ```c#
-    public class CalculateRequest
-    {
-        public double A { get; set; }
-        public double B { get; set; }
-    }
+public class CalculateRequest
+{
+    public double A { get; set; }
+    public double B { get; set; }
+}
 ```
 <br/>
 
 *CalculateResponse*:
 ```c#
-    public class CalculateResponse
-    {
-        public double Sum { get; set; }
-    }
+public class CalculateResponse
+{
+    public double Sum { get; set; }
+}
 ```
 <br/>
 
 Here is how we can send a *CalculateRequest* from the first Transporter, while expecting a *CalculateResponse* from the "other-side" second Transporter.
 ```c#
-    var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
-    {
-        A = 10,
-        B = 5
-    });
+var response = await transporter1.SendRequestAsync<CalculateRequest, CalculateResponse>(new CalculateRequest()
+{
+    A = 10,
+    B = 5
+});
 
-    Console.WriteLine(response.Sum);
+Console.WriteLine(response.Sum);
 ```
 <Br/>
 
@@ -190,37 +190,37 @@ Let's go back to where we accepted the first Transporter connection and initiali
 
 Here is how we would register for the *RequestReceived* event and respond to the *CalculateRequest* with a *CalculateResponse*.
 ```c#
-    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
-    {
-        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-            .Create()
-            .WithAdapter(e.Accept())
-            .WithJsonTranscoding()
-            .Build();
-        
-        //Register an event handler..
-        transporter2.RequestReceived += Transporter2_RequestReceived;
-
-        await transporter2.Connect();
-    }
+private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+{
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithAdapter(e.Accept())
+        .WithJsonTranscoding()
+        .Build();
     
-    private async void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
+    //Register an event handler..
+    transporter2.RequestReceived += Transporter2_RequestReceived;
+
+    await transporter2.ConnectAsync();
+}
+
+private async void Transporter2_RequestReceived(object sender, ResonanceRequestReceivedEventArgs e)
+{
+    if (e.Request.Message is CalculateRequest calculateRequest)
     {
-        if (e.Request.Message is CalculateRequest calculateRequest)
+        if (calculateRequest.A > 0 && calculateRequest.B > 0)
         {
-            if (calculateRequest.A > 0 && calculateRequest.B > 0)
+            await e.Transporter.SendResponseAsync(new CalculateResponse()
             {
-                await e.Transporter.SendResponse(new CalculateResponse()
-                {
-                    Sum = calculateRequest.A + calculateRequest.B
-                }, e.Request.Token);
-            }
-            else
-            {
-                await e.Transporter.SendErrorResponse("A & B must be greater than zero", e.Request.Token);
-            }
+                Sum = calculateRequest.A + calculateRequest.B
+            }, e.Request.Token);
+        }
+        else
+        {
+            await e.Transporter.SendErrorResponseAsync("A & B must be greater than zero", e.Request.Token);
         }
     }
+}
 ```
 <Br/>
 
@@ -239,33 +239,32 @@ A better and more intuitive approach is to register a request handler method tha
 Let's go back again and see how we might register a request handler.
 
 ```c#
-    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+{
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithAdapter(e.Accept())
+        .WithJsonTranscoding()
+        .Build();
+    
+    //Register a request handler method...
+    transporter2.RegisterRequestHandler<CalculateRequest, CalculateResponse>(HandleCalculateRequest);
+
+    await transporter2.ConnectAsync();
+}
+
+
+private ResonanceActionResult<CalculateResponse> HandleCalculateRequest(CalculateRequest request)
+{
+    if (request.A > 0 && request.B > 0)
     {
-        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-            .Create()
-            .WithAdapter(e.Accept())
-            .WithJsonTranscoding()
-            .Build();
-        
-        //Register a request handler method...
-        transporter2.RegisterRequestHandler<CalculateRequest, CalculateResponse>(HandleCalculateRequest);
-
-        await transporter2.Connect();
+        return new CalculateResponse() { Sum = request.A + request.B };
     }
-
-
-    private ResonanceActionResult<CalculateResponse> HandleCalculateRequest(CalculateRequest request)
+    else
     {
-        if (request.A > 0 && request.B > 0)
-        {
-            return new CalculateResponse() { Sum = request.A + request.B };
-        }
-        else
-        {
-            throw new ArgumentException("A & B must be greater than zero");
-        }
+        throw new ArgumentException("A & B must be greater than zero");
     }
-
+}
 ```
 <Br/>
 
@@ -295,40 +294,40 @@ Only methods that meets the below criteria will be registered as request handler
 Let's create our Calculation Service class.
 
 ```c#
-    private class CalculationService : IResonanceService
+private class CalculationService : IResonanceService
+{
+    public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
     {
-        public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
-        {
-            return new CalculateResponse() { Sum = request.A + request.B };
-        }
+        return new CalculateResponse() { Sum = request.A + request.B };
+    }
 
-        public void OnTransporterStateChanged(ResonanceComponentState state)
+    public void OnTransporterStateChanged(ResonanceComponentState state)
+    {
+        if (state == ResonanceComponentState.Failed)
         {
-            if (state == ResonanceComponentState.Failed)
-            {
-                //Connection lost
-            }
+            //Connection lost
         }
     }
+}
 ```
 <Br/>
 
 Let's go back again and see how we might register our service.
 
 ```c#
-    private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
-    {
-        IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-            .Create()
-            .WithAdapter(e.Accept())
-            .WithJsonTranscoding()
-            .Build();
-        
-        //Register a service...
-        transporter2.RegisterService(new CalculationService());
+private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
+{
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithAdapter(e.Accept())
+        .WithJsonTranscoding()
+        .Build();
+    
+    //Register a service...
+    transporter2.RegisterService(new CalculationService());
 
-        await transporter2.Connect();
-    }
+    await transporter2.ConnectAsync();
+}
 ```
 <Br/>
 
@@ -352,69 +351,69 @@ First, let's create our *ProgressRequest* and *ProgressResponse* messages.
 
 *ProgressRequest*:
 ```c#
-    public class ProgressRequest
-    {
-        public int Count { get; set; }
-        public TimeSpan Interval { get; set; }
-    }
+public class ProgressRequest
+{
+    public int Count { get; set; }
+    public TimeSpan Interval { get; set; }
+}
 ```
 <br/>
 
 *ProgressResponse*:
 ```c#
-    public class ProgressResponse
-    {
-        public int Value { get; set; }
-    }
+public class ProgressResponse
+{
+    public int Value { get; set; }
+}
 ```
 <br/>
 
 Now, we are going to initialize two Transporters, send a continuous request from the first one, and respond with multiple response messages from the other.
 
 ```c#
-        public async void Send_Continuous_Request()
+public async void Send_Continuous_Request()
+{
+    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+       .Create()
+       .WithInMemoryAdapter()
+       .WithAddress("TEST")
+       .WithJsonTranscoding()
+       .Build();
+
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TEST")
+        .WithJsonTranscoding()
+        .Build();
+
+    await transporter1.ConnectAsync();
+    await transporter2.ConnectAsync();
+
+    transporter2.RegisterRequestHandler<ProgressRequest>(async (t, request) =>
+    {
+        for (int i = 0; i < request.Message.Count; i++)
         {
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-               .Create()
-               .WithInMemoryAdapter()
-               .WithAddress("TEST")
-               .WithJsonTranscoding()
-               .Build();
-
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TEST")
-                .WithJsonTranscoding()
-                .Build();
-
-            await transporter1.Connect();
-            await transporter2.Connect();
-
-            transporter2.RegisterRequestHandler<ProgressRequest>(async (t, request) =>
-            {
-                for (int i = 0; i < request.Message.Count; i++)
-                {
-                    await t.SendResponse(new ProgressResponse() { Value = i }, request.Token);
-                    Thread.Sleep(request.Message.Interval);
-                }
-            });
-
-            transporter1.SendContinuousRequest<ProgressRequest, ProgressResponse>(new ProgressRequest()
-            {
-                Interval = TimeSpan.FromSeconds(1),
-                Count = 10
-            }).Subscribe((response) =>
-            {
-                Console.WriteLine(response.Value);
-            }, (ex) =>
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }, () =>
-            {
-                Console.WriteLine($"Continuous Request Completed!");
-            });
+            await t.SendResponseAsync(new ProgressResponse() { Value = i }, request.Token);
+            Thread.Sleep(request.Message.Interval);
         }
+    });
+
+    transporter1.SendContinuousRequest<ProgressRequest, ProgressResponse>(new ProgressRequest()
+    {
+        Interval = TimeSpan.FromSeconds(1),
+        Count = 10
+    }).Subscribe((response) =>
+    {
+        Console.WriteLine(response.Value);
+    }, (ex) =>
+    {
+        Console.WriteLine($"Error: {ex.Message}");
+    }, () =>
+    {
+        Console.WriteLine($"Continuous Request Completed!");
+    });
+}
 ```
 
 <br/>
@@ -425,25 +424,25 @@ Testing your communication is easier without initializing an actual known commun
 All you need to do is assign each of the adapters the same address.
 
 ```c#
-        public async void Demo()
-        {
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TEST")
-                .WithJsonTranscoding()
-                .Build();
+public async void Demo()
+{
+    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TEST")
+        .WithJsonTranscoding()
+        .Build();
 
-            IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TEST")
-                .WithJsonTranscoding()
-                .Build();
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TEST")
+        .WithJsonTranscoding()
+        .Build();
 
-            await transporter1.Connect();
-            await transporter2.Connect();
-        }
+    await transporter1.ConnectAsync();
+    await transporter2.ConnectAsync();
+}
 ```
 
 <br/>
@@ -455,19 +454,18 @@ For example, by specifying a request configuration, we can change the default ti
 
 Here is how you would specify the configuration of a simple request message.
 ```c#
-    var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
-    {
-        A = 10,
-        B = 5
-    }, new ResonanceRequestConfig()
-    {
-        //After 5 seconds and no response, a TimeoutException will be thrown.
-        Timeout = TimeSpan.FromSeconds(5),
-        
-        //This message has high priority in the message queue.
-        Priority = Threading.QueuePriority.High,
-    });
-
+var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
+{
+    A = 10,
+    B = 5
+}, new ResonanceRequestConfig()
+{
+    //After 5 seconds and no response, a TimeoutException will be thrown.
+    Timeout = TimeSpan.FromSeconds(5),
+    
+    //This message has high priority in the message queue.
+    Priority = Threading.QueuePriority.High,
+});
 ```
 A continuous request configuration also allows specifying the continuous timeout, meaning, the maximum time interval between each response.
 
@@ -481,35 +479,35 @@ We can enable/disable and control a Transporter's keep alive behavior by changin
 
 Here is how we would change a Transporter's keep alive configuration.
 ```c#
-     IResonanceTransporter t = new ResonanceTransporter();
+IResonanceTransporter t = new ResonanceTransporter();
 
-     //Enable keep alive.
-     t.KeepAliveConfiguration.Enabled = true;
+//Enable keep alive.
+t.KeepAliveConfiguration.Enabled = true;
 
-     //Frequency of keep alive messages.
-     t.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(5);
+//Frequency of keep alive messages.
+t.KeepAliveConfiguration.Interval = TimeSpan.FromSeconds(5);
 
-     //Maximum failed attempts.
-     t.KeepAliveConfiguration.Retries = 4;
+//Maximum failed attempts.
+t.KeepAliveConfiguration.Retries = 4;
 
-     //Respond to the other-side transporter keep alive messages.
-     t.KeepAliveConfiguration.EnableAutoResponse = true;
+//Respond to the other-side transporter keep alive messages.
+t.KeepAliveConfiguration.EnableAutoResponse = true;
 
-     //Transporter state will change to 'Failed' when keep alive times out.
-     t.KeepAliveConfiguration.FailTransporterOnTimeout = true;
+//Transporter state will change to 'Failed' when keep alive times out.
+t.KeepAliveConfiguration.FailTransporterOnTimeout = true;
 ```
 <br/>
 
 Here is how you can configure the keep alive using the Transporter fluent builder.
 ```c#
-    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-        .Create()
-        .WithTcpAdapter()
-        .WithAddress("127.0.0.1")
-        .WithPort(8888)
-        .WithJsonTranscoding()
-        .WithKeepAlive(interval: TimeSpan.FromSeconds(5), retries: 4)
-        .Build();
+IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+    .Create()
+    .WithTcpAdapter()
+    .WithAddress("127.0.0.1")
+    .WithPort(8888)
+    .WithJsonTranscoding()
+    .WithKeepAlive(interval: TimeSpan.FromSeconds(5), retries: 4)
+    .Build();
 ```
 <br/>
 
@@ -520,24 +518,24 @@ Compression and decompression is performed by the Transporter's *Encoder* and *D
 To enable the encoder compression, you can access the encoder's *CompressionConfiguration*.
 
 ```c#
-   IResonanceTransporter t = new ResonanceTransporter();
-   t.Encoder = new JsonEncoder();
-   t.Encoder.CompressionConfiguration.Enabled = true; //Enable compression.
+IResonanceTransporter t = new ResonanceTransporter();
+t.Encoder = new JsonEncoder();
+t.Encoder.CompressionConfiguration.Enabled = true; //Enable compression.
 ```
 <br/>
 
 Or, using the fluent builder...
 
 ```c#
-   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-       .Create()
-       .WithInMemoryAdapter()
-       .WithAddress("TST")
-       .WithJsonTranscoding()
-       .NoKeepAlive()
-       .NoEncryption()
-       .WithCompression() //Enable compression
-       .Build();
+IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+    .Create()
+    .WithInMemoryAdapter()
+    .WithAddress("TST")
+    .WithJsonTranscoding()
+    .NoKeepAlive()
+    .NoEncryption()
+    .WithCompression() //Enable compression
+    .Build();
 ```
 <br/>
 
@@ -546,15 +544,15 @@ There is no need to configure the receiving Decoder as it automatically detects 
 
 The base library uses GZip for compression, but you can use the faster LZ4 compression algorithm by installing the *Resonance.LZ4* nuget package and specifying it as the Encoder's compressor.
 ```c#
-   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-       .Create()
-       .WithInMemoryAdapter()
-       .WithAddress("TST")
-       .WithJsonTranscoding()
-       .NoKeepAlive()
-       .NoEncryption()
-       .WithLZ4Compression() //Enable LZ4 compression.
-       .Build();
+IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+    .Create()
+    .WithInMemoryAdapter()
+    .WithAddress("TST")
+    .WithJsonTranscoding()
+    .NoKeepAlive()
+    .NoEncryption()
+    .WithLZ4Compression() //Enable LZ4 compression.
+    .Build();
 ```
 <br/>
 
@@ -588,22 +586,22 @@ The one with the highest ClientID gets to decide about the Symmetric encryption 
 After we understand what happens behind the scenes, let's see how to configure a Transporter to encrypt messages.
 
 ```c#
-    IResonanceTransporter t = new ResonanceTransporter();
-    t.CryptographyConfiguration.Enabled = true; //Enable encryption.
+IResonanceTransporter t = new ResonanceTransporter();
+t.CryptographyConfiguration.Enabled = true; //Enable encryption.
 ```
 <br/>
 
 You can also configure encryption using the fluent builder.
 
 ```c#
-   IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-       .Create().WithTcpAdapter()
-       .WithAddress("127.0.0.1")
-       .WithPort(8888)
-       .WithJsonTranscoding()
-       .WithKeepAlive()
-       .WithEncryption() //Enable encryption.
-       .Build();
+IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+    .Create().WithTcpAdapter()
+    .WithAddress("127.0.0.1")
+    .WithPort(8888)
+    .WithJsonTranscoding()
+    .WithKeepAlive()
+    .WithEncryption() //Enable encryption.
+    .Build();
 ```
 <br/>
 
@@ -625,19 +623,19 @@ In order to route Resonance logging to your logging infrastructure, you need to 
 
 Here is how you can hookup Resonance to *Serilog* logging library.
 ```c#
-        public void InitLogging()
-        {
-            var loggerFactory = new LoggerFactory();
-            var logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.Seq("http://localhost:5341")
-                .CreateLogger();
+public void InitLogging()
+{
+    var loggerFactory = new LoggerFactory();
+    var logger = new LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .WriteTo.Console()
+        .WriteTo.Seq("http://localhost:5341")
+        .CreateLogger();
 
-            loggerFactory.AddSerilog(logger);
+    loggerFactory.AddSerilog(logger);
 
-            ResonanceGlobalSettings.Default.LoggerFactory = loggerFactory;
-        }
+    ResonanceGlobalSettings.Default.LoggerFactory = loggerFactory;
+}
 ```
 <br/>
 
@@ -656,30 +654,30 @@ Note, when the minimum log level is "Debug" request and response messages will a
 Here is how you would configure the logging mode of a request.
 
 ```c#
-        public async void Demo()
-        {
-            IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-               .Create().WithTcpAdapter()
-               .WithAddress("127.0.0.1")
-               .WithPort(8888)
-               .WithJsonTranscoding()
-               .WithKeepAlive()
-               .NoEncryption()
-               .WithCompression()
-               .Build();
+public async void Demo()
+{
+    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+       .Create().WithTcpAdapter()
+       .WithAddress("127.0.0.1")
+       .WithPort(8888)
+       .WithJsonTranscoding()
+       .WithKeepAlive()
+       .NoEncryption()
+       .WithCompression()
+       .Build();
 
-            await transporter1.Connect();
+    await transporter1.ConnectAsync();
 
-            CalculateRequest request = new CalculateRequest() { A = 10, B = 5 };
+    CalculateRequest request = new CalculateRequest() { A = 10, B = 5 };
 
-            //Log request and response names
-            var response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(request,
-                new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Title });
+    //Log request and response names
+    var response = await transporter1.SendRequestAsync<CalculateRequest, CalculateResponse>(request,
+        new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Title });
 
-            //Log request and response names and content
-            response = await transporter1.SendRequest<CalculateRequest, CalculateResponse>(request,
-                new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
-        }
+    //Log request and response names and content
+    response = await transporter1.SendRequestAsync<CalculateRequest, CalculateResponse>(request,
+        new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
+}
 ```
 
 <br/>

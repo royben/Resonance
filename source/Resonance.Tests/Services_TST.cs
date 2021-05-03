@@ -19,15 +19,15 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             var testService = new TestService();
 
             t2.RegisterService(testService);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
 
@@ -38,7 +38,7 @@ namespace Resonance.Tests
                 response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
                 {
                     Timeout = TimeSpan.FromSeconds(1)
-                }).GetAwaiter().GetResult();
+                });
             });
 
             t2.RegisterService(testService);
@@ -72,8 +72,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             var testErrorService = new TestErrorService();
 
@@ -84,7 +84,7 @@ namespace Resonance.Tests
                 try
                 {
                     var request = new CalculateRequest() { A = 10, B = 15 };
-                    var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                    var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
                 }
                 catch (Exception ex)
                 {
@@ -116,15 +116,15 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             var testService = new TestAsyncService();
 
             t2.RegisterService(testService);
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
 

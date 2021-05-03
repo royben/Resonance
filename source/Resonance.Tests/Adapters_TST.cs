@@ -45,14 +45,14 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
-            server.Start().GetAwaiter().GetResult();
+            server.Start();
             server.ConnectionRequest += (x, e) => 
             {
                 t2.Adapter = e.Accept();
-                t2.Connect().GetAwaiter().GetResult();
+                t2.Connect();
             };
 
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
@@ -89,7 +89,7 @@ namespace Resonance.Tests
             String virtualSerialDeviceName = "HHD Software Virtual Serial Port";
             String errorMessage = "Could not locate any virtual serial port bridge. Please download from https://freevirtualserialports.com and create a local bridge.";
 
-            var devices = UsbDevice.GetAvailableDevices().GetAwaiter().GetResult();
+            var devices = UsbDevice.GetAvailableDevices();
 
             var virtualPort1 = devices.FirstOrDefault(x => x.Description.Contains(virtualSerialDeviceName));
             Assert.IsNotNull(virtualPort1, errorMessage);
@@ -115,14 +115,14 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
-            server.Start().GetAwaiter().GetResult();
+            server.Start();
             server.ConnectionRequest += (x, e) =>
             {
                 t2.Adapter = e.Accept();
-                t2.Connect().GetAwaiter().GetResult();
+                t2.Connect();
             };
 
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
 
             while (t2.State != ResonanceComponentState.Connected)
             {

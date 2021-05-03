@@ -18,7 +18,7 @@ namespace Resonance.Examples.TCP.Server
         {
             if (InSession)
             {
-                await RemoteClient?.SendRequest(request);
+                await RemoteClient?.SendRequestAsync(request);
             }
         }
 
@@ -26,7 +26,7 @@ namespace Resonance.Examples.TCP.Server
         {
             if (InSession)
             {
-                await RemoteClient?.SendResponse(response);
+                await RemoteClient?.SendResponseAsync(response);
             }
         }
     }
