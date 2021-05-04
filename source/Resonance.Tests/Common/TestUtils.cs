@@ -48,13 +48,13 @@ namespace Resonance.Tests.Common
             t1.CryptographyConfiguration.Enabled = enableCryptography;
             t2.CryptographyConfiguration.Enabled = enableCryptography;
 
-            t2.Connect().GetAwaiter().GetResult();
-            t1.Connect().GetAwaiter().GetResult();
+            t2.Connect();
+            t1.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             Stopwatch watch = new Stopwatch();
@@ -66,7 +66,7 @@ namespace Resonance.Tests.Common
                 watch.Restart();
 
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
                 measurements.Add(watch.ElapsedMilliseconds);
 

@@ -42,7 +42,7 @@ namespace Resonance.SignalR.Services
         /// <param name="url">The URL.</param>
         /// <param name="mode">The mode.</param>
         /// <returns></returns>
-        public async Task<List<TReportedServiceInformation>> GetAvailableServices<TCredentials, TReportedServiceInformation>(TCredentials credentials, String url, SignalRMode mode) where TReportedServiceInformation : IResonanceServiceInformation
+        public async Task<List<TReportedServiceInformation>> GetAvailableServicesAsync<TCredentials, TReportedServiceInformation>(TCredentials credentials, String url, SignalRMode mode) where TReportedServiceInformation : IResonanceServiceInformation
         {
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
@@ -52,6 +52,20 @@ namespace Resonance.SignalR.Services
             await client.DisposeAsync();
 
             return services;
+        }
+
+        /// <summary>
+        /// Gets the collection of available services for the provided credentials.
+        /// </summary>
+        /// <typeparam name="TCredentials">The type of the credentials.</typeparam>
+        /// <typeparam name="TReportedServiceInformation">The type of the reported service information.</typeparam>
+        /// <param name="credentials">The credentials.</param>
+        /// <param name="url">The URL.</param>
+        /// <param name="mode">The mode.</param>
+        /// <returns></returns>
+        public List<TReportedServiceInformation> GetAvailableServices<TCredentials, TReportedServiceInformation>(TCredentials credentials, String url, SignalRMode mode) where TReportedServiceInformation : IResonanceServiceInformation
+        {
+            return GetAvailableServicesAsync<TCredentials, TReportedServiceInformation>(credentials, url, mode).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -65,7 +79,7 @@ namespace Resonance.SignalR.Services
         /// <param name="url">The hub URL.</param>
         /// <param name="mode">The SignalR mode (legacy/core).</param>
         /// <returns></returns>
-        public async Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
+        public async Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterServiceAsync<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
         {
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
@@ -73,6 +87,22 @@ namespace Resonance.SignalR.Services
             await client.Invoke(ResonanceHubMethods.Login, credentials);
             await client.Invoke(ResonanceHubMethods.RegisterService, serviceInformation);
             return new ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, mode, client);
+        }
+
+        /// <summary>
+        /// Registers a new Resonance SignalR service.
+        /// </summary>
+        /// <typeparam name="TCredentials">The type of the credentials.</typeparam>
+        /// <typeparam name="TResonanceServiceInformation">The type of the resonance service information.</typeparam>
+        /// <typeparam name="TAdapterInformation">The type of the adapter information.</typeparam>
+        /// <param name="credentials">The credentials used to authenticate the service.</param>
+        /// <param name="serviceInformation">The service information.</param>
+        /// <param name="url">The hub URL.</param>
+        /// <param name="mode">The SignalR mode (legacy/core).</param>
+        /// <returns></returns>
+        public ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> RegisterService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
+        {
+            return RegisterServiceAsync<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, url, mode).GetAwaiter().GetResult();
         }
     }
 }

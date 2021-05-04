@@ -93,7 +93,7 @@ namespace Resonance.Tests
             TestCredentials credentials = new TestCredentials() { Name = "Test" };
             TestServiceInformation serviceInfo = new TestServiceInformation() { ServiceId = "My Test Service" };
 
-            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, url, mode).GetAwaiter().GetResult();
+            var registeredService = ResonanceServiceFactory.Default.RegisterService<TestCredentials, TestServiceInformation, TestAdapterInformation>(credentials, serviceInfo, url, mode);
 
             Assert.AreSame(registeredService.Credentials, credentials);
             Assert.AreSame(registeredService.ServiceInformation, serviceInfo);
@@ -107,11 +107,11 @@ namespace Resonance.Tests
             {
                 Assert.IsTrue(e.RemoteAdapterInformation.Information == "No information on the remote adapter");
                 serviceTransporter.Adapter = e.Accept();
-                serviceTransporter.Connect().GetAwaiter().GetResult();
+                serviceTransporter.Connect();
                 connected = true;
             };
 
-            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode).GetAwaiter().GetResult();
+            var remoteServices = ResonanceServiceFactory.Default.GetAvailableServices<TestCredentials, TestServiceInformation>(credentials, url, mode);
 
             Assert.IsTrue(remoteServices.Count == 1);
 
@@ -121,7 +121,7 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
 
-            clientTransporter.Connect().GetAwaiter().GetResult();
+            clientTransporter.Connect();
 
             while (!connected)
             {

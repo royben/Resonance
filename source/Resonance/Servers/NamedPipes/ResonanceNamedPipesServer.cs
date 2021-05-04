@@ -56,9 +56,9 @@ namespace Resonance.Servers.NamedPipes
         #region Start / Stop
 
         /// <summary>
-        /// Starts the server.
+        /// Start listening for incoming connections.
         /// </summary>
-        public Task Start()
+        public Task StartAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -72,9 +72,17 @@ namespace Resonance.Servers.NamedPipes
         }
 
         /// <summary>
-        /// Stops the server.
+        /// Start listening for incoming connections.
         /// </summary>
-        public Task Stop()
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Stop listening for incoming connections.
+        /// </summary>
+        public Task StopAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -85,6 +93,14 @@ namespace Resonance.Servers.NamedPipes
                     Logger.LogInformation("Stopped.");
                 }
             });
+        }
+
+        /// <summary>
+        /// Stop listening for incoming connections.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
         }
 
         #endregion
@@ -174,7 +190,7 @@ namespace Resonance.Servers.NamedPipes
         /// <returns></returns>
         public Task DisposeAsync()
         {
-            return Stop();
+            return StopAsync();
         }
 
         #endregion

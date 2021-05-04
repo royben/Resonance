@@ -80,11 +80,11 @@ namespace Resonance.Examples.TCP.Server
                 IsStarted = true;
                 _server = new ResonanceTcpServer(Port);
                 _server.ConnectionRequest += OnConnectionRequest;
-                await _server.Start();
+                await _server.StartAsync();
 
                 //Start the discovery service.
                 _discoveryService.DiscoveryInfo = new DiscoveryInfo() { ServiceName = ServiceName, Port = Port };
-                await _discoveryService.Start();
+                await _discoveryService.StartAsync();
             }
         }
 
@@ -96,14 +96,14 @@ namespace Resonance.Examples.TCP.Server
             if (IsStarted)
             {
                 //Stop the tcp server.
-                await _server.Stop();
+                await _server.StopAsync();
 
                 //Stop the discovery service.
-                await _discoveryService.Stop();
+                await _discoveryService.StopAsync();
                 IsStarted = false;
 
                 //Disconnect all clients.
-                _clients.ToList().ForEach(async x => await x.Disconnect());
+                _clients.ToList().ForEach(async x => await x.DisconnectAsync());
                 _clients.Clear();
             }
         }
@@ -133,7 +133,7 @@ namespace Resonance.Examples.TCP.Server
             newClient.RegisterRequestHandler<JoinSessionRequest, JoinSessionResponse>(OnClientJoinSessionRequest);
             newClient.RegisterRequestHandler<LeaveSessionRequest>(OnClientLeaveSessionRequest);
 
-            await newClient.Connect();
+            await newClient.ConnectAsync();
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace Resonance.Examples.TCP.Server
                 throw new Exception($"Client {request.ClientID} is already in session with another client.");
             }
 
-            existingClient.SendRequest<JoinSessionRequest, JoinSessionResponse>(new JoinSessionRequest()
+            existingClient.SendRequestAsync<JoinSessionRequest, JoinSessionResponse>(new JoinSessionRequest()
             {
                 ClientID = client.ClientID
             },new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(10) }).GetAwaiter().GetResult();
@@ -235,7 +235,7 @@ namespace Resonance.Examples.TCP.Server
                 client.InSession = false;
                 client.RemoteClient.InSession = false;
 
-                await client.RemoteClient.SendObject(new LeaveSessionRequest()
+                await client.RemoteClient.SendObjectAsync(new LeaveSessionRequest()
                 {
                     Reason = $"{client.RemoteClient.ClientID} has left the session"
                 });
@@ -267,7 +267,7 @@ namespace Resonance.Examples.TCP.Server
                 if (client.InSession)
                 {
                     client.RemoteClient.InSession = false;
-                    await client.RemoteClient.SendObject(new LeaveSessionRequest()
+                    await client.RemoteClient.SendObjectAsync(new LeaveSessionRequest()
                     {
                         Reason = "The remote client has disconnected"
                     });
@@ -282,7 +282,7 @@ namespace Resonance.Examples.TCP.Server
         {
             _clients.ToList().ForEach(async x =>
             {
-                await x.SendObject(new NotifyAvailableClientsRequest()
+                await x.SendObjectAsync(new NotifyAvailableClientsRequest()
                 {
                     Clients = _clients.Where(y => y != x).Select(y => y.ClientID).ToList()
                 });

@@ -38,6 +38,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{85155BCA-4E8B-4697-932E-B6B6EC41F2FA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TCP", "TCP", "{AF8F1FEE-A931-45FD-874D-F16724178E7B}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\TCP\README.md = Examples\TCP\README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{913C958F-352E-49F0-AAB2-F1C47777C156}"
 EndProject

@@ -102,20 +102,20 @@ namespace Resonance.Tests
                 .WithBsonTranscoding()
                 .Build();
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequestWithDate receivedRequest = e.Request.Message as CalculateRequestWithDate;
-                t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token);
             };
 
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequestWithDate() { A = 10, B = 15, Date = DateTime.UtcNow };
-                var response = t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest<CalculateRequestWithDate, CalculateResponseWithDate>(request);
 
                 Assert.AreEqual(response.Sum, request.A + request.B);
                 Assert.AreEqual(request.Date.Kind, response.Date.Kind);
@@ -168,17 +168,17 @@ namespace Resonance.Tests
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(10);
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -211,17 +211,17 @@ namespace Resonance.Tests
                 .WithTypeResolver<ProtobufTypeResolver>()
                 .Build();
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<Messages.Proto.CalculateRequest, Messages.Proto.CalculateResponse>(request);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -253,20 +253,20 @@ namespace Resonance.Tests
                 .Build();
 
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
             var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
             {
                 Timeout = TimeSpan.FromSeconds(20)
-            }).GetAwaiter().GetResult();
+            });
 
             t1.Dispose(true);
             t2.Dispose(true);

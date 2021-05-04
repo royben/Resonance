@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
-using Resonance.Logging;
 using Serilog;
 using System;
 using System.Collections.Generic;

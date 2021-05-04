@@ -6,11 +6,11 @@
         xmlns:local="clr-namespace:Resonance.Examples.TCP.Client"
         xmlns:logging="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Common"
         mc:Ignorable="d"
-        Title="Resonance TCP Client - Demo" Height="450" Width="1000" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}">
+        Title="Resonance TCP Client - Demo" Height="500" Width="1000" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}" Style="{StaticResource ResonanceWindowStyle}">
     <Grid Margin="10" IsEnabled="{Binding IsFree}">
         <DockPanel>
             <DockPanel DockPanel.Dock="Top">
-                <TextBlock FontSize="40">Resonance TCP Client</TextBlock>
+                <TextBlock FontSize="30">Resonance TCP Client</TextBlock>
 
                 <DockPanel VerticalAlignment="Center" HorizontalAlignment="Right" IsEnabled="{Binding IsConnected,Converter={StaticResource BooleanInverseConverter}}">
                     <TextBlock VerticalAlignment="Center">CLIENT ID:</TextBlock>
@@ -34,7 +34,7 @@
 
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Top">Discovered Services:</TextBlock>
-                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="30">
+                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="33">
                             <Button Margin="0 0 5 0" Command="{Binding DisconnectCommand}">DISCONNECT</Button>
                             <Button Margin="5 0 0 0" Command="{Binding ConnectCommand}">CONNECT</Button>
                         </UniformGrid>
@@ -50,7 +50,7 @@
 
                     <DockPanel Grid.Row="1" Margin="0 10 0 0">
                         <TextBlock DockPanel.Dock="Top">Connected Clients:</TextBlock>
-                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="30">
+                        <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="35">
                             <Button Margin="0 0 5 0" Command="{Binding LeaveSessionCommand}">LEAVE SESSION</Button>
                             <Button Margin="5 0 0 0" Command="{Binding JoinSessionCommand}">JOIN SESSION</Button>
                         </UniformGrid>
@@ -62,8 +62,8 @@
                     <DockPanel Grid.Row="2" Margin="0 20 0 0" IsEnabled="{Binding InSession}">
                         <TextBlock DockPanel.Dock="Top">Send Message:</TextBlock>
                         <DockPanel Margin="0 5 0 0">
-                            <Button DockPanel.Dock="Right" Width="80" Command="{Binding SendMessageCommand}">SEND</Button>
-                            <TextBox VerticalContentAlignment="Center" Text="{Binding Message}"></TextBox>
+                            <Button DockPanel.Dock="Right" Margin="5 0 0 0" Width="80" Command="{Binding SendMessageCommand}">SEND</Button>
+                            <TextBox VerticalAlignment="Center" Text="{Binding Message}"></TextBox>
                         </DockPanel>
                     </DockPanel>
                 </Grid>

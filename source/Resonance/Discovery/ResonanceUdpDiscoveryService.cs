@@ -82,7 +82,7 @@ namespace Resonance.Discovery
         /// <summary>
         /// Starts the discovery service.
         /// </summary>
-        public async Task Start()
+        public async Task StartAsync()
         {
             if (!IsStarted)
             {
@@ -95,7 +95,7 @@ namespace Resonance.Discovery
                     e.Decline();
                 };
 
-                await _tcpValidationServer.Start();
+                await _tcpValidationServer.StartAsync();
 
                 _timer = new Timer();
                 _timer.Interval = Interval.TotalMilliseconds;
@@ -111,13 +111,13 @@ namespace Resonance.Discovery
         /// <summary>
         /// Stops the discovery service.
         /// </summary>
-        public async Task Stop()
+        public async Task StopAsync()
         {
             if (IsStarted)
             {
                 Logger.LogInformation("Stopping...");
 
-                await _tcpValidationServer.Stop();
+                await _tcpValidationServer.StopAsync();
 
                 //Transmit the discovery packet one more time so clients can tell that we have disconnected.
                 BroadcastDiscoveryPacket();
@@ -126,6 +126,22 @@ namespace Resonance.Discovery
                 IsStarted = false;
                 Logger.LogInformation("Stopped.");
             }
+        }
+
+        /// <summary>
+        /// Starts the discovery service.
+        /// </summary>
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Stops the discovery service.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
         }
 
         private void BroadcastDiscoveryPacket()
@@ -172,7 +188,7 @@ namespace Resonance.Discovery
         /// <returns></returns>
         public Task DisposeAsync()
         {
-            return Stop();
+            return StopAsync();
         }
 
         /// <summary>

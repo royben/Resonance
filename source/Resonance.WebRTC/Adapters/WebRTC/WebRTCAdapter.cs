@@ -149,7 +149,7 @@ namespace Resonance.Adapters.WebRTC
                             Logger.LogDebug("Adapter initialized by an offer request.");
                             var response = OnWebRTCOfferRequest(_offerRequest);
 
-                            _signalingTransporter.SendResponse(response.Response, _offerRequestToken, new ResonanceResponseConfig() { LoggingMode = LoggingMode }).GetAwaiter().GetResult();
+                            _signalingTransporter.SendResponseAsync(response.Response, _offerRequestToken, new ResonanceResponseConfig() { LoggingMode = LoggingMode }).GetAwaiter().GetResult();
                         }
                         catch (Exception ex)
                         {
@@ -174,7 +174,7 @@ namespace Resonance.Adapters.WebRTC
                         RTCSessionDescriptionInit offer = _connection.createOffer(new RTCOfferOptions());
                         await _connection.setLocalDescription(offer);
 
-                        var response = await _signalingTransporter.SendRequest<WebRTCOfferRequest, WebRTCOfferResponse>(new WebRTCOfferRequest()
+                        var response = await _signalingTransporter.SendRequestAsync<WebRTCOfferRequest, WebRTCOfferResponse>(new WebRTCOfferRequest()
                         {
                             Offer = WebRTCSessionDescription.FromSessionDescription(offer)
                         }, new ResonanceRequestConfig()
@@ -504,7 +504,7 @@ namespace Resonance.Adapters.WebRTC
                 {
                     try
                     {
-                        await _signalingTransporter.SendRequest<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
+                        await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
                         {
                             Candidate = iceCandidate.candidate,
                             SdpMid = iceCandidate.sdpMid,

@@ -232,7 +232,17 @@ namespace Resonance
         /// <param name="request">The request message.</param>
         /// <param name="config">Request configuration.</param>
         /// <returns></returns>
-        Task<Response> SendRequest<Request, Response>(Request request, ResonanceRequestConfig config = null);
+        Task<Response> SendRequestAsync<Request, Response>(Request request, ResonanceRequestConfig config = null);
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <typeparam name="Request">The type of the Request.</typeparam>
+        /// <typeparam name="Response">The type of the Response.</typeparam>
+        /// <param name="request">The request message.</param>
+        /// <param name="config">Request configuration.</param>
+        /// <returns></returns>
+        Response SendRequest<Request, Response>(Request request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
@@ -240,7 +250,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Task<Object> SendRequest(Object request, ResonanceRequestConfig config = null);
+        Task<Object> SendRequestAsync(Object request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
@@ -248,14 +258,37 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Task<Object> SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null);
+        Object SendRequest(Object request, ResonanceRequestConfig config = null);
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        Task<Object> SendRequestAsync(ResonanceRequest request, ResonanceRequestConfig config = null);
+
+        /// <summary>
+        /// Sends the specified request message and returns a response.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        Object SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified object without expecting any response.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="config">The configuration.</param>
-        Task SendObject(Object message, ResonanceRequestConfig config = null);
+        Task SendObjectAsync(Object message, ResonanceRequestConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        void SendObject(Object message, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends a request message while expecting multiple response messages with the same token.
@@ -274,7 +307,16 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+
+        /// <summary>
+        /// Sends a response message.
+        /// </summary>
+        /// <typeparam name="Response">The type of the Response.</typeparam>
+        /// <param name="response">The response message.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        void SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -283,7 +325,16 @@ namespace Resonance
         /// <param name="token">Request token.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponse(Object message, String token, ResonanceResponseConfig config = null);
+        Task SendResponseAsync(Object message, String token, ResonanceResponseConfig config = null);
+
+        /// <summary>
+        /// Sends the specified response message.
+        /// </summary>
+        /// <param name="message">The response message.</param>
+        /// <param name="token">Request token.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        void SendResponse(Object message, String token, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -291,7 +342,15 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync(ResonanceResponse response, ResonanceResponseConfig config = null);
+
+        /// <summary>
+        /// Sends the specified response message.
+        /// </summary>
+        /// <param name="response">The response message.</param>
+        /// <param name="config">Response configuration.</param>
+        /// <returns></returns>
+        void SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends a general error response agnostic to the type of request.
@@ -299,7 +358,15 @@ namespace Resonance
         /// <param name="exception">The exception.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
-        Task SendErrorResponse(Exception exception, String token);
+        Task SendErrorResponseAsync(Exception exception, String token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        void SendErrorResponse(Exception exception, String token);
 
         /// <summary>
         /// Sends a general error response agnostic to the type of request.
@@ -307,7 +374,15 @@ namespace Resonance
         /// <param name="message">The error message.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
-        Task SendErrorResponse(String message, string token);
+        Task SendErrorResponseAsync(String message, string token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        void SendErrorResponse(String message, string token);
 
         /// <summary>
         /// Creates a new transporter builder based on this transporter.

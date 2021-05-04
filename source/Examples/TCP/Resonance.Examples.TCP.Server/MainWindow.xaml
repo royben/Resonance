@@ -6,17 +6,17 @@
         xmlns:local="clr-namespace:Resonance.Examples.TCP.Server"
         xmlns:logging="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Common"
         mc:Ignorable="d"
-        Title="Resonance TCP Server - Demo" Height="450" Width="800" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}">
+        Title="Resonance TCP Server - Demo" Height="450" Width="800" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}" Style="{StaticResource ResonanceWindowStyle}">
     <Grid Margin="10">
         <DockPanel>
-            <TextBlock DockPanel.Dock="Top" FontSize="40">Resonance TCP Server</TextBlock>
+            <TextBlock DockPanel.Dock="Top" FontSize="30">Resonance TCP Server</TextBlock>
 
             <DockPanel DockPanel.Dock="Bottom" Height="40">
                 <DockPanel VerticalAlignment="Center">
-                    <TextBlock>PORT:</TextBlock>
+                    <TextBlock VerticalAlignment="Center">PORT:</TextBlock>
                     <TextBox Margin="5 0 0 0" Width="100" Text="{Binding Port,UpdateSourceTrigger=PropertyChanged}"></TextBox>
 
-                    <TextBlock Margin="20 0 0 0">SERVICE NAME:</TextBlock>
+                    <TextBlock VerticalAlignment="Center" Margin="20 0 0 0">SERVICE NAME:</TextBlock>
                     <TextBox Margin="5 0 0 0" Width="100" Text="{Binding ServiceName,UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 </DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">

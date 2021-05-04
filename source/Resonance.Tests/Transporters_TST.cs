@@ -23,18 +23,18 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 Assert.IsTrue(t1.PendingRequestsCount == 1);
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content }).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -48,18 +48,18 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendErrorResponse("Error Message", e.Request.Token).GetAwaiter().GetResult();
+                t2.SendErrorResponse("Error Message", e.Request.Token);
             };
 
             Assert.ThrowsException<ResonanceResponseException>(() =>
             {
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()).GetAwaiter().GetResult();
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
             }, "Error Message");
 
             t1.Dispose(true);
@@ -74,8 +74,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
@@ -85,14 +85,14 @@ namespace Resonance.Tests
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token).GetAwaiter().GetResult();
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
                     t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
-                    }).GetAwaiter().GetResult();
+                    });
 
                 });
             };
@@ -117,7 +117,7 @@ namespace Resonance.Tests
                 isCompleted = true;
             });
 
-            subscription.WaitAsync().GetAwaiter().GetResult();
+            subscription.Wait();
 
             Assert.AreEqual(currentValue, request.Count);
             Assert.IsTrue(isCompleted);
@@ -135,17 +135,17 @@ namespace Resonance.Tests
             t1.Encoder.CompressionConfiguration.Enabled = true;
             t2.Encoder.CompressionConfiguration.Enabled = true;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -162,8 +162,8 @@ namespace Resonance.Tests
             t1.CryptographyConfiguration.Enabled = true;
             t2.CryptographyConfiguration.Enabled = true;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
@@ -184,14 +184,14 @@ namespace Resonance.Tests
 
             Task.Factory.StartNew(() =>
             {
-                response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-                response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request);
+                response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request);
             }).GetAwaiter().GetResult();
 
             Task.Factory.StartNew(() =>
             {
-                response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-                response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
+                response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             }).GetAwaiter().GetResult();
 
 
@@ -211,8 +211,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
@@ -222,18 +222,18 @@ namespace Resonance.Tests
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token).GetAwaiter().GetResult();
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
-                    t2.SendErrorResponse("Test Exception", e.Request.Token).GetAwaiter().GetResult();
+                    t2.SendErrorResponse("Test Exception", e.Request.Token);
 
                     Thread.Sleep(receivedRequest.Interval);
 
                     t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
-                    }).GetAwaiter().GetResult();
+                    });
                 });
             };
 
@@ -263,7 +263,7 @@ namespace Resonance.Tests
 
             Assert.ThrowsException<ResonanceResponseException>(() =>
             {
-                subscription.WaitAsync().GetAwaiter().GetResult();
+                subscription.Wait();
             }, "Test Exception");
 
             Assert.AreEqual(currentValue, request.Count - 1);
@@ -280,8 +280,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
@@ -297,7 +297,7 @@ namespace Resonance.Tests
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
                 {
                     Timeout = TimeSpan.FromSeconds(0.5)
-                }).GetAwaiter().GetResult();
+                });
             });
 
             t1.Dispose(true);
@@ -309,14 +309,14 @@ namespace Resonance.Tests
         {
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = true;
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
 
             try
             {
-                var response = t1.SendRequest(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest(request);
                 Assert.Fail("Expected an exception.");
             }
             catch { }
@@ -333,13 +333,13 @@ namespace Resonance.Tests
         {
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.FailsWithAdapter = false;
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
             Assert.ThrowsException<KeyNotFoundException>(() =>
             {
-                var response = t1.SendRequest(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest(request);
             });
 
             Assert.IsTrue(t1.Adapter.State == ResonanceComponentState.Failed && t1.State == ResonanceComponentState.Connected);
@@ -353,7 +353,7 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             t1.NotifyOnDisconnect = false; //This is set so the adapter will not fail on disconnect request and thus will not be disposed but failed.
 
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
             t1.Dispose(true);
 
             Assert.IsTrue(t1.State == ResonanceComponentState.Disposed, "Transporter was not disposed properly.");
@@ -366,8 +366,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -378,7 +378,7 @@ namespace Resonance.Tests
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest(), new ResonanceRequestConfig()
                 {
                     CancellationToken = cts.Token,
-                }).GetAwaiter().GetResult();
+                });
             });
 
             t1.Dispose(true);
@@ -391,20 +391,20 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateRequest(), e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateRequest(), e.Request.Token);
             };
 
             var request = new CalculateRequest();
 
             Assert.ThrowsException<InvalidCastException>(() =>
             {
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             });
 
             t1.Dispose(true);
@@ -419,20 +419,20 @@ namespace Resonance.Tests
 
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateResponse(), e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse(), e.Request.Token);
             };
 
             var request = new CalculateRequest();
 
             Assert.ThrowsException<CorruptedDecoderException>(() =>
             {
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             });
 
             t1.Dispose(true);
@@ -457,8 +457,8 @@ namespace Resonance.Tests
             t2.KeepAliveConfiguration.Enabled = false;
             t2.KeepAliveConfiguration.EnableAutoResponse = false;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             Thread.Sleep(t1.KeepAliveConfiguration.Delay);
 
@@ -497,8 +497,8 @@ namespace Resonance.Tests
             t2.KeepAliveConfiguration.Enabled = false;
             t2.KeepAliveConfiguration.EnableAutoResponse = false;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             Thread.Sleep((int)(t1.DefaultRequestTimeout.Add(t1.KeepAliveConfiguration.Interval).TotalMilliseconds * t1.KeepAliveConfiguration.Retries));
 
@@ -527,8 +527,8 @@ namespace Resonance.Tests
             t2.KeepAliveConfiguration.Enabled = false;
             t2.KeepAliveConfiguration.EnableAutoResponse = true;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             Thread.Sleep((int)(t1.DefaultRequestTimeout.Add(t1.KeepAliveConfiguration.Interval).TotalMilliseconds * 2));
             Assert.IsTrue(t1.State == ResonanceComponentState.Connected);
@@ -558,8 +558,8 @@ namespace Resonance.Tests
             t2.KeepAliveConfiguration.Enabled = false;
             t2.KeepAliveConfiguration.EnableAutoResponse = false;
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             Thread.Sleep((int)(t1.DefaultRequestTimeout.Add(t1.KeepAliveConfiguration.Interval).TotalMilliseconds * (t1.KeepAliveConfiguration.Retries / 2)));
 
@@ -584,17 +584,17 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new CalculateResponse(), e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse(), e.Request.Token);
             };
 
-            t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()).GetAwaiter().GetResult();
+            t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
 
-            t2.Disconnect().GetAwaiter().GetResult();
+            t2.Disconnect();
 
             Thread.Sleep(1000);
 
@@ -611,8 +611,8 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t2.RequestReceived += (s, e) =>
             {
@@ -624,7 +624,7 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 1000; i++)
             {
-                t1.SendObject(new CalculateRequest() { A = 10 }).GetAwaiter().GetResult();
+                t1.SendObject(new CalculateRequest() { A = 10 });
             }
 
             Assert.IsTrue(t1.PendingRequestsCount == 0);
@@ -655,8 +655,8 @@ namespace Resonance.Tests
                 .Build();
 
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t1.HandShakeNegotiator.BeginHandShake();
             t2.HandShakeNegotiator.BeginHandShake();
@@ -664,7 +664,7 @@ namespace Resonance.Tests
             Assert.IsTrue(t1.IsChannelSecure);
             Assert.IsTrue(t2.IsChannelSecure);
 
-            t1.SendObject(new CalculateRequest()).GetAwaiter().GetResult();
+            t1.SendObject(new CalculateRequest());
 
             t1.Dispose();
             t2.Dispose();

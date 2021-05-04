@@ -170,8 +170,8 @@ namespace Resonance.Examples.TCP.Client
                     _transporter.RegisterRequestHandler<EchoTextRequest, EchoTextResponse>(OnEchoTextRequest);
                     _transporter.RegisterRequestHandler<LeaveSessionRequest>(OnLeaveSessionRequest);
 
-                    await _transporter.Connect();
-                    await _transporter.SendRequest<LoginRequest, LoginResponse>(new LoginRequest() { ClientID = ClientID });
+                    await _transporter.ConnectAsync();
+                    await _transporter.SendRequestAsync<LoginRequest, LoginResponse>(new LoginRequest() { ClientID = ClientID });
 
                     await _discoveryClient.Stop();
 
@@ -207,7 +207,7 @@ namespace Resonance.Examples.TCP.Client
         {
             try
             {
-                var response = await _transporter.SendRequest<JoinSessionRequest, JoinSessionResponse>(new JoinSessionRequest()
+                var response = await _transporter.SendRequestAsync<JoinSessionRequest, JoinSessionResponse>(new JoinSessionRequest()
                 {
                     ClientID = SelectedClient
                 }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(10) });
@@ -222,7 +222,7 @@ namespace Resonance.Examples.TCP.Client
 
         private async void LeaveSession()
         {
-            await _transporter.SendObject(new LeaveSessionRequest()
+            await _transporter.SendObjectAsync(new LeaveSessionRequest()
             {
 
             });
@@ -232,7 +232,7 @@ namespace Resonance.Examples.TCP.Client
 
         private async void SendMessage()
         {
-            var response = await _transporter.SendRequest<EchoTextRequest, EchoTextResponse>(new EchoTextRequest()
+            var response = await _transporter.SendRequestAsync<EchoTextRequest, EchoTextResponse>(new EchoTextRequest()
             {
                 Message = Message
             });
@@ -250,11 +250,11 @@ namespace Resonance.Examples.TCP.Client
             {
                 InSession = true;
                 SelectedClient = request.Message.ClientID;
-                await transporter.SendResponse(new JoinSessionResponse(), request.Token);
+                await transporter.SendResponseAsync(new JoinSessionResponse(), request.Token);
             }
             else
             {
-                await transporter.SendErrorResponse("No thanks.", request.Token);
+                await transporter.SendErrorResponseAsync("No thanks.", request.Token);
             }
         }
 
