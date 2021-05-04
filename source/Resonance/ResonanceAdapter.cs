@@ -139,7 +139,7 @@ namespace Resonance
                 Logger.LogError(ex, message);
                 try
                 {
-                    Disconnect().GetAwaiter().GetResult();
+                    DisconnectAsync().GetAwaiter().GetResult();
                 }
                 catch { }
                 State = ResonanceComponentState.Failed;
@@ -249,7 +249,7 @@ namespace Resonance
                 {
                     Logger.LogInformation("Disposing...");
                     _isDisposing = true;
-                    await Disconnect();
+                    await DisconnectAsync();
                     Logger.LogInformation("Disposed.");
                     State = ResonanceComponentState.Disposed;
                 }
@@ -272,7 +272,7 @@ namespace Resonance
         /// Connects the adapter.
         /// </summary>
         /// <returns></returns>
-        public async Task Connect()
+        public async Task ConnectAsync()
         {
             ThrowIfDisposed();
 
@@ -306,10 +306,19 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Connects the adapter.
+        /// </summary>
+        /// <returns></returns>
+        public void Connect()
+        {
+            ConnectAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Disconnects the adapter.
         /// </summary>
         /// <returns></returns>
-        public async Task Disconnect()
+        public async Task DisconnectAsync()
         {
             if (State == ResonanceComponentState.Connected)
             {
@@ -334,6 +343,15 @@ namespace Resonance
                     throw ex;
                 }
             }
+        }
+
+        /// <summary>
+        /// Disconnects the adapter.
+        /// </summary>
+        /// <returns></returns>
+        public void Disconnect()
+        {
+            DisconnectAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>

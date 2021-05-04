@@ -51,6 +51,14 @@ namespace Resonance.Discovery
         /// <param name="maxDuration">The maximum duration to perform the scan.</param>
         /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
         /// <returns></returns>
-        Task<List<TDiscoveredService>> Discover(TimeSpan maxDuration, int? maxServices = null);
+        Task<List<TDiscoveredService>> DiscoverAsync(TimeSpan maxDuration, int? maxServices = null);
+
+        /// <summary>
+        /// Asynchronous method for collecting discovered services within the given duration.
+        /// </summary>
+        /// <param name="maxDuration">The maximum duration to perform the scan.</param>
+        /// <param name="maxServices">Drop the scanning after the maximum services discovered.</param>
+        /// <returns></returns>
+        List<TDiscoveredService> Discover(TimeSpan maxDuration, int? maxServices = null);
     }
 }

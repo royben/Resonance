@@ -29,19 +29,19 @@ namespace Resonance.Benchmarks
             ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);
@@ -57,19 +57,19 @@ namespace Resonance.Benchmarks
             t1.Encoder.CompressionConfiguration.Enabled = true;
             t2.Encoder.CompressionConfiguration.Enabled = true;
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);
@@ -85,19 +85,19 @@ namespace Resonance.Benchmarks
             t1.CryptographyConfiguration.Enabled = true;
             t2.CryptographyConfiguration.Enabled = true;
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);
@@ -115,19 +115,19 @@ namespace Resonance.Benchmarks
             t1.Encoder.CompressionConfiguration.Enabled = true;
             t2.Encoder.CompressionConfiguration.Enabled = true;
 
-            t1.Connect().Wait();
-            t2.Connect().Wait();
+            t1.ConnectAsync().Wait();
+            t2.ConnectAsync().Wait();
 
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             for (int i = 0; i < 1000; i++)
             {
                 var request = new CalculateRequest() { A = 10, B = i };
-                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
             t1.Dispose(true);

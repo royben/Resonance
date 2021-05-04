@@ -5,10 +5,6 @@
              xmlns:local="clr-namespace:Resonance.Examples.TCP.Client"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <ResourceDictionary>
-            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <converters:BooleanInverseConverter x:Key="BooleanInverseConverter" />
-            <converters:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter" />
-        </ResourceDictionary>
+        <ResourceDictionary Source="pack://application:,,,/Resonance.Examples.Common;component/Themes/Generic.xaml" />
     </Application.Resources>
 </Application>

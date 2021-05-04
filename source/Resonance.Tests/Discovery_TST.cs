@@ -39,11 +39,11 @@ namespace Resonance.Tests
                     Identity = "Test Identity"
                 }, 1984);
 
-            service.Start().GetAwaiter().GetResult();
+            service.Start();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(1984);
 
-            var services = client.Discover(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+            var services = client.Discover(TimeSpan.FromSeconds(10));
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.Identity == service.DiscoveryInfo.Identity);
@@ -73,14 +73,14 @@ namespace Resonance.Tests
 
                 services.Add(service);
 
-                service.Start().GetAwaiter().GetResult();
+                service.Start();
             }
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(
                 1984,
                 (s1, s2) => s1.DiscoveryInfo.Identity == s2.DiscoveryInfo.Identity);
 
-            var discoveredDervices = client .Discover(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+            var discoveredDervices = client.Discover(TimeSpan.FromSeconds(10));
 
             Assert.IsTrue(discoveredDervices.Count == servicesCount);
 
@@ -106,7 +106,7 @@ namespace Resonance.Tests
                     Identity = "Test Identity"
                 }, 1984);
 
-            service.Start().GetAwaiter().GetResult();
+            service.Start();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfo, JsonDecoder>(1984);
 
@@ -119,7 +119,7 @@ namespace Resonance.Tests
                 waitHandle.Set();
             };
 
-            var services = client.Discover(TimeSpan.FromSeconds(10), 1).GetAwaiter().GetResult();
+            var services = client.Discover(TimeSpan.FromSeconds(10), 1);
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.Identity == service.DiscoveryInfo.Identity);
@@ -144,11 +144,11 @@ namespace Resonance.Tests
                     TcpServerPort = 9999
                 }, 1984);
 
-            service.Start().GetAwaiter().GetResult();
+            service.Start();
 
             ResonanceUdpDiscoveryClient<DiscoveryInfoTransporter, JsonDecoder> client = new ResonanceUdpDiscoveryClient<DiscoveryInfoTransporter, JsonDecoder>(1984);
 
-            var services = client.Discover(TimeSpan.FromSeconds(10), 1).GetAwaiter().GetResult();
+            var services = client.Discover(TimeSpan.FromSeconds(10), 1);
 
             Assert.IsTrue(services.Count == 1);
             Assert.IsTrue(services[0].DiscoveryInfo.TcpServerPort == service.DiscoveryInfo.TcpServerPort);
@@ -162,14 +162,14 @@ namespace Resonance.Tests
             ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
-            server.Start().GetAwaiter().GetResult();
+            server.Start();
             server.ConnectionRequest += (x, e) =>
             {
                 t2.Adapter = e.Accept();
-                t2.Connect().GetAwaiter().GetResult();
+                t2.Connect();
             };
 
-            t1.Connect().GetAwaiter().GetResult();
+            t1.Connect();
 
             while (t2.State != ResonanceComponentState.Connected)
             {
@@ -179,11 +179,11 @@ namespace Resonance.Tests
             t2.RequestReceived += (s, e) =>
             {
                 CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             Assert.AreEqual(response.Sum, request.A + request.B);
 
             t1.Dispose(true);

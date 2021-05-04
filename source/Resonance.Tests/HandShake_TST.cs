@@ -72,8 +72,8 @@ namespace Resonance.Tests
                     symmetricPassword2 = e.SymmetricPassword;
                 };
 
-                adapter1.Connect().GetAwaiter().GetResult();
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter1.Connect();
+                adapter2.Connect();
 
                 adapter1.DataAvailable += (x, e) =>
                 {
@@ -140,8 +140,8 @@ namespace Resonance.Tests
                     symmetricPassword2 = e.SymmetricPassword;
                 };
 
-                adapter1.Connect().GetAwaiter().GetResult();
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter1.Connect();
+                adapter2.Connect();
 
                 adapter1.DataAvailable += (x, e) =>
                 {
@@ -211,8 +211,8 @@ namespace Resonance.Tests
                     symmetricPassword2 = e.SymmetricPassword;
                 };
 
-                adapter1.Connect().GetAwaiter().GetResult();
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter1.Connect();
+                adapter2.Connect();
 
                 adapter1.DataAvailable += (x, e) =>
                 {
@@ -277,8 +277,8 @@ namespace Resonance.Tests
                     symmetricPassword2 = e.SymmetricPassword;
                 };
 
-                adapter1.Connect().GetAwaiter().GetResult();
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter1.Connect();
+                adapter2.Connect();
 
                 adapter1.DataAvailable += (x, e) =>
                 {
@@ -323,19 +323,19 @@ namespace Resonance.Tests
                 t1.CryptographyConfiguration.Enabled = i % 2 == 0;
                 t2.CryptographyConfiguration.Enabled = i % 3 == 0;
 
-                t1.Connect().GetAwaiter().GetResult();
-                t2.Connect().GetAwaiter().GetResult();
+                t1.Connect();
+                t2.Connect();
 
                 t2.RequestReceived += (s, e) =>
                 {
                     CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                    t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                    t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
                 };
 
                 t1.RequestReceived += (s, e) =>
                 {
                     CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                    t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token).GetAwaiter().GetResult();
+                    t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
                 };
 
                 var request = new CalculateRequest() { A = 10, B = 15 };
@@ -347,18 +347,18 @@ namespace Resonance.Tests
                 {
                     Task.Factory.StartNew(() =>
                     {
-                        response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                        response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request);
                     });
 
                     Task.Factory.StartNew(() =>
                     {
-                        response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                        response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
                     });
                 }
                 else
                 {
-                    response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
-                    response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
+                    response1 = t2.SendRequest<CalculateRequest, CalculateResponse>(request);
+                    response2 = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
                 }
 
                 Thread.Sleep(1000);

@@ -48,20 +48,20 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             WebRTCAdapter adapter1 = new WebRTCAdapter(signal1, WebRTCAdapterRole.Accept);
 
             Task.Factory.StartNew(() =>
             {
-                adapter1.Connect().GetAwaiter().GetResult();
+                adapter1.Connect();
             });
 
             Thread.Sleep(100);
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.Connect().GetAwaiter().GetResult();
+            adapter2.Connect();
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -77,13 +77,13 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new CalculateResponse() { Sum = 15 }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Request.Token);
             };
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest() { A = 10, B = 5 }).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest() { A = 10, B = 5 });
             Assert.IsTrue(response.Sum == 15);
 
             t1.Dispose();
@@ -109,19 +109,19 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             WebRTCAdapter adapter1 = null;
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
                 adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
-                await adapter1.Connect();
+                await adapter1.ConnectAsync();
             });
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.Connect().GetAwaiter().GetResult();
+            adapter2.Connect();
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -137,13 +137,13 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new CalculateResponse() { Sum = 15 }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Request.Token);
             };
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
-            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest() { A = 10, B = 5 }).GetAwaiter().GetResult();
+            var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest() { A = 10, B = 5 });
             Assert.IsTrue(response.Sum == 15);
 
             t1.Dispose();
@@ -169,19 +169,19 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             WebRTCAdapter adapter1 = null;
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
                 adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
-                await adapter1.Connect();
+                await adapter1.ConnectAsync();
             });
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.Connect().GetAwaiter().GetResult();
+            adapter2.Connect();
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -197,15 +197,15 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
             };
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             byte[] data = TestHelper.GetRandomByteArray(200);
 
-            var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
+            var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data });
 
             Assert.IsTrue(data.SequenceEqual(response.Data));
 
@@ -232,19 +232,19 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             WebRTCAdapter adapter1 = null;
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
                 adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
-                await adapter1.Connect();
+                await adapter1.ConnectAsync();
             });
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.Connect().GetAwaiter().GetResult();
+            adapter2.Connect();
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -260,18 +260,18 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
             };
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
 
             for (int i = 0; i < 100; i++)
             {
                 byte[] data = TestHelper.GetRandomByteArray(60);
-                var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
+                var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data });
                 Assert.IsTrue(data.SequenceEqual(response.Data));
             }
 
@@ -298,19 +298,19 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             WebRTCAdapter adapter1 = null;
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
                 adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
-                await adapter1.Connect();
+                await adapter1.ConnectAsync();
             });
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.Connect().GetAwaiter().GetResult();
+            adapter2.Connect();
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder
                 .Create()
@@ -326,18 +326,18 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponse(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
             };
 
-            t1.Connect().GetAwaiter().GetResult();
-            t2.Connect().GetAwaiter().GetResult();
+            t1.Connect();
+            t2.Connect();
 
             t1.DefaultRequestTimeout = TimeSpan.FromSeconds(60);
 
             for (int i = 0; i < 100; i++)
             {
                 byte[] data = TestHelper.GetRandomByteArray(2);
-                var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data }).GetAwaiter().GetResult();
+                var response = t1.SendRequest<LargeMessageRequest, LargeMessageResponse>(new LargeMessageRequest() { Data = data });
                 Assert.IsTrue(data.SequenceEqual(response.Data));
             }
 
@@ -364,8 +364,8 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal1.Connect().GetAwaiter().GetResult();
-            signal2.Connect().GetAwaiter().GetResult();
+            signal1.Connect();
+            signal2.Connect();
 
             Thread.Sleep(100);
 
@@ -374,7 +374,7 @@ namespace Resonance.Tests
 
             Assert.ThrowsException<ResonanceWebRTCConnectionFailedException>(() =>
             {
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter2.Connect();
             });
 
             adapter2.Dispose();
@@ -392,7 +392,7 @@ namespace Resonance.Tests
                 .WithJsonTranscoding()
                 .Build();
 
-            signal2.Connect().GetAwaiter().GetResult();
+            signal2.Connect();
 
             Thread.Sleep(100);
 
@@ -401,7 +401,7 @@ namespace Resonance.Tests
 
             Assert.ThrowsException<ResonanceWebRTCConnectionFailedException>(() =>
             {
-                adapter2.Connect().GetAwaiter().GetResult();
+                adapter2.Connect();
             });
 
             adapter2.Dispose();

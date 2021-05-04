@@ -40,5 +40,13 @@ namespace Resonance.Reactive
         {
             return _completionSource.Task;
         }
+
+        /// <summary>
+        /// Waits for the continuous request to marked as completed.
+        /// </summary>
+        public void Wait()
+        {
+            WaitAsync().GetAwaiter().GetResult();
+        }
     }
 }

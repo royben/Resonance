@@ -42,11 +42,21 @@ namespace Resonance.Discovery
         /// <summary>
         /// Starts the discovery service.
         /// </summary>
-        Task Start();
+        Task StartAsync();
+
+        /// <summary>
+        /// Starts the discovery service.
+        /// </summary>
+        void Start();
 
         /// <summary>
         /// Stops the discovery service.
         /// </summary>
-        Task Stop();
+        Task StopAsync();
+
+        /// <summary>
+        /// Stops the discovery service.
+        /// </summary>
+        void Stop();
     }
 }

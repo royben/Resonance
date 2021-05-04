@@ -56,7 +56,7 @@ namespace Resonance.Servers.Tcp
         /// Start listening for incoming connections.
         /// </summary>
         /// <returns></returns>
-        public Task Start()
+        public Task StartAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -77,7 +77,7 @@ namespace Resonance.Servers.Tcp
         /// Stop listening for incoming connections.
         /// </summary>
         /// <returns></returns>
-        public Task Stop()
+        public Task StopAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -88,6 +88,22 @@ namespace Resonance.Servers.Tcp
                     Logger.LogInformation($"TCP server stopped on port {Port}.");
                 }
             });
+        }
+
+        /// <summary>
+        /// Start listening for incoming connections.
+        /// </summary>
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Stop listening for incoming connections.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
         }
 
         #endregion
@@ -152,7 +168,7 @@ namespace Resonance.Servers.Tcp
         /// <returns></returns>
         public Task DisposeAsync()
         {
-            return Stop();
+            return StopAsync();
         }
 
         #endregion

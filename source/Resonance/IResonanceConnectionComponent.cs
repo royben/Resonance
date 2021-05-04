@@ -14,12 +14,24 @@ namespace Resonance
         /// Connects this component.
         /// </summary>
         /// <returns></returns>
-        Task Connect();
+        Task ConnectAsync();
+
+        /// <summary>
+        /// Connects this component.
+        /// </summary>
+        /// <returns></returns>
+        void Connect();
 
         /// <summary>
         /// Disconnects this component.
         /// </summary>
         /// <returns></returns>
-        Task Disconnect();
+        Task DisconnectAsync();
+
+        /// <summary>
+        /// Disconnects this component.
+        /// </summary>
+        /// <returns></returns>
+        void Disconnect();
     }
 }

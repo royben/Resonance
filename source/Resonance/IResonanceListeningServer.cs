@@ -26,11 +26,21 @@ namespace Resonance
         /// <summary>
         /// Start listening for incoming connections.
         /// </summary>
-        Task Start();
+        Task StartAsync();
+
+        /// <summary>
+        /// Start listening for incoming connections.
+        /// </summary>
+        void Start();
 
         /// <summary>
         /// Stop listening for incoming connections.
         /// </summary>
-        Task Stop();
+        Task StopAsync();
+
+        /// <summary>
+        /// Stop listening for incoming connections.
+        /// </summary>
+        void Stop();
     }
 }
