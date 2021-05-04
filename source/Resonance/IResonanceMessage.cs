@@ -17,6 +17,6 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the message.
         /// </summary>
-        Object Message { get; set; }
+        Object Object { get; set; }
     }
 }

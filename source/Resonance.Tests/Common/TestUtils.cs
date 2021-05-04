@@ -53,8 +53,8 @@ namespace Resonance.Tests.Common
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             Stopwatch watch = new Stopwatch();

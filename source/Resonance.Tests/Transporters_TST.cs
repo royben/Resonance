@@ -29,8 +29,8 @@ namespace Resonance.Tests
             t2.RequestReceived += (s, e) =>
             {
                 Assert.IsTrue(t1.PendingRequestsCount == 1);
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -53,8 +53,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendErrorResponse("Error Message", e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendErrorResponse("Error Message", e.Message.Token);
             };
 
             Assert.ThrowsException<ResonanceResponseException>(() =>
@@ -79,17 +79,17 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                ProgressRequest receivedRequest = e.Request.Message as ProgressRequest;
+                ProgressRequest receivedRequest = e.Message.Object as ProgressRequest;
 
                 Task.Factory.StartNew(() =>
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Message.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
-                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
+                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Message.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
                     });
@@ -140,8 +140,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -167,14 +167,14 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             t1.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -216,21 +216,21 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                ProgressRequest receivedRequest = e.Request.Message as ProgressRequest;
+                ProgressRequest receivedRequest = e.Message.Object as ProgressRequest;
 
                 Task.Factory.StartNew(() =>
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Message.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
-                    t2.SendErrorResponse("Test Exception", e.Request.Token);
+                    t2.SendErrorResponse("Test Exception", e.Message.Token);
 
                     Thread.Sleep(receivedRequest.Interval);
 
-                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
+                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Message.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
                     });
@@ -286,8 +286,8 @@ namespace Resonance.Tests
             t2.RequestReceived += (s, e) =>
             {
                 Thread.Sleep(1000);
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -396,8 +396,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateRequest(), e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest; //Should be calculate response...
+                t2.SendResponse(new CalculateRequest(), e.Message.Token);
             };
 
             var request = new CalculateRequest();
@@ -424,8 +424,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateResponse(), e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest; //Should be calculate response...
+                t2.SendResponse(new CalculateResponse(), e.Message.Token);
             };
 
             var request = new CalculateRequest();
@@ -589,7 +589,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new CalculateResponse(), e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse(), e.Message.Token);
             };
 
             t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
@@ -616,7 +616,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
                 Assert.IsTrue(receivedRequest.A == 10);
             };
 

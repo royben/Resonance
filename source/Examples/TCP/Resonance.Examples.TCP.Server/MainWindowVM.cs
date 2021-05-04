@@ -225,7 +225,7 @@ namespace Resonance.Examples.TCP.Server
         /// </summary>
         /// <param name="transporter">The transporter.</param>
         /// <param name="request">The request.</param>
-        private async void OnClientLeaveSessionRequest(IResonanceTransporter transporter, ResonanceRequest<LeaveSessionRequest> request)
+        private async void OnClientLeaveSessionRequest(IResonanceTransporter transporter, ResonanceMessage<LeaveSessionRequest> request)
         {
             ResonanceTcpClient client = transporter as ResonanceTcpClient;
 

@@ -107,8 +107,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequestWithDate receivedRequest = e.Request.Message as CalculateRequestWithDate;
-                t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Request.Token);
+                CalculateRequestWithDate receivedRequest = e.Message.Object as CalculateRequestWithDate;
+                t2.SendResponse(new CalculateResponseWithDate() { Sum = receivedRequest.A + receivedRequest.B, Date = receivedRequest.Date }, e.Message.Token);
             };
 
 
@@ -173,8 +173,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                Messages.Proto.CalculateRequest receivedRequest = e.Message.Object as Messages.Proto.CalculateRequest;
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
@@ -216,8 +216,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                Messages.Proto.CalculateRequest receivedRequest = e.Request.Message as Messages.Proto.CalculateRequest;
-                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                Messages.Proto.CalculateRequest receivedRequest = e.Message.Object as Messages.Proto.CalculateRequest;
+                t2.SendResponse(new Messages.Proto.CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new Messages.Proto.CalculateRequest() { A = 10, B = 15 };
@@ -258,8 +258,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };

@@ -61,9 +61,9 @@ namespace Resonance.Tests
             return new CalculateResponse() { Sum = request.A + request.B };
         }
 
-        private void CalculateRequest_Standard_Handler(IResonanceTransporter transporter, ResonanceRequest<CalculateRequest> request)
+        private void CalculateRequest_Standard_Handler(IResonanceTransporter transporter, ResonanceMessage<CalculateRequest> request)
         {
-            transporter.SendResponseAsync(new CalculateResponse() { Sum = request.Message.A + request.Message.B }, request.Token);
+            transporter.SendResponseAsync(new CalculateResponse() { Sum = request.Object.A + request.Object.B }, request.Token);
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a <see cref="ResonanceResponse"/> configuration.
+    /// Represents a <see cref="ResonanceMessage"/> configuration.
     /// </summary>
     public class ResonanceResponseConfig
     {

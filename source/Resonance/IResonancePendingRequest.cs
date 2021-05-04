@@ -12,6 +12,6 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the Resonance request.
         /// </summary>
-        ResonanceRequest Request { get; set; }
+        ResonanceMessage Request { get; set; }
     }
 }

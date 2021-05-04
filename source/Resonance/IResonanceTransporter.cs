@@ -10,7 +10,7 @@ using Resonance.HandShake;
 
 namespace Resonance
 {
-    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceRequest<Request> request) where Request : class;
+    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceMessage<Request> request) where Request : class;
 
     public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
 
@@ -29,32 +29,32 @@ namespace Resonance
         /// <summary>
         /// Occurs when a new request message has been received.
         /// </summary>
-        event EventHandler<ResonanceRequestReceivedEventArgs> RequestReceived;
+        event EventHandler<ResonanceMessageReceivedEventArgs> RequestReceived;
 
         /// <summary>
         /// Occurs when a request has been sent.
         /// </summary>
-        event EventHandler<ResonanceRequestEventArgs> RequestSent;
+        event EventHandler<ResonanceMessageEventArgs> RequestSent;
 
         /// <summary>
         /// Occurs when a request has failed.
         /// </summary>
-        event EventHandler<ResonanceRequestFailedEventArgs> RequestFailed;
+        event EventHandler<ResonanceMessageFailedEventArgs> RequestFailed;
 
         /// <summary>
         /// Occurs when a request response has been received.
         /// </summary>
-        event EventHandler<ResonanceResponseEventArgs> ResponseReceived;
+        event EventHandler<ResonanceMessageEventArgs> ResponseReceived;
 
         /// <summary>
         /// Occurs when a response has been sent.
         /// </summary>
-        event EventHandler<ResonanceResponseEventArgs> ResponseSent;
+        event EventHandler<ResonanceMessageEventArgs> ResponseSent;
 
         /// <summary>
         /// Occurs when a response has failed to be sent.
         /// </summary>
-        event EventHandler<ResonanceResponseFailedEventArgs> ResponseFailed;
+        event EventHandler<ResonanceMessageFailedEventArgs> ResponseFailed;
 
         /// <summary>
         /// Occurs when the keep alive mechanism is enabled and has failed by reaching the given timeout and retries.
@@ -266,7 +266,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Task<Object> SendRequestAsync(ResonanceRequest request, ResonanceRequestConfig config = null);
+        Task<Object> SendRequestAsync(ResonanceMessage request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
@@ -274,7 +274,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Object SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null);
+        Object SendRequest(ResonanceMessage request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified object without expecting any response.
@@ -307,7 +307,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponseAsync<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends a response message.
@@ -316,7 +316,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        void SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+        void SendResponse<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -342,7 +342,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponseAsync(ResonanceResponse response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync(ResonanceMessage response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -350,7 +350,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        void SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null);
+        void SendResponse(ResonanceMessage response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends a general error response agnostic to the type of request.

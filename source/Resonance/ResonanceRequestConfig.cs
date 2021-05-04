@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Resonance
 {
     /// <summary>
-    /// Represents an <see cref="ResonanceRequest"/> configuration.
+    /// Represents an <see cref="ResonanceMessage"/> configuration.
     /// </summary>
     public class ResonanceRequestConfig
     {
