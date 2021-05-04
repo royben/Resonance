@@ -26,7 +26,7 @@ Resonance is a high-performance real-time C# communication library with built-in
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AzureBuild|AnyCPU'">
-    <OutputPath>C:\DATA\Development\Resonance\source\Resonance.Protobuf\bin\AzureBuild\Resonance.Protobuf.xml</OutputPath>
+    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.Protobuf\bin\AzureBuild\Resonance.Protobuf.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
