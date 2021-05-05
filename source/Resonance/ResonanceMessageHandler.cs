@@ -4,10 +4,10 @@ using System.Text;
 
 namespace Resonance
 {
-    internal class ResonanceRequestHandler
+    internal class ResonanceMessageHandler
     {
         public bool HasResponse { get; set; }
-        public Type RequestType { get; set; }
+        public Type MessageType { get; set; }
         public Action<IResonanceTransporter, Object> Callback { get; set; }
         public Func<Object, Object> ResponseCallback { get; set; }
         public object RegisteredCallback { get; set; }

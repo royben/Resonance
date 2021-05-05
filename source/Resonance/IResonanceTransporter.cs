@@ -10,7 +10,7 @@ using Resonance.HandShake;
 
 namespace Resonance
 {
-    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceRequest<Request> request) where Request : class;
+    public delegate void MessageHandlerCallbackDelegate<Message>(IResonanceTransporter transporter, ResonanceMessage<Message> message) where Message : class;
 
     public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
 
@@ -27,34 +27,49 @@ namespace Resonance
     public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IDisposable, IResonanceAsyncDisposable
     {
         /// <summary>
+        /// Occurs when a new message has been received.
+        /// </summary>
+        event EventHandler<ResonanceMessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        /// Occurs when a message has been sent.
+        /// </summary>
+        event EventHandler<ResonanceMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a sent message has failed.
+        /// </summary>
+        event EventHandler<ResonanceMessageFailedEventArgs> MessageFailed;
+
+        /// <summary>
         /// Occurs when a new request message has been received.
         /// </summary>
-        event EventHandler<ResonanceRequestReceivedEventArgs> RequestReceived;
+        event EventHandler<ResonanceMessageReceivedEventArgs> RequestReceived;
 
         /// <summary>
         /// Occurs when a request has been sent.
         /// </summary>
-        event EventHandler<ResonanceRequestEventArgs> RequestSent;
+        event EventHandler<ResonanceMessageEventArgs> RequestSent;
 
         /// <summary>
         /// Occurs when a request has failed.
         /// </summary>
-        event EventHandler<ResonanceRequestFailedEventArgs> RequestFailed;
+        event EventHandler<ResonanceMessageFailedEventArgs> RequestFailed;
 
         /// <summary>
         /// Occurs when a request response has been received.
         /// </summary>
-        event EventHandler<ResonanceResponseEventArgs> ResponseReceived;
+        event EventHandler<ResonanceMessageEventArgs> ResponseReceived;
 
         /// <summary>
         /// Occurs when a response has been sent.
         /// </summary>
-        event EventHandler<ResonanceResponseEventArgs> ResponseSent;
+        event EventHandler<ResonanceMessageEventArgs> ResponseSent;
 
         /// <summary>
         /// Occurs when a response has failed to be sent.
         /// </summary>
-        event EventHandler<ResonanceResponseFailedEventArgs> ResponseFailed;
+        event EventHandler<ResonanceMessageFailedEventArgs> ResponseFailed;
 
         /// <summary>
         /// Occurs when the keep alive mechanism is enabled and has failed by reaching the given timeout and retries.
@@ -113,6 +128,11 @@ namespace Resonance
         IResonanceHandShakeNegotiator HandShakeNegotiator { get; set; }
 
         /// <summary>
+        /// Gets or sets the message acknowledgment behavior when receiving and sending standard messages.
+        /// </summary>
+        ResonanceMessageAckBehavior MessageAcknowledgmentBehavior { get; set; }
+
+        /// <summary>
         /// Returns true if communication is currently encrypted.
         /// </summary>
         bool IsChannelSecure { get; }
@@ -128,9 +148,9 @@ namespace Resonance
         int OutgoingQueueCount { get; }
 
         /// <summary>
-        /// Gets the number of current pending requests.
+        /// Gets the number of current pending outgoing messages.
         /// </summary>
-        int PendingRequestsCount { get; }
+        int TotalPendingOutgoingMessages { get; }
 
         /// <summary>
         /// Gets the total of incoming messages.
@@ -143,11 +163,25 @@ namespace Resonance
         int TotalOutgoingMessages { get; }
 
         /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        void RegisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+
+        /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+        void RegisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -178,7 +212,7 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+        void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -266,7 +300,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Task<Object> SendRequestAsync(ResonanceRequest request, ResonanceRequestConfig config = null);
+        Task<Object> SendRequestAsync(ResonanceMessage request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
@@ -274,21 +308,35 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Object SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null);
+        Object SendRequest(ResonanceMessage request, ResonanceRequestConfig config = null);
 
         /// <summary>
         /// Sends the specified object without expecting any response.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="config">The configuration.</param>
-        Task SendObjectAsync(Object message, ResonanceRequestConfig config = null);
+        Task SendAsync(ResonanceMessage message, ResonanceMessageConfig config = null);
 
         /// <summary>
         /// Sends the specified object without expecting any response.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="config">The configuration.</param>
-        void SendObject(Object message, ResonanceRequestConfig config = null);
+        void Send(ResonanceMessage message, ResonanceMessageConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        Task SendAsync(Object message, ResonanceMessageConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        void Send(Object message, ResonanceMessageConfig config = null);
 
         /// <summary>
         /// Sends a request message while expecting multiple response messages with the same token.
@@ -307,7 +355,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponseAsync<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends a response message.
@@ -316,7 +364,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        void SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null);
+        void SendResponse<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -342,7 +390,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        Task SendResponseAsync(ResonanceResponse response, ResonanceResponseConfig config = null);
+        Task SendResponseAsync(ResonanceMessage response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends the specified response message.
@@ -350,7 +398,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        void SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null);
+        void SendResponse(ResonanceMessage response, ResonanceResponseConfig config = null);
 
         /// <summary>
         /// Sends a general error response agnostic to the type of request.

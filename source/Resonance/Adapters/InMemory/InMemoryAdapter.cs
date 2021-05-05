@@ -18,6 +18,11 @@ namespace Resonance.Adapters.InMemory
         public String Address { get; private set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to perform the Write method asynchronously.
+        /// </summary>
+        public bool IsAsync { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryAdapter"/> class.
         /// </summary>
         /// <param name="address">The address.</param>
@@ -61,7 +66,14 @@ namespace Resonance.Adapters.InMemory
         /// <param name="data">The data.</param>
         protected override void OnWrite(byte[] data)
         {
-            InMemoryAdaptersManager.Write(this, data);
+            if (IsAsync)
+            {
+                Task.Factory.StartNew(() => { InMemoryAdaptersManager.Write(this, data); });
+            }
+            else
+            {
+                InMemoryAdaptersManager.Write(this, data);
+            }
         }
 
         /// <summary>

@@ -19,7 +19,7 @@ using static Resonance.ResonanceTransporterBuilder;
 namespace Resonance
 {
     /// <summary>
-    /// Represents an <see cref="IResonanceTransporter"/> base class.
+    /// Represents the <see cref="IResonanceTransporter"/> primary implementation.
     /// </summary>
     /// <seealso cref="Resonance.IResonanceTransporter" />
     public class ResonanceTransporter : ResonanceObject, IResonanceTransporter
@@ -27,9 +27,9 @@ namespace Resonance
         private readonly int _componentCounter;
         private DateTime _lastIncomingMessageTime;
         private PriorityProducerConsumerQueue<Object> _sendingQueue;
-        private ConcurrentList<IResonancePendingRequest> _pendingRequests;
+        private ConcurrentList<IResonancePendingMessage> _pendingMessages;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
-        private readonly List<ResonanceRequestHandler> _requestHandlers;
+        private readonly List<ResonanceMessageHandler> _messageHandlers;
         private readonly List<IResonanceService> _services;
         private Thread _pushThread;
         private Thread _pullThread;
@@ -41,34 +41,49 @@ namespace Resonance
         #region Events
 
         /// <summary>
+        /// Occurs when a new message has been received.
+        /// </summary>
+        public event EventHandler<ResonanceMessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        /// Occurs when a message has been sent.
+        /// </summary>
+        public event EventHandler<ResonanceMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a sent message has failed.
+        /// </summary>
+        public event EventHandler<ResonanceMessageFailedEventArgs> MessageFailed;
+
+        /// <summary>
         /// Occurs when a new request message has been received.
         /// </summary>
-        public event EventHandler<ResonanceRequestReceivedEventArgs> RequestReceived;
+        public event EventHandler<ResonanceMessageReceivedEventArgs> RequestReceived;
 
         /// <summary>
         /// Occurs when a request has been sent.
         /// </summary>
-        public event EventHandler<ResonanceRequestEventArgs> RequestSent;
+        public event EventHandler<ResonanceMessageEventArgs> RequestSent;
 
         /// <summary>
         /// Occurs when a request has failed.
         /// </summary>
-        public event EventHandler<ResonanceRequestFailedEventArgs> RequestFailed;
+        public event EventHandler<ResonanceMessageFailedEventArgs> RequestFailed;
 
         /// <summary>
         /// Occurs when a response has been sent.
         /// </summary>
-        public event EventHandler<ResonanceResponseEventArgs> ResponseSent;
+        public event EventHandler<ResonanceMessageEventArgs> ResponseSent;
 
         /// <summary>
         /// Occurs when a request response has been received.
         /// </summary>
-        public event EventHandler<ResonanceResponseEventArgs> ResponseReceived;
+        public event EventHandler<ResonanceMessageEventArgs> ResponseReceived;
 
         /// <summary>
         /// Occurs when a response has failed to be sent.
         /// </summary>
-        public event EventHandler<ResonanceResponseFailedEventArgs> ResponseFailed;
+        public event EventHandler<ResonanceMessageFailedEventArgs> ResponseFailed;
 
         /// <summary>
         /// Occurs when the current state of the component has changed.
@@ -174,6 +189,11 @@ namespace Resonance
         public ResonanceCryptographyConfiguration CryptographyConfiguration { get; }
 
         /// <summary>
+        /// Gets or sets the message acknowledgment behavior when receiving and sending standard messages.
+        /// </summary>
+        public ResonanceMessageAckBehavior MessageAcknowledgmentBehavior { get; set; }
+
+        /// <summary>
         /// Returns true if communication is currently encrypted.
         /// </summary>
         public bool IsChannelSecure { get; private set; }
@@ -190,13 +210,13 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Gets the number of current pending requests.
+        /// Gets the number of current pending outgoing messages.
         /// </summary>
-        public int PendingRequestsCount
+        public int TotalPendingOutgoingMessages
         {
             get
             {
-                return _pendingRequests.Count;
+                return _pendingMessages.Count;
             }
         }
 
@@ -225,7 +245,7 @@ namespace Resonance
 
             HandShakeNegotiator = new ResonanceDefaultHandShakeNegotiator(this);
 
-            _requestHandlers = new List<ResonanceRequestHandler>();
+            _messageHandlers = new List<ResonanceMessageHandler>();
             _services = new List<IResonanceService>();
 
             _lastIncomingMessageTime = DateTime.Now;
@@ -236,7 +256,7 @@ namespace Resonance
             CryptographyConfiguration = new ResonanceCryptographyConfiguration(); //Should be set by GlobalSettings.
             TokenGenerator = new ShortGuidGenerator();
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
-            _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
+            _pendingMessages = new ConcurrentList<IResonancePendingMessage>();
             _arrivedMessages = new ProducerConsumerQueue<byte[]>();
 
             DefaultRequestTimeout = ResonanceGlobalSettings.Default.DefaultRequestTimeout;
@@ -249,28 +269,74 @@ namespace Resonance
         #region Request Handlers
 
         /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        public void RegisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class
+        {
+            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
+
+            Logger.LogDebug("Registering message handler for '{Message}' on '{Handler}'...", typeof(Message).Name, handlerDescription);
+
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Message>) == callback))
+            {
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
+                handler.MessageType = typeof(Message);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.Callback = (transporter, resonanceRequest) =>
+                {
+                    callback?.Invoke(transporter, resonanceRequest as ResonanceMessage<Message>);
+                };
+
+                _messageHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Message handler for '{Message}' on '{Handler}' was already registered.", typeof(Message).Name, handlerDescription);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class
+        {
+            Logger.LogDebug("Unregistering message handler for '{Message}' on '{Handler}'...", typeof(Message).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
+
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Message>) == callback);
+            if (handler != null)
+            {
+                _messageHandlers.Remove(handler);
+            }
+        }
+
+        /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
+        public void RegisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class
         {
             String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
 
             Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request>) == callback))
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Request>) == callback))
             {
-                ResonanceRequestHandler handler = new ResonanceRequestHandler();
-                handler.RequestType = typeof(Request);
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
+                handler.MessageType = typeof(Request);
                 handler.RegisteredCallback = callback;
                 handler.RegisteredCallbackDescription = handlerDescription;
                 handler.Callback = (transporter, resonanceRequest) =>
                 {
-                    callback?.Invoke(transporter, resonanceRequest as ResonanceRequest<Request>);
+                    callback?.Invoke(transporter, resonanceRequest as ResonanceMessage<Request>);
                 };
 
-                _requestHandlers.Add(handler);
+                _messageHandlers.Add(handler);
             }
             else
             {
@@ -283,14 +349,14 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class
+        public void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class
         {
             Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
 
-            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request>) == callback);
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Request>) == callback);
             if (handler != null)
             {
-                _requestHandlers.Remove(handler);
+                _messageHandlers.Remove(handler);
             }
         }
 
@@ -306,11 +372,11 @@ namespace Resonance
 
             Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback))
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback))
             {
-                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
                 handler.HasResponse = true;
-                handler.RequestType = typeof(Request);
+                handler.MessageType = typeof(Request);
                 handler.RegisteredCallback = callback;
                 handler.RegisteredCallbackDescription = handlerDescription;
                 handler.ResponseCallback = (request) =>
@@ -318,7 +384,7 @@ namespace Resonance
                     return (ResonanceActionResult<Response>)callback.Invoke(request as Request);
                 };
 
-                _requestHandlers.Add(handler);
+                _messageHandlers.Add(handler);
             }
             else
             {
@@ -336,10 +402,10 @@ namespace Resonance
         {
             Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
 
-            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
             if (handler != null)
             {
-                _requestHandlers.Remove(handler);
+                _messageHandlers.Remove(handler);
             }
         }
 
@@ -355,11 +421,11 @@ namespace Resonance
 
             Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback))
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback))
             {
-                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
                 handler.HasResponse = true;
-                handler.RequestType = typeof(Request);
+                handler.MessageType = typeof(Request);
                 handler.RegisteredCallback = callback;
                 handler.RegisteredCallbackDescription = handlerDescription;
                 handler.ResponseCallback = (request) =>
@@ -367,7 +433,7 @@ namespace Resonance
                     return (ResonanceActionResult<Response>)callback.Invoke(this, request as Request);
                 };
 
-                _requestHandlers.Add(handler);
+                _messageHandlers.Add(handler);
             }
             else
             {
@@ -385,10 +451,10 @@ namespace Resonance
         {
             Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
 
-            var handler = _requestHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback);
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback);
             if (handler != null)
             {
-                _requestHandlers.Remove(handler);
+                _messageHandlers.Remove(handler);
             }
         }
 
@@ -404,11 +470,11 @@ namespace Resonance
 
             Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
 
-            if (!_requestHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback))
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback))
             {
-                ResonanceRequestHandler handler = new ResonanceRequestHandler();
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
                 handler.HasResponse = true;
-                handler.RequestType = typeof(Request);
+                handler.MessageType = typeof(Request);
                 handler.RegisteredCallback = callback;
                 handler.RegisteredCallbackDescription = handlerDescription;
                 handler.ResponseCallback = (request) =>
@@ -416,7 +482,7 @@ namespace Resonance
                     return callback.Invoke(this, request as Request).GetAwaiter().GetResult() as ResonanceActionResult<Response>;
                 };
 
-                _requestHandlers.Add(handler);
+                _messageHandlers.Add(handler);
             }
             else
             {
@@ -448,10 +514,10 @@ namespace Resonance
                 _services.Remove(service);
             }
 
-            foreach (var handler in _requestHandlers.ToList())
+            foreach (var handler in _messageHandlers.ToList())
             {
-                (transporter as ResonanceTransporter)._requestHandlers.Add(handler);
-                _requestHandlers.Remove(handler);
+                (transporter as ResonanceTransporter)._messageHandlers.Add(handler);
+                _messageHandlers.Remove(handler);
             }
         }
 
@@ -475,7 +541,14 @@ namespace Resonance
 
             foreach (var method in service.GetType().GetMethods())
             {
-                if (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) || (typeof(Task).IsAssignableFrom(method.ReturnType) && method.ReturnType.GenericTypeArguments.Length == 1 && typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0])))
+                if ( //With Response
+                    (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) || 
+                    (typeof(Task).IsAssignableFrom(method.ReturnType) && 
+                    method.ReturnType.GenericTypeArguments.Length == 1 && 
+                    typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0]))) ||
+
+                    //void Or Task
+                    method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
                 {
                     if (method.GetParameters().Length > 1)
                     {
@@ -499,28 +572,48 @@ namespace Resonance
 
                 Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", requestType.Name, handlerDescription);
 
-                ResonanceRequestHandler handler = new ResonanceRequestHandler();
-                handler.HasResponse = true;
-                handler.RequestType = requestType;
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
+                handler.MessageType = requestType;
                 handler.Service = service;
                 handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
-                {
-                    if (typeof(Task).IsAssignableFrom(method.ReturnType))
-                    {
-                        var task = (Task)method.Invoke(service, new object[] { request });
-                        task.GetAwaiter().GetResult();
-                        var prop = typeof(Task<>).MakeGenericType(method.ReturnType.GenericTypeArguments[0]).GetProperty("Result");
-                        var value = prop.GetValue(task);
-                        return value as IResonanceActionResult;
-                    }
-                    else
-                    {
-                        return method.Invoke(service, new object[] { request });
-                    }
-                };
 
-                _requestHandlers.Add(handler);
+                if (method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
+                {
+                    handler.Callback = (transporter, resonanceRequest) =>
+                    {
+                        if (method.ReturnType == typeof(Task))
+                        {
+                            var task = (Task)method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
+                            task.GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
+                        }
+                    };
+                }
+                else
+                {
+                    handler.HasResponse = true;
+
+                    handler.ResponseCallback = (request) =>
+                    {
+                        if (typeof(Task).IsAssignableFrom(method.ReturnType))
+                        {
+                            var task = (Task)method.Invoke(service, new object[] { request });
+                            task.GetAwaiter().GetResult();
+                            var prop = typeof(Task<>).MakeGenericType(method.ReturnType.GenericTypeArguments[0]).GetProperty("Result");
+                            var value = prop.GetValue(task);
+                            return value as IResonanceActionResult;
+                        }
+                        else
+                        {
+                            return method.Invoke(service, new object[] { request });
+                        }
+                    };
+                }
+
+                _messageHandlers.Add(handler);
             }
 
             _services.Add(service);
@@ -533,7 +626,7 @@ namespace Resonance
         public void UnregisterService(IResonanceService service)
         {
             Logger.LogDebug($"Unregistering a request handler service '{service.GetType().FullName}'...");
-            _requestHandlers.RemoveAll(x => x.Service == service);
+            _messageHandlers.RemoveAll(x => x.Service == service);
             _services.Remove(service);
         }
 
@@ -672,6 +765,95 @@ namespace Resonance
 
         #endregion
 
+        #region Send Message
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException"></exception>
+        public Task SendAsync(object message, ResonanceMessageConfig config = null)
+        {
+            ValidateMessagingState(message);
+            return SendAsync(new ResonanceMessage() { Object = message, Token = TokenGenerator.GenerateToken(message) }, config);
+        }
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        public void Send(Object message, ResonanceMessageConfig config = null)
+        {
+            SendAsync(message, config).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns></returns>
+        public Task SendAsync(ResonanceMessage message, ResonanceMessageConfig config = null)
+        {
+            ValidateMessagingState(message);
+
+            config = config ?? new ResonanceMessageConfig();
+            config.Timeout = config.Timeout ?? DefaultRequestTimeout;
+
+            TaskCompletionSource<Object> completionSource = new TaskCompletionSource<object>();
+
+            ResonancePendingMessage pendingMessage = new ResonancePendingMessage();
+            pendingMessage.Message = message;
+            pendingMessage.Config = config;
+            pendingMessage.CompletionSource = completionSource;
+
+            String logMessage = String.Empty;
+
+            if (!config.RequireACK)
+            {
+                logMessage = "Sending message: '{Message}'...";
+            }
+            else
+            {
+                logMessage = "Sending message: '{Message}', ACK required...";
+            }
+
+            using (Logger.BeginScopeToken(pendingMessage.Message.Token))
+            {
+                switch (config.LoggingMode)
+                {
+                    case ResonanceMessageLoggingMode.Content:
+                        Logger.LogInformation($"{logMessage}{{@Content}}", pendingMessage.Message.ObjectTypeName, pendingMessage.Message.Object);
+                        break;
+                    case ResonanceMessageLoggingMode.Title:
+                        Logger.LogInformation(logMessage, pendingMessage.Message.ObjectTypeName);
+                        break;
+                    case ResonanceMessageLoggingMode.None:
+                        Logger.LogDebug(logMessage, pendingMessage.Message.ObjectTypeName);
+                        break;
+                }
+            }
+
+            _sendingQueue.BlockEnqueue(pendingMessage, config.Priority);
+
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        public void Send(ResonanceMessage message, ResonanceMessageConfig config = null)
+        {
+            SendAsync(message, config).GetAwaiter().GetResult();
+        }
+
+        #endregion
+
         #region Send Request
 
         /// <summary>
@@ -709,9 +891,9 @@ namespace Resonance
         /// <exception cref="System.InvalidOperationException"></exception>
         public Task<Object> SendRequestAsync(Object request, ResonanceRequestConfig config = null)
         {
-            ResonanceRequest resonanceRequest = new ResonanceRequest();
+            ResonanceMessage resonanceRequest = new ResonanceMessage();
             resonanceRequest.Token = TokenGenerator.GenerateToken(request);
-            resonanceRequest.Message = request;
+            resonanceRequest.Object = request;
 
             return SendRequestAsync(resonanceRequest, config);
         }
@@ -734,7 +916,7 @@ namespace Resonance
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task<Object> SendRequestAsync(ResonanceRequest request, ResonanceRequestConfig config = null)
+        public Task<Object> SendRequestAsync(ResonanceMessage request, ResonanceRequestConfig config = null)
         {
             ValidateMessagingState(request);
 
@@ -744,7 +926,7 @@ namespace Resonance
             TaskCompletionSource<Object> completionSource = new TaskCompletionSource<object>();
 
             ResonancePendingRequest pendingRequest = new ResonancePendingRequest();
-            pendingRequest.Request = request;
+            pendingRequest.Message = request;
             pendingRequest.Config = config;
             pendingRequest.CompletionSource = completionSource;
 
@@ -755,13 +937,13 @@ namespace Resonance
                 switch (config.LoggingMode)
                 {
                     case ResonanceMessageLoggingMode.Content:
-                        Logger.LogInformation($"{logMessage}{{@Content}}", request.MessageTypeName, request.Message);
+                        Logger.LogInformation($"{logMessage}{{@Content}}", request.ObjectTypeName, request.Object);
                         break;
                     case ResonanceMessageLoggingMode.Title:
-                        Logger.LogInformation(logMessage, request.MessageTypeName);
+                        Logger.LogInformation(logMessage, request.ObjectTypeName);
                         break;
                     case ResonanceMessageLoggingMode.None:
-                        Logger.LogDebug(logMessage, request.MessageTypeName);
+                        Logger.LogDebug(logMessage, request.ObjectTypeName);
                         break;
                 }
             }
@@ -777,7 +959,7 @@ namespace Resonance
         /// <param name="request">The request.</param>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        public Object SendRequest(ResonanceRequest request, ResonanceRequestConfig config = null)
+        public Object SendRequest(ResonanceMessage request, ResonanceRequestConfig config = null)
         {
             return SendRequestAsync(request, config).GetAwaiter().GetResult();
         }
@@ -799,14 +981,14 @@ namespace Resonance
             config.Timeout = config.Timeout ?? DefaultRequestTimeout;
             config.ContinuousTimeout = config.ContinuousTimeout ?? DefaultRequestTimeout;
 
-            ResonanceRequest resonanceRequest = new ResonanceRequest();
+            ResonanceMessage resonanceRequest = new ResonanceMessage();
             resonanceRequest.Token = TokenGenerator.GenerateToken(request);
-            resonanceRequest.Message = request;
+            resonanceRequest.Object = request;
 
             ResonanceObservable<Response> observable = new ResonanceObservable<Response>();
 
             ResonancePendingContinuousRequest pendingContinuousRequest = new ResonancePendingContinuousRequest();
-            pendingContinuousRequest.Request = resonanceRequest;
+            pendingContinuousRequest.Message = resonanceRequest;
             pendingContinuousRequest.Config = config;
             pendingContinuousRequest.ContinuousObservable = observable;
 
@@ -817,13 +999,13 @@ namespace Resonance
                 switch (config.LoggingMode)
                 {
                     case ResonanceMessageLoggingMode.Content:
-                        Logger.LogInformation($"{logMessage}{{@Content}}", resonanceRequest.MessageTypeName, resonanceRequest.Message);
+                        Logger.LogInformation($"{logMessage}{{@Content}}", resonanceRequest.ObjectTypeName, resonanceRequest.Object);
                         break;
                     case ResonanceMessageLoggingMode.Title:
-                        Logger.LogInformation(logMessage, resonanceRequest.MessageTypeName);
+                        Logger.LogInformation(logMessage, resonanceRequest.ObjectTypeName);
                         break;
                     case ResonanceMessageLoggingMode.None:
-                        Logger.LogDebug(logMessage, resonanceRequest.MessageTypeName);
+                        Logger.LogDebug(logMessage, resonanceRequest.ObjectTypeName);
                         break;
                 }
             }
@@ -844,9 +1026,9 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        public Task SendResponseAsync<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null)
+        public Task SendResponseAsync<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null)
         {
-            return SendResponseAsync((ResonanceResponse)response, config);
+            return SendResponseAsync((ResonanceMessage)response, config);
         }
 
         /// <summary>
@@ -856,7 +1038,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        public void SendResponse<Response>(ResonanceResponse<Response> response, ResonanceResponseConfig config = null)
+        public void SendResponse<Response>(ResonanceMessage<Response> response, ResonanceResponseConfig config = null)
         {
             SendResponseAsync<Response>(response, config).GetAwaiter().GetResult();
         }
@@ -870,9 +1052,9 @@ namespace Resonance
         /// <returns></returns>
         public Task SendResponseAsync(Object message, String token, ResonanceResponseConfig config = null)
         {
-            return SendResponseAsync(new ResonanceResponse()
+            return SendResponseAsync(new ResonanceMessage()
             {
-                Message = message,
+                Object = message,
                 Token = token
             }, config);
         }
@@ -896,7 +1078,7 @@ namespace Resonance
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException"></exception>
-        public Task SendResponseAsync(ResonanceResponse response, ResonanceResponseConfig config = null)
+        public Task SendResponseAsync(ResonanceMessage response, ResonanceResponseConfig config = null)
         {
             return SendResponse(response, false, config);
         }
@@ -907,7 +1089,7 @@ namespace Resonance
         /// <param name="response">The response message.</param>
         /// <param name="config">Response configuration.</param>
         /// <returns></returns>
-        public void SendResponse(ResonanceResponse response, ResonanceResponseConfig config = null)
+        public void SendResponse(ResonanceMessage response, ResonanceResponseConfig config = null)
         {
             SendResponseAsync(response, config).GetAwaiter().GetResult();
         }
@@ -946,7 +1128,7 @@ namespace Resonance
             config.HasError = true;
             config.ErrorMessage = message;
 
-            return SendResponse(new ResonanceResponse() { Message = message, Token = token }, true, config);
+            return SendResponse(new ResonanceMessage() { Object = message, Token = token }, true, config);
         }
 
         /// <summary>
@@ -960,7 +1142,7 @@ namespace Resonance
             SendErrorResponseAsync(message, token).GetAwaiter().GetResult();
         }
 
-        private Task SendResponse(ResonanceResponse response, bool isError, ResonanceResponseConfig config = null)
+        private Task SendResponse(ResonanceMessage response, bool isError, ResonanceResponseConfig config = null)
         {
             ValidateMessagingState(response);
 
@@ -974,7 +1156,7 @@ namespace Resonance
             pendingResponse.Config = config;
 
 
-            String error = response.Message.ToStringOrEmpty().Ellipsis(50);
+            String error = response.Object.ToStringOrEmpty().Ellipsis(50);
             String errorMessage = "Sending error response: '{Error}'...";
 
             String message = "Sending response message: '{Message}'...";
@@ -998,13 +1180,13 @@ namespace Resonance
                     switch (config.LoggingMode)
                     {
                         case ResonanceMessageLoggingMode.Content:
-                            Logger.LogInformation($"{message}{{@Content}}", response.MessageTypeName, response.Message);
+                            Logger.LogInformation($"{message}{{@Content}}", response.ObjectTypeName, response.Object);
                             break;
                         case ResonanceMessageLoggingMode.Title:
-                            Logger.LogInformation(message, response.MessageTypeName);
+                            Logger.LogInformation(message, response.ObjectTypeName);
                             break;
                         case ResonanceMessageLoggingMode.None:
-                            Logger.LogDebug(message, response.MessageTypeName);
+                            Logger.LogDebug(message, response.ObjectTypeName);
                             break;
                     }
                 }
@@ -1013,67 +1195,6 @@ namespace Resonance
             _sendingQueue.BlockEnqueue(pendingResponse, config.Priority);
 
             return completionSource.Task;
-        }
-
-        #endregion
-
-        #region Send Object
-
-        /// <summary>
-        /// Sends the specified object without expecting any response.
-        /// </summary>
-        /// <param name="message">The message.</param>
-        /// <param name="config">The configuration.</param>
-        /// <returns></returns>
-        /// <exception cref="System.InvalidOperationException"></exception>
-        public Task SendObjectAsync(object message, ResonanceRequestConfig config = null)
-        {
-            ValidateMessagingState(message);
-
-            config = config ?? new ResonanceRequestConfig();
-            config.Timeout = config.Timeout ?? DefaultRequestTimeout;
-
-            TaskCompletionSource<Object> completionSource = new TaskCompletionSource<object>();
-
-            String token = TokenGenerator.GenerateToken(message);
-
-            ResonancePendingRequest pendingRequest = new ResonancePendingRequest();
-            pendingRequest.Request = new ResonanceRequest() { Message = message, Token = token };
-            pendingRequest.Config = config;
-            pendingRequest.IsWithoutResponse = true;
-            pendingRequest.CompletionSource = completionSource;
-
-            String logMessage = "Sending request message: '{Message}'...";
-
-            using (Logger.BeginScopeToken(pendingRequest.Request.Token))
-            {
-                switch (config.LoggingMode)
-                {
-                    case ResonanceMessageLoggingMode.Content:
-                        Logger.LogInformation($"{logMessage}{{@Content}}", pendingRequest.Request.MessageTypeName, pendingRequest.Request.Message);
-                        break;
-                    case ResonanceMessageLoggingMode.Title:
-                        Logger.LogInformation(logMessage, pendingRequest.Request.MessageTypeName);
-                        break;
-                    case ResonanceMessageLoggingMode.None:
-                        Logger.LogDebug(logMessage, pendingRequest.Request.MessageTypeName);
-                        break;
-                }
-            }
-
-            _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
-
-            return completionSource.Task;
-        }
-
-        /// <summary>
-        /// Sends the specified object without expecting any response.
-        /// </summary>
-        /// <param name="message">The message.</param>
-        /// <param name="config">The configuration.</param>
-        public void SendObject(Object message, ResonanceRequestConfig config = null)
-        {
-            SendObjectAsync(message, config).GetAwaiter().GetResult();
         }
 
         #endregion
@@ -1095,7 +1216,11 @@ namespace Resonance
                         return;
                     }
 
-                    if (pending is ResonancePendingRequest pendingRequest)
+                    if (pending is ResonancePendingMessage pendingMessage)
+                    {
+                        OnOutgoingMessage(pendingMessage);
+                    }
+                    else if (pending is ResonancePendingRequest pendingRequest)
                     {
                         OnOutgoingRequest(pendingRequest);
                     }
@@ -1119,6 +1244,108 @@ namespace Resonance
             }
         }
 
+        protected virtual void OnOutgoingMessage(ResonancePendingMessage pendingMessage)
+        {
+            try
+            {
+                if (pendingMessage.Config.RequireACK)
+                {
+                    _pendingMessages.Add(pendingMessage);
+                }
+
+                ResonanceEncodingInformation info = new ResonanceEncodingInformation();
+                info.Token = pendingMessage.Message.Token;
+                info.Message = pendingMessage.Message.Object;
+
+                if (pendingMessage.Message.Object is ResonanceKeepAliveRequest)
+                {
+                    info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
+                }
+                else if (pendingMessage.Message.Object is ResonanceDisconnectRequest)
+                {
+                    info.Type = ResonanceTranscodingInformationType.Disconnect;
+                }
+                else if (pendingMessage.Message.Object is ResonanceAcknowledgeMessage ackMessage)
+                {
+                    info.Type = ResonanceTranscodingInformationType.MessageSyncACK;
+
+                    if (ackMessage.Exception != null)
+                    {
+                        info.HasError = true;
+                        info.ErrorMessage = ackMessage.Exception.Message;
+                    }
+
+                    try
+                    {
+                        OnEncodeAndWriteData(info);
+                        pendingMessage.SetResult();
+                    }
+                    catch { /*TODO: Minimum logging*/ }
+                    return;
+                }
+                else if (pendingMessage.Config.RequireACK)
+                {
+                    info.Type = ResonanceTranscodingInformationType.MessageSync;
+                }
+                else
+                {
+                    info.Type = ResonanceTranscodingInformationType.Message;
+                }
+
+                if (pendingMessage.Config.CancellationToken != null && pendingMessage.Config.RequireACK)
+                {
+                    Task.Factory.StartNew(() =>
+                    {
+                        while (!pendingMessage.IsCompleted)
+                        {
+                            Thread.Sleep(10);
+
+                            if (pendingMessage.Config.CancellationToken.Value.IsCancellationRequested)
+                            {
+                                Logger.LogDebugToken(pendingMessage.Message.Token, "'{Message}' aborted by cancellation token.", pendingMessage.Message.ObjectTypeName);
+                                _pendingMessages.Remove(pendingMessage);
+                                pendingMessage.SetException(new OperationCanceledException());
+                            }
+                        }
+                    });
+                }
+
+                OnEncodeAndWriteData(info);
+
+                if (pendingMessage.Config.RequireACK)
+                {
+                    Task.Delay(pendingMessage.Config.Timeout.Value).ContinueWith((x) =>
+                    {
+                        if (!pendingMessage.IsCompleted)
+                        {
+                            Logger.LogWarningToken(pendingMessage.Message.Token, "'{Message}' was not provided with an acknowledgment within the given period of {Timeout} seconds and has timed out.", pendingMessage.Message.ObjectTypeName, pendingMessage.Config.Timeout.Value.TotalSeconds);
+                            _pendingMessages.Remove(pendingMessage);
+
+                            var timeoutException = new TimeoutException($"{pendingMessage.Message.ObjectTypeName} was not provided with an acknowledgment within the given period of {pendingMessage.Config.Timeout.Value.TotalSeconds} seconds and has timed out.");
+                            OnMessageFailed(pendingMessage.Message, timeoutException);
+                            pendingMessage.SetException(timeoutException);
+                        }
+                    });
+                }
+
+                Task.Factory.StartNew(() =>
+                {
+                    if (!pendingMessage.Config.RequireACK)
+                    {
+                        pendingMessage.SetResult();
+                    }
+
+                    OnMessageSent(pendingMessage.Message);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogErrorToken(pendingMessage.Message.Token, ex, "Error occurred while trying to send message '{Message}'.", pendingMessage.Message.ObjectTypeName);
+                OnMessageFailed(pendingMessage.Message, ex);
+                pendingMessage.SetException(ex);
+            }
+        }
+
         /// <summary>
         /// Performs the actual outgoing request sending.
         /// </summary>
@@ -1127,20 +1354,17 @@ namespace Resonance
         {
             try
             {
-                if (!pendingRequest.IsWithoutResponse)
-                {
-                    _pendingRequests.Add(pendingRequest);
-                }
+                _pendingMessages.Add(pendingRequest);
 
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
-                info.Token = pendingRequest.Request.Token;
-                info.Message = pendingRequest.Request.Message;
+                info.Token = pendingRequest.Message.Token;
+                info.Message = pendingRequest.Message.Object;
 
-                if (pendingRequest.Request.Message is ResonanceKeepAliveRequest)
+                if (pendingRequest.Message.Object is ResonanceKeepAliveRequest)
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
                 }
-                else if (pendingRequest.Request.Message is ResonanceDisconnectRequest)
+                else if (pendingRequest.Message.Object is ResonanceDisconnectRequest)
                 {
                     info.Type = ResonanceTranscodingInformationType.Disconnect;
                     pendingRequest.SetResult(true);
@@ -1150,7 +1374,7 @@ namespace Resonance
                     info.Type = ResonanceTranscodingInformationType.Request;
                 }
 
-                if (pendingRequest.Config.CancellationToken != null && !pendingRequest.IsWithoutResponse)
+                if (pendingRequest.Config.CancellationToken != null)
                 {
                     Task.Factory.StartNew(() =>
                     {
@@ -1160,8 +1384,8 @@ namespace Resonance
 
                             if (pendingRequest.Config.CancellationToken.Value.IsCancellationRequested)
                             {
-                                Logger.LogDebugToken(pendingRequest.Request.Token, "'{Message}' aborted by cancellation token.", pendingRequest.Request.MessageTypeName);
-                                _pendingRequests.Remove(pendingRequest);
+                                Logger.LogDebugToken(pendingRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingRequest.Message.ObjectTypeName);
+                                _pendingMessages.Remove(pendingRequest);
                                 pendingRequest.SetException(new OperationCanceledException());
                             }
                         }
@@ -1170,32 +1394,28 @@ namespace Resonance
 
                 OnEncodeAndWriteData(info);
 
-                if (!pendingRequest.IsWithoutResponse)
+                Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
                 {
-                    Task.Delay(pendingRequest.Config.Timeout.Value).ContinueWith((x) =>
+                    if (!pendingRequest.IsCompleted)
                     {
-                        if (!pendingRequest.IsCompleted)
-                        {
-                            Logger.LogWarningToken(pendingRequest.Request.Token, "'{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingRequest.Request.MessageTypeName, pendingRequest.Config.Timeout.Value.TotalSeconds);
-                            _pendingRequests.Remove(pendingRequest);
-                            pendingRequest.SetException(new TimeoutException($"{pendingRequest.Request.MessageTypeName} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out."));
-                        }
-                    });
-                }
+                        Logger.LogWarningToken(pendingRequest.Message.Token, "'{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingRequest.Message.ObjectTypeName, pendingRequest.Config.Timeout.Value.TotalSeconds);
+                        _pendingMessages.Remove(pendingRequest);
+
+                        var timeoutException = new TimeoutException($"{pendingRequest.Message.ObjectTypeName} was not provided with a response within the given period of {pendingRequest.Config.Timeout.Value.TotalSeconds} seconds and has timed out.");
+                        OnRequestFailed(pendingRequest.Message, timeoutException);
+                        pendingRequest.SetException(timeoutException);
+                    }
+                });
 
                 Task.Factory.StartNew(() =>
                 {
-                    if (pendingRequest.IsWithoutResponse)
-                    {
-                        pendingRequest.SetResult(true);
-                    }
-
-                    OnRequestSent(pendingRequest.Request);
+                    OnRequestSent(pendingRequest.Message);
                 });
             }
             catch (Exception ex)
             {
-                Logger.LogErrorToken(pendingRequest.Request.Token, ex, "Error occurred while trying to send request '{Message}'.", pendingRequest.Request.MessageTypeName);
+                Logger.LogErrorToken(pendingRequest.Message.Token, ex, "Error occurred while trying to send request '{Message}'.", pendingRequest.Message.ObjectTypeName);
+                OnRequestFailed(pendingRequest.Message, ex);
                 pendingRequest.SetException(ex);
             }
         }
@@ -1208,11 +1428,11 @@ namespace Resonance
         {
             try
             {
-                _pendingRequests.Add(pendingContinuousRequest);
+                _pendingMessages.Add(pendingContinuousRequest);
 
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
-                info.Token = pendingContinuousRequest.Request.Token;
-                info.Message = pendingContinuousRequest.Request.Message;
+                info.Token = pendingContinuousRequest.Message.Token;
+                info.Message = pendingContinuousRequest.Message.Object;
                 info.Type = ResonanceTranscodingInformationType.ContinuousRequest;
 
                 if (pendingContinuousRequest.Config.CancellationToken != null)
@@ -1225,8 +1445,8 @@ namespace Resonance
 
                             if (pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
                             {
-                                Logger.LogDebugToken(pendingContinuousRequest.Request.Token, "'{Message}' aborted by cancellation token.", pendingContinuousRequest.Request.MessageTypeName);
-                                _pendingRequests.Remove(pendingContinuousRequest);
+                                Logger.LogDebugToken(pendingContinuousRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingContinuousRequest.Message.ObjectTypeName);
+                                _pendingMessages.Remove(pendingContinuousRequest);
                                 pendingContinuousRequest.OnError(new OperationCanceledException());
                             }
                         }
@@ -1241,9 +1461,11 @@ namespace Resonance
                     {
                         if (pendingContinuousRequest.Config.CancellationToken == null || !pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
                         {
-                            Logger.LogWarningToken(pendingContinuousRequest.Request.Token, "Continuous request '{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Request.MessageTypeName, pendingContinuousRequest.Config.Timeout.Value.Seconds);
-                            _pendingRequests.Remove(pendingContinuousRequest);
-                            pendingContinuousRequest.OnError(new TimeoutException($"Continuous request '{pendingContinuousRequest.Request.MessageTypeName}' was not provided with a response within the given period of {pendingContinuousRequest.Config.Timeout.Value.Seconds} seconds and has timed out."));
+                            Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.Timeout.Value.Seconds);
+                            _pendingMessages.Remove(pendingContinuousRequest);
+                            var timeoutException = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.ObjectTypeName}' was not provided with a response within the given period of {pendingContinuousRequest.Config.Timeout.Value.Seconds} seconds and has timed out.");
+                            OnRequestFailed(pendingContinuousRequest.Message, timeoutException);
+                            pendingContinuousRequest.OnError(timeoutException);
                         }
                     }
                     else
@@ -1260,9 +1482,9 @@ namespace Resonance
                                         {
                                             if (DateTime.Now - pendingContinuousRequest.ContinuousObservable.LastResponseTime > pendingContinuousRequest.Config.ContinuousTimeout.Value)
                                             {
-                                                Logger.LogWarningToken(pendingContinuousRequest.Request.Token, "Continuous request '{Message}' had failed to provide a response for a period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Request.MessageTypeName, pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds);
-                                                TimeoutException ex = new TimeoutException($"Continuous request '{pendingContinuousRequest.Request.Message.GetType().Name}' had failed to provide a response for a period of {pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds} seconds and has timed out.");
-                                                OnRequestFailed(pendingContinuousRequest.Request, ex);
+                                                Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' had failed to provide a response for a period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds);
+                                                TimeoutException ex = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.Object.GetType().Name}' had failed to provide a response for a period of {pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds} seconds and has timed out.");
+                                                OnRequestFailed(pendingContinuousRequest.Message, ex);
                                                 pendingContinuousRequest.OnError(ex);
                                                 return;
                                             }
@@ -1276,12 +1498,13 @@ namespace Resonance
 
                 Task.Factory.StartNew(() =>
                 {
-                    OnRequestSent(pendingContinuousRequest.Request);
+                    OnRequestSent(pendingContinuousRequest.Message);
                 });
             }
             catch (Exception ex)
             {
-                Logger.LogErrorToken(pendingContinuousRequest.Request.Token, ex, "Error occurred while trying to send continuous request '{Message}'.", pendingContinuousRequest.Request.MessageTypeName);
+                Logger.LogErrorToken(pendingContinuousRequest.Message.Token, ex, "Error occurred while trying to send continuous request '{Message}'.", pendingContinuousRequest.Message.ObjectTypeName);
+                OnRequestFailed(pendingContinuousRequest.Message, ex);
                 pendingContinuousRequest.OnError(ex);
             }
         }
@@ -1296,12 +1519,12 @@ namespace Resonance
             {
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingResponse.Response.Token;
-                info.Message = pendingResponse.Response.Message;
+                info.Message = pendingResponse.Response.Object;
                 info.Completed = pendingResponse.Config.Completed;
                 info.ErrorMessage = pendingResponse.Config.ErrorMessage;
                 info.HasError = pendingResponse.Config.HasError;
 
-                if (pendingResponse.Response.Message is ResonanceKeepAliveResponse)
+                if (pendingResponse.Response.Object is ResonanceKeepAliveResponse)
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveResponse;
                 }
@@ -1324,7 +1547,7 @@ namespace Resonance
             }
             catch (Exception ex)
             {
-                Logger.LogErrorToken(pendingResponse.Response.Token, ex, "Error occurred while trying to send response '{Message}'.", pendingResponse.Response.MessageTypeName);
+                Logger.LogErrorToken(pendingResponse.Response.Token, ex, "Error occurred while trying to send response '{Message}'.", pendingResponse.Response.ObjectTypeName);
                 pendingResponse.SetException(ex);
                 OnResponseFailed(pendingResponse.Response, ex);
             }
@@ -1430,7 +1653,21 @@ namespace Resonance
                             }
                         }
 
-                        if (info.Type == ResonanceTranscodingInformationType.Request || info.Type == ResonanceTranscodingInformationType.ContinuousRequest)
+                        if (info.Type == ResonanceTranscodingInformationType.Message || info.Type == ResonanceTranscodingInformationType.MessageSync)
+                        {
+                            if (!info.HasDecodingException)
+                            {
+                                OnIncomingMessage(info);
+                            }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
+                        {
+                            if (!info.HasDecodingException)
+                            {
+                                OnIncomingMessageACK(info);
+                            }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.Request || info.Type == ResonanceTranscodingInformationType.ContinuousRequest)
                         {
                             if (!info.HasDecodingException)
                             {
@@ -1447,7 +1684,7 @@ namespace Resonance
                         }
                         else
                         {
-                            IResonancePendingRequest pending = _pendingRequests.ToList().FirstOrDefault(x => x.Request.Token == info.Token);
+                            IResonancePendingMessage pending = _pendingMessages.ToList().FirstOrDefault(x => x.Message.Token == info.Token);
 
                             if (pending != null)
                             {
@@ -1487,6 +1724,106 @@ namespace Resonance
         }
 
         /// <summary>
+        /// Handles incoming messages.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        protected virtual void OnIncomingMessage(ResonanceDecodingInformation info)
+        {
+            if (info.Type == ResonanceTranscodingInformationType.MessageSync)
+            {
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}', ACK required...", info.Message.GetType().Name);
+
+                if (MessageAcknowledgmentBehavior == ResonanceMessageAckBehavior.Default)
+                {
+                    try
+                    {
+                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage(), Token = info.Token });
+                    }
+                    catch { }
+                }
+            }
+            else
+            {
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}'...", info.Message.GetType().Name);
+            }
+
+            Exception exception = null;
+
+            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message.GetType());
+            request.Token = info.Token;
+            request.Object = info.Message;
+
+            Task.Factory.StartNew(() =>
+            {
+                var handlers = _messageHandlers.ToList().Where(x => !x.HasResponse && x.MessageType == request.Object.GetType()).ToList();
+
+                foreach (var handler in handlers)
+                {
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking message handler '{Handler}'...", handler.RegisteredCallbackDescription);
+
+                    try
+                    {
+                        handler.Callback.Invoke(this, request);
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Message handler '{Handler}' completed.", handler.RegisteredCallbackDescription);
+                    }
+                    catch (Exception ex)
+                    {
+                        exception = ex;
+                        Logger.LogErrorToken(info.Token, ex, "Message handler '{Handler}' threw an exception.", handler.RegisteredCallbackDescription);
+                    }
+                }
+
+                try
+                {
+                    OnMessageReceived(request);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                    Logger.LogErrorToken(info.Token, ex, "Error occurred on message received event for message {Message}", info.Message.GetType().Name);
+                }
+
+                if (info.Type == ResonanceTranscodingInformationType.MessageSync && MessageAcknowledgmentBehavior == ResonanceMessageAckBehavior.ReportErrors)
+                {
+                    try
+                    {
+                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage() { Exception = exception }, Token = info.Token });
+                    }
+                    catch { }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Handles incoming ACK messages.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        protected virtual void OnIncomingMessageACK(ResonanceDecodingInformation info)
+        {
+            ResonancePendingMessage pending = _pendingMessages.ToList().FirstOrDefault(x => x.Message.Token == info.Token) as ResonancePendingMessage;
+
+            if (pending != null)
+            {
+                _pendingMessages.Remove(pending);
+
+                if (!info.HasError || MessageAcknowledgmentBehavior == ResonanceMessageAckBehavior.Default)
+                {
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message ACK received for message '{Message}'...", pending.Message.ObjectTypeName);
+                    pending.SetResult();
+                }
+                else
+                {
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message ACK received with error '{Error}' for message '{Message}'...", info.ErrorMessage, pending.Message.ObjectTypeName);
+                    pending.SetException(new ResonanceResponseException(info.ErrorMessage));
+                }
+            }
+            else
+            {
+                Logger.LogWarningToken(info.Token, "A message ACK with no awaiting message was received. Token: {Token}. Ignoring...");
+            }
+        }
+
+        /// <summary>
         /// Handles incoming request messages.
         /// </summary>
         /// <param name="info">The information.</param>
@@ -1494,13 +1831,13 @@ namespace Resonance
         {
             if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming request received '{Message}'...", info.Message.GetType().Name);
 
-            ResonanceRequest request = ResonanceRequest.CreateGenericRequest(info.Message.GetType());
+            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message.GetType());
             request.Token = info.Token;
-            request.Message = info.Message;
+            request.Object = info.Message;
 
             Task.Factory.StartNew(() =>
             {
-                var handlers = _requestHandlers.ToList().Where(x => x.RequestType == request.Message.GetType()).ToList();
+                var handlers = _messageHandlers.ToList().Where(x => x.MessageType == request.Object.GetType()).ToList();
 
                 foreach (var handler in handlers)
                 {
@@ -1510,7 +1847,7 @@ namespace Resonance
                     {
                         if (handler.HasResponse)
                         {
-                            IResonanceActionResult result = handler.ResponseCallback.Invoke(request.Message) as IResonanceActionResult;
+                            IResonanceActionResult result = handler.ResponseCallback.Invoke(request.Object) as IResonanceActionResult;
 
                             if (result != null && result.Response != null)
                             {
@@ -1561,7 +1898,7 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnIncomingResponse(ResonancePendingRequest pendingRequest, ResonanceDecodingInformation info)
         {
-            _pendingRequests.Remove(pendingRequest);
+            _pendingMessages.Remove(pendingRequest);
 
             if (!info.HasDecodingException)
             {
@@ -1590,10 +1927,10 @@ namespace Resonance
                     {
                         case ResonanceMessageLoggingMode.Content:
                         case ResonanceMessageLoggingMode.Title:
-                            Logger.LogInformationToken(info.Token, errorMessage, pendingRequest.Request.MessageTypeName, info.ErrorMessage.Ellipsis(50));
+                            Logger.LogInformationToken(info.Token, errorMessage, pendingRequest.Message.ObjectTypeName, info.ErrorMessage.Ellipsis(50));
                             break;
                         case ResonanceMessageLoggingMode.None:
-                            Logger.LogDebugToken(info.Token, errorMessage, pendingRequest.Request.MessageTypeName, info.ErrorMessage.Ellipsis(50));
+                            Logger.LogDebugToken(info.Token, errorMessage, pendingRequest.Message.ObjectTypeName, info.ErrorMessage.Ellipsis(50));
                             break;
                     }
                 }
@@ -1607,13 +1944,13 @@ namespace Resonance
             {
                 pendingRequest.SetResult(info.Message);
 
-                Task.Factory.StartNew(() =>
+                Task.Factory.StartNew((Action)(() =>
                 {
-                    ResonanceResponse response = new ResonanceResponse();
+                    ResonanceMessage response = new ResonanceMessage();
                     response.Token = info.Token;
-                    response.Message = info.Message;
+                    response.Object = info.Message;
                     OnResponseReceived(response);
-                });
+                }));
             }
             else
             {
@@ -1655,10 +1992,10 @@ namespace Resonance
                     {
                         case ResonanceMessageLoggingMode.Content:
                         case ResonanceMessageLoggingMode.Title:
-                            Logger.LogInformationToken(info.Token, errorMessage, pendingContinuousRequest.Request.MessageTypeName, info.ErrorMessage.Ellipsis(50));
+                            Logger.LogInformationToken(info.Token, errorMessage, pendingContinuousRequest.Message.ObjectTypeName, info.ErrorMessage.Ellipsis(50));
                             break;
                         case ResonanceMessageLoggingMode.None:
-                            Logger.LogDebugToken(info.Token, errorMessage, pendingContinuousRequest.Request.MessageTypeName, info.ErrorMessage.Ellipsis(50));
+                            Logger.LogDebugToken(info.Token, errorMessage, pendingContinuousRequest.Message.ObjectTypeName, info.ErrorMessage.Ellipsis(50));
                             break;
                     }
                 }
@@ -1670,9 +2007,9 @@ namespace Resonance
             }
             else if (!info.HasError)
             {
-                ResonanceResponse response = new ResonanceResponse();
+                ResonanceMessage response = new ResonanceMessage();
                 response.Token = info.Token;
-                response.Message = info.Message;
+                response.Object = info.Message;
 
                 if (!info.Completed)
                 {
@@ -1681,19 +2018,19 @@ namespace Resonance
                 }
                 else
                 {
-                    _pendingRequests.Remove(pendingContinuousRequest);
+                    _pendingMessages.Remove(pendingContinuousRequest);
 
                     pendingContinuousRequest.OnNext(info.Message);
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Request.MessageTypeName);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(info.Token, "Continuous request '{Message}' completed.", pendingContinuousRequest.Message.ObjectTypeName);
                     pendingContinuousRequest.OnCompleted();
                     OnResponseReceived(response);
                 }
             }
             else
             {
-                _pendingRequests.Remove(pendingContinuousRequest);
+                _pendingMessages.Remove(pendingContinuousRequest);
 
-                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Request.MessageTypeName);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Message.ObjectTypeName);
                 pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
             }
         }
@@ -1730,8 +2067,8 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnKeepAliveResponseReceived(ResonancePendingRequest pendingRequest, ResonanceDecodingInformation info)
         {
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pendingRequest.Request.Token, "KeepAlive response received...");
-            _pendingRequests.Remove(pendingRequest);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pendingRequest.Message.Token, "KeepAlive response received...");
+            _pendingMessages.Remove(pendingRequest);
             pendingRequest.SetResult(info.Message);
         }
 
@@ -1903,7 +2240,7 @@ namespace Resonance
         {
             Logger.LogDebug("Clearing queues...");
             _sendingQueue = new PriorityProducerConsumerQueue<object>();
-            _pendingRequests = new ConcurrentList<IResonancePendingRequest>();
+            _pendingMessages = new ConcurrentList<IResonancePendingMessage>();
             _arrivedMessages = new ProducerConsumerQueue<byte[]>();
             _clearedQueues = true;
         }
@@ -1960,7 +2297,7 @@ namespace Resonance
         {
             if (exception == null) exception = new ResonanceTransporterDisconnectedException("Transporter disconnected.");
 
-            var pendingRequests = _pendingRequests.ToList();
+            var pendingRequests = _pendingMessages.ToList();
 
             if (pendingRequests.Count > 0)
             {
@@ -1970,15 +2307,15 @@ namespace Resonance
                 {
                     try
                     {
-                        _pendingRequests.Remove(pending);
+                        _pendingMessages.Remove(pending);
 
-                        if (pending.Request.Message != null)
+                        if (pending.Message.Object != null)
                         {
-                            if (pending.Request.Message is ResonanceDisconnectRequest) continue;
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pending.Request.Token, "Aborting request '{Message}'...", pending.Request.MessageTypeName);
+                            if (pending.Message.Object is ResonanceDisconnectRequest) continue;
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pending.Message.Token, "Aborting request '{Message}'...", pending.Message.ObjectTypeName);
                         }
 
-                        OnRequestFailed(pending.Request, exception);
+                        OnRequestFailed(pending.Message, exception);
 
                         if (pending is ResonancePendingContinuousRequest continuousPendingRequest)
                         {
@@ -1991,7 +2328,7 @@ namespace Resonance
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarningToken(pending.Request.Token, ex, "Error occurred while trying to abort a pending request message.");
+                        Logger.LogWarningToken(pending.Message.Token, ex, "Error occurred while trying to abort a pending request message.");
                     }
                 }
             }
@@ -2011,9 +2348,9 @@ namespace Resonance
                 {
                     if (toSend is ResonancePendingResponse pendingResponse)
                     {
-                        if (pendingResponse.Response.Message != null)
+                        if (pendingResponse.Response.Object != null)
                         {
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pendingResponse.Response.Token, "Aborting response '{Message}'...", pendingResponse.Response.MessageTypeName);
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pendingResponse.Response.Token, "Aborting response '{Message}'...", pendingResponse.Response.ObjectTypeName);
                         }
 
                         pendingResponse.SetException(exception);
@@ -2027,21 +2364,49 @@ namespace Resonance
         #region Events Notification Methods
 
         /// <summary>
+        /// Called when a message has been received.
+        /// </summary>
+        /// <param name="message">The resonance message.</param>
+        protected virtual void OnMessageReceived(ResonanceMessage message)
+        {
+            MessageReceived?.Invoke(this, new ResonanceMessageReceivedEventArgs(this, message));
+        }
+
+        /// <summary>
+        /// Called when a message has been sent.
+        /// </summary>
+        /// <param name="message">The resonance message.</param>
+        protected virtual void OnMessageSent(ResonanceMessage message)
+        {
+            MessageSent?.Invoke(this, new ResonanceMessageEventArgs(this, message));
+        }
+
+        /// <summary>
+        /// Called when a sent message has failed.
+        /// </summary>
+        /// <param name="message">The resonance message.</param>
+        /// <param name="exception">The exception.</param>
+        protected virtual void OnMessageFailed(ResonanceMessage message, Exception exception)
+        {
+            MessageFailed?.Invoke(this, new ResonanceMessageFailedEventArgs(this, message, exception));
+        }
+
+        /// <summary>
         /// Called when a request has been received.
         /// </summary>
         /// <param name="request">The request.</param>
-        protected virtual void OnRequestReceived(ResonanceRequest request)
+        protected virtual void OnRequestReceived(ResonanceMessage request)
         {
-            RequestReceived?.Invoke(this, new ResonanceRequestReceivedEventArgs(this, request));
+            RequestReceived?.Invoke(this, new ResonanceMessageReceivedEventArgs(this, request));
         }
 
         /// <summary>
         /// Called when a request has been sent.
         /// </summary>
         /// <param name="request">The request.</param>
-        protected virtual void OnRequestSent(ResonanceRequest request)
+        protected virtual void OnRequestSent(ResonanceMessage request)
         {
-            RequestSent?.Invoke(this, new ResonanceRequestEventArgs(this, request));
+            RequestSent?.Invoke(this, new ResonanceMessageEventArgs(this, request));
         }
 
         /// <summary>
@@ -2049,27 +2414,27 @@ namespace Resonance
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="exception">The exception.</param>
-        protected virtual void OnRequestFailed(ResonanceRequest request, Exception exception)
+        protected virtual void OnRequestFailed(ResonanceMessage request, Exception exception)
         {
-            RequestFailed?.Invoke(this, new ResonanceRequestFailedEventArgs(this, request, exception));
+            RequestFailed?.Invoke(this, new ResonanceMessageFailedEventArgs(this, request, exception));
         }
 
         /// <summary>
         /// Called when a response has been sent.
         /// </summary>
         /// <param name="response">The response.</param>
-        protected virtual void OnResponseSent(ResonanceResponse response)
+        protected virtual void OnResponseSent(ResonanceMessage response)
         {
-            ResponseSent?.Invoke(this, new ResonanceResponseEventArgs(this, response));
+            ResponseSent?.Invoke(this, new ResonanceMessageEventArgs(this, response));
         }
 
         /// <summary>
         /// Called when a response has been received.
         /// </summary>
         /// <param name="response">The response.</param>
-        protected virtual void OnResponseReceived(ResonanceResponse response)
+        protected virtual void OnResponseReceived(ResonanceMessage response)
         {
-            ResponseReceived?.Invoke(this, new ResonanceResponseEventArgs(this, response));
+            ResponseReceived?.Invoke(this, new ResonanceMessageEventArgs(this, response));
         }
 
         /// <summary>
@@ -2077,9 +2442,9 @@ namespace Resonance
         /// </summary>
         /// <param name="response">The response.</param>
         /// <param name="exception">The exception.</param>
-        protected virtual void OnResponseFailed(ResonanceResponse response, Exception exception)
+        protected virtual void OnResponseFailed(ResonanceMessage response, Exception exception)
         {
-            ResponseFailed?.Invoke(this, new ResonanceResponseFailedEventArgs(this, response, exception));
+            ResponseFailed?.Invoke(this, new ResonanceMessageFailedEventArgs(this, response, exception));
         }
 
         /// <summary>

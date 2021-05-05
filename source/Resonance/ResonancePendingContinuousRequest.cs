@@ -11,8 +11,8 @@ namespace Resonance
     /// <summary>
     /// Represents a registration of an awaiting continuous request.
     /// </summary>
-    /// <seealso cref="Resonance.IResonancePendingRequest" />
-    public class ResonancePendingContinuousRequest : IResonancePendingRequest
+    /// <seealso cref="Resonance.IResonancePendingMessage" />
+    public class ResonancePendingContinuousRequest : IResonancePendingMessage
     {
         private ResonanceContinuousResponseDispatcher _dispatcher;
 
@@ -21,7 +21,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the Resonance request.
         /// </summary>
-        public ResonanceRequest Request { get; set; }
+        public ResonanceMessage Message { get; set; }
 
         /// <summary>
         /// Gets or sets the request configuration.

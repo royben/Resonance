@@ -15,7 +15,7 @@ namespace Resonance
         /// <summary>
         /// Gets or sets the response.
         /// </summary>
-        public ResonanceResponse Response { get; set; }
+        public ResonanceMessage Response { get; set; }
 
         /// <summary>
         /// Gets or sets the response completion source.

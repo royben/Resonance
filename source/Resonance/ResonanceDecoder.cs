@@ -56,6 +56,8 @@ namespace Resonance
                             &&
                             info.Type != ResonanceTranscodingInformationType.Disconnect
                             &&
+                            info.Type != ResonanceTranscodingInformationType.MessageSyncACK
+                            &&
                             !info.HasError)
                         {
                             ms.Position = info.ActualMessageStreamPosition;
