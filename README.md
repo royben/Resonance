@@ -338,6 +338,34 @@ You can continue reading if you want to explore some more advanced topics.
 
 <br/>
 
+## In-Memory Testing
+Testing your communication is easier without initializing an actual known communication method. The library implements a special `InMemoryAdapter` which can be used for testing.<br/>
+All you need to do is assign each of the adapters the same address.
+
+```c#
+public async void Demo()
+{
+    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TEST")
+        .WithJsonTranscoding()
+        .Build();
+
+    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TEST")
+        .WithJsonTranscoding()
+        .Build();
+
+    await transporter1.ConnectAsync();
+    await transporter2.ConnectAsync();
+}
+```
+
+<br/>
+
 ## Continuous Response
 The continuous response pattern is simply the concept of sending a single request and expecting multiple response messages.<br/>
 We are basically opening a constant stream of response messages.<br/>
@@ -524,34 +552,6 @@ private async void SendWithErrorExample()
 
 <br/>
 
-
-## In-Memory Testing
-Testing your communication is easier without initializing an actual known communication method. The library implements a special `InMemoryAdapter` which can be used for testing.<br/>
-All you need to do is assign each of the adapters the same address.
-
-```c#
-public async void Demo()
-{
-    IResonanceTransporter transporter1 = ResonanceTransporter.Builder
-        .Create()
-        .WithInMemoryAdapter()
-        .WithAddress("TEST")
-        .WithJsonTranscoding()
-        .Build();
-
-    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-        .Create()
-        .WithInMemoryAdapter()
-        .WithAddress("TEST")
-        .WithJsonTranscoding()
-        .Build();
-
-    await transporter1.ConnectAsync();
-    await transporter2.ConnectAsync();
-}
-```
-
-<br/>
 
 ## Message Configuration
 In all previous example we used the Transporter to send request and response messages by providing the request or response objects, but actually, we can specify additional configuration to each request or response message.<br/>
