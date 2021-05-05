@@ -29,7 +29,7 @@ namespace Resonance
             writer.Write(info.Token);
             writer.Write((byte)info.Type);
 
-            if (info.Type == ResonanceTranscodingInformationType.Response)
+            if (info.Type == ResonanceTranscodingInformationType.Response || info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
             {
                 writer.Write(info.Completed);
                 writer.Write(info.HasError);
@@ -53,7 +53,7 @@ namespace Resonance
             info.Token = reader.ReadString();
             info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
 
-            if (info.Type == ResonanceTranscodingInformationType.Response)
+            if (info.Type == ResonanceTranscodingInformationType.Response || info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
             {
                 info.Completed = reader.ReadBoolean();
                 info.HasError = reader.ReadBoolean();

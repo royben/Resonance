@@ -30,6 +30,11 @@ namespace Resonance.Tests.Common
 
         public bool IsRunningOnAzurePipelines { get; set; }
 
+        /// <summary>
+        /// Gets or sets the test logger.
+        /// </summary>
+        public Microsoft.Extensions.Logging.ILogger Logger { get; set; }
+
         [TestInitialize]
         public void Init()
         {
@@ -48,7 +53,7 @@ namespace Resonance.Tests.Common
             {
                 if (Debugger.IsAttached)
                 {
-                    loggerConfiguration.MinimumLevel.Debug();
+                    loggerConfiguration.MinimumLevel.Information();
                 }
                 else
                 {
@@ -71,6 +76,8 @@ namespace Resonance.Tests.Common
 
             var logger = loggerFactory.CreateLogger(testName);
             logger.LogDebug("Starting Test...");
+
+            Logger = logger;
         }
 
         [TestCleanup]

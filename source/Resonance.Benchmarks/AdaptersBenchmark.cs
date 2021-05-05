@@ -34,8 +34,8 @@ namespace Resonance.Benchmarks
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             for (int i = 0; i < 1000; i++)
@@ -62,8 +62,8 @@ namespace Resonance.Benchmarks
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             for (int i = 0; i < 1000; i++)
@@ -90,8 +90,8 @@ namespace Resonance.Benchmarks
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             for (int i = 0; i < 1000; i++)
@@ -120,8 +120,8 @@ namespace Resonance.Benchmarks
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponseAsync(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             for (int i = 0; i < 1000; i++)

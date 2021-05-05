@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Resonance.Tests
 {
     [TestClass]
-    [TestCategory("LZ_4")]
+    [TestCategory("LZ4")]
     public class LZ4_TST : ResonanceTest
     {
         [TestMethod]

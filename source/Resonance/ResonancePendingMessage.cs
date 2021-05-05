@@ -1,36 +1,34 @@
-﻿using Resonance.Reactive;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Resonance
 {
     /// <summary>
-    /// Represents a registration of an awaiting request.
+    /// Represents a pending message.
     /// </summary>
     /// <seealso cref="Resonance.IResonancePendingMessage" />
-    public class ResonancePendingRequest : IResonancePendingMessage
+    public class ResonancePendingMessage : IResonancePendingMessage
     {
         public bool IsCompleted { get; private set; }
 
         /// <summary>
-        /// Gets or sets the Resonance request.
+        /// Gets or sets the Resonance message.
         /// </summary>
         public ResonanceMessage Message { get; set; }
 
         /// <summary>
-        /// Gets or sets the request configuration.
+        /// Gets or sets the message configuration.
         /// </summary>
-        public ResonanceRequestConfig Config { get; set; }
+        public ResonanceMessageConfig Config { get; set; }
 
         /// <summary>
         /// Gets or sets the request completion source.
         /// </summary>
         public TaskCompletionSource<Object> CompletionSource { get; set; }
 
-        public void SetResult(Object result)
+        public void SetResult()
         {
             if (!IsCompleted)
             {
@@ -38,7 +36,7 @@ namespace Resonance
 
                 if (!CompletionSource.Task.IsCompleted)
                 {
-                    CompletionSource.SetResult(result);
+                    CompletionSource.SetResult(true);
                 }
             }
         }

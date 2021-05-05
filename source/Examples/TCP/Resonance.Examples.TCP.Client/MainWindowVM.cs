@@ -222,7 +222,7 @@ namespace Resonance.Examples.TCP.Client
 
         private async void LeaveSession()
         {
-            await _transporter.SendObjectAsync(new LeaveSessionRequest()
+            await _transporter.SendAsync(new LeaveSessionRequest()
             {
 
             });

@@ -10,7 +10,7 @@ using Resonance.HandShake;
 
 namespace Resonance
 {
-    public delegate void RequestHandlerCallbackDelegate<Request>(IResonanceTransporter transporter, ResonanceMessage<Request> request) where Request : class;
+    public delegate void MessageHandlerCallbackDelegate<Message>(IResonanceTransporter transporter, ResonanceMessage<Message> message) where Message : class;
 
     public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
 
@@ -26,6 +26,21 @@ namespace Resonance
     /// <seealso cref="Resonance.IResonanceConnectionComponent" />
     public interface IResonanceTransporter : IResonanceComponent, IResonanceStateComponent, IResonanceConnectionComponent, IDisposable, IResonanceAsyncDisposable
     {
+        /// <summary>
+        /// Occurs when a new message has been received.
+        /// </summary>
+        event EventHandler<ResonanceMessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        /// Occurs when a message has been sent.
+        /// </summary>
+        event EventHandler<ResonanceMessageEventArgs> MessageSent;
+
+        /// <summary>
+        /// Occurs when a sent message has failed.
+        /// </summary>
+        event EventHandler<ResonanceMessageFailedEventArgs> MessageFailed;
+
         /// <summary>
         /// Occurs when a new request message has been received.
         /// </summary>
@@ -113,6 +128,11 @@ namespace Resonance
         IResonanceHandShakeNegotiator HandShakeNegotiator { get; set; }
 
         /// <summary>
+        /// Gets or sets the message acknowledgment behavior when receiving and sending standard messages.
+        /// </summary>
+        ResonanceMessageAckBehavior MessageAcknowledgmentBehavior { get; set; }
+
+        /// <summary>
         /// Returns true if communication is currently encrypted.
         /// </summary>
         bool IsChannelSecure { get; }
@@ -128,9 +148,9 @@ namespace Resonance
         int OutgoingQueueCount { get; }
 
         /// <summary>
-        /// Gets the number of current pending requests.
+        /// Gets the number of current pending outgoing messages.
         /// </summary>
-        int PendingRequestsCount { get; }
+        int TotalPendingOutgoingMessages { get; }
 
         /// <summary>
         /// Gets the total of incoming messages.
@@ -143,11 +163,25 @@ namespace Resonance
         int TotalOutgoingMessages { get; }
 
         /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        void RegisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+
+        /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+        void RegisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -178,7 +212,7 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request>(RequestHandlerCallbackDelegate<Request> callback) where Request : class;
+        void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -281,14 +315,28 @@ namespace Resonance
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="config">The configuration.</param>
-        Task SendObjectAsync(Object message, ResonanceRequestConfig config = null);
+        Task SendAsync(ResonanceMessage message, ResonanceMessageConfig config = null);
 
         /// <summary>
         /// Sends the specified object without expecting any response.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="config">The configuration.</param>
-        void SendObject(Object message, ResonanceRequestConfig config = null);
+        void Send(ResonanceMessage message, ResonanceMessageConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        Task SendAsync(Object message, ResonanceMessageConfig config = null);
+
+        /// <summary>
+        /// Sends the specified object without expecting any response.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="config">The configuration.</param>
+        void Send(Object message, ResonanceMessageConfig config = null);
 
         /// <summary>
         /// Sends a request message while expecting multiple response messages with the same token.
