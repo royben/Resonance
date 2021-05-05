@@ -29,5 +29,13 @@ namespace Resonance.Examples.TCP.Server
                 await RemoteClient?.SendResponseAsync(response);
             }
         }
+
+        protected async override void OnMessageReceived(ResonanceMessage message)
+        {
+            if (InSession)
+            {
+                await RemoteClient?.SendAsync(message);
+            }
+        }
     }
 }
