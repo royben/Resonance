@@ -78,7 +78,7 @@
     <Compile Include="Adapters_TST.cs" />
     <Compile Include="Discovery_TST.cs" />
     <Compile Include="Builders.cs" />
-    <Compile Include="RequestHandlers_TST.cs" />
+    <Compile Include="Handlers_TST.cs" />
     <Compile Include="Services_TST.cs" />
     <Compile Include="Transcoding_TST.cs" />
     <Compile Include="HandShake_TST.cs" />

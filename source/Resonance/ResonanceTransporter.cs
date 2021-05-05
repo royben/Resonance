@@ -541,7 +541,14 @@ namespace Resonance
 
             foreach (var method in service.GetType().GetMethods())
             {
-                if (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) || (typeof(Task).IsAssignableFrom(method.ReturnType) && method.ReturnType.GenericTypeArguments.Length == 1 && typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0])))
+                if ( //With Response
+                    (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) || 
+                    (typeof(Task).IsAssignableFrom(method.ReturnType) && 
+                    method.ReturnType.GenericTypeArguments.Length == 1 && 
+                    typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0]))) ||
+
+                    //void Or Task
+                    method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
                 {
                     if (method.GetParameters().Length > 1)
                     {
@@ -566,25 +573,45 @@ namespace Resonance
                 Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", requestType.Name, handlerDescription);
 
                 ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.HasResponse = true;
                 handler.MessageType = requestType;
                 handler.Service = service;
                 handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
+
+                if (method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
                 {
-                    if (typeof(Task).IsAssignableFrom(method.ReturnType))
+                    handler.Callback = (transporter, resonanceRequest) =>
                     {
-                        var task = (Task)method.Invoke(service, new object[] { request });
-                        task.GetAwaiter().GetResult();
-                        var prop = typeof(Task<>).MakeGenericType(method.ReturnType.GenericTypeArguments[0]).GetProperty("Result");
-                        var value = prop.GetValue(task);
-                        return value as IResonanceActionResult;
-                    }
-                    else
+                        if (method.ReturnType == typeof(Task))
+                        {
+                            var task = (Task)method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
+                            task.GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
+                        }
+                    };
+                }
+                else
+                {
+                    handler.HasResponse = true;
+
+                    handler.ResponseCallback = (request) =>
                     {
-                        return method.Invoke(service, new object[] { request });
-                    }
-                };
+                        if (typeof(Task).IsAssignableFrom(method.ReturnType))
+                        {
+                            var task = (Task)method.Invoke(service, new object[] { request });
+                            task.GetAwaiter().GetResult();
+                            var prop = typeof(Task<>).MakeGenericType(method.ReturnType.GenericTypeArguments[0]).GetProperty("Result");
+                            var value = prop.GetValue(task);
+                            return value as IResonanceActionResult;
+                        }
+                        else
+                        {
+                            return method.Invoke(service, new object[] { request });
+                        }
+                    };
+                }
 
                 _messageHandlers.Add(handler);
             }
