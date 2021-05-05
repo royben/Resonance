@@ -10,6 +10,8 @@ using Resonance.Tests.Common;
 using Resonance.Messages;
 using Resonance.Tests.Common.Transcoding;
 using Resonance.Transporters;
+using Resonance.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Resonance.Tests
 {
@@ -17,6 +19,233 @@ namespace Resonance.Tests
     [TestCategory("Transporters")]
     public class Transporters_TST : ResonanceTest
     {
+        [TestMethod]
+        public void Send_Standard_Message()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            bool received = false;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                Assert.IsTrue(t1.TotalPendingOutgoingMessages == 0);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                received = true;
+            };
+
+            t1.Send(new CalculateRequest() { A = 10, B = 15 });
+
+            Thread.Sleep(500);
+
+            Assert.IsTrue(received);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Standard_Message_With_ACK()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+            t2.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+
+            t1.Connect();
+            t2.Connect();
+
+            bool received = false;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                Assert.IsTrue(t1.TotalPendingOutgoingMessages == 1);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                received = true;
+            };
+
+            t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
+
+            Thread.Sleep(200);
+
+            Assert.IsTrue(received);
+            Assert.IsTrue(t1.TotalPendingOutgoingMessages == 0);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Standard_Message_With_Error_ACK_And_Reporting_Throws_Exception()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            t2.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+            t1.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+
+            t1.Connect();
+            t2.Connect();
+
+            bool received = false;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                Assert.IsTrue(t1.TotalPendingOutgoingMessages == 1);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                received = true;
+
+                throw new Exception("Test Error");
+            };
+
+            Assert.ThrowsException<ResonanceResponseException>(() =>
+            {
+                t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
+            }, "Test Error");
+
+            Thread.Sleep(200);
+
+            Assert.IsTrue(received);
+            Assert.IsTrue(t1.TotalPendingOutgoingMessages == 0);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Standard_Message_With_Error_ACK_And_No_Reporting_Does_Not_Throws_Exception()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            bool received = false;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                received = true;
+
+                throw new Exception("Test Error");
+            };
+
+            t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
+
+            Thread.Sleep(200);
+
+            Assert.IsTrue(received);
+            Assert.IsTrue(t1.TotalPendingOutgoingMessages == 0);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Standard_Message_ACK_No_x1000()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            ConcurrentList<int> indeces = new ConcurrentList<int>();
+            int count = 1;
+
+            Exception exception = null;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                //Logger.LogInformation($"Received calc {count}");
+
+                try
+                {
+                    CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                    Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                    indeces.Add(count++);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+            };
+
+            for (int i = 0; i < 1000; i++)
+            {
+                t1.Send(new CalculateRequest() { A = 10, B = 15 });
+                //Logger.LogInformation($"Sending calc {i}");
+            }
+
+            while (count < 1000 && exception == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            if (exception != null)
+            {
+                Logger.LogError(exception, exception.Message);
+            }
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Send_Standard_Message_ACK_Yes_x1000()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            ConcurrentList<int> indeces = new ConcurrentList<int>();
+            int count = 1;
+
+            Exception exception = null;
+
+            t2.MessageReceived += (s, e) =>
+            {
+                try
+                {
+                    CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                    Assert.IsTrue(receivedRequest.A == 10 && receivedRequest.B == 15);
+                    indeces.Add(count++);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+            };
+
+            for (int i = 0; i < 1000; i++)
+            {
+                t1.Send(new CalculateRequest() { A = 10, B = 15 },new ResonanceMessageConfig() { RequireACK = true });
+            }
+
+            while (count < 1000 && exception == null)
+            {
+                Thread.Sleep(10);
+            }
+
+            if (exception != null)
+            {
+                Logger.LogError(exception, exception.Message);
+            }
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
         [TestMethod]
         public void Send_And_Receive_Standard_Request()
         {
@@ -28,9 +257,9 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                Assert.IsTrue(t1.PendingRequestsCount == 1);
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                Assert.IsTrue(t1.TotalPendingOutgoingMessages == 1);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -53,8 +282,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendErrorResponse("Error Message", e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendErrorResponse("Error Message", e.Message.Token);
             };
 
             Assert.ThrowsException<ResonanceResponseException>(() =>
@@ -79,17 +308,17 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                ProgressRequest receivedRequest = e.Request.Message as ProgressRequest;
+                ProgressRequest receivedRequest = e.Message.Object as ProgressRequest;
 
                 Task.Factory.StartNew(() =>
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Message.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
-                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
+                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Message.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
                     });
@@ -140,8 +369,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -167,14 +396,14 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             t1.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t1.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -216,21 +445,21 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                ProgressRequest receivedRequest = e.Request.Message as ProgressRequest;
+                ProgressRequest receivedRequest = e.Message.Object as ProgressRequest;
 
                 Task.Factory.StartNew(() =>
                 {
                     for (int i = 0; i < receivedRequest.Count; i++)
                     {
-                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Request.Token);
+                        t2.SendResponse(new ProgressResponse() { Value = i }, e.Message.Token);
                         Thread.Sleep(receivedRequest.Interval);
                     }
 
-                    t2.SendErrorResponse("Test Exception", e.Request.Token);
+                    t2.SendErrorResponse("Test Exception", e.Message.Token);
 
                     Thread.Sleep(receivedRequest.Interval);
 
-                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Request.Token, new ResonanceResponseConfig()
+                    t2.SendResponse(new ProgressResponse() { Value = receivedRequest.Count }, e.Message.Token, new ResonanceResponseConfig()
                     {
                         Completed = true
                     });
@@ -286,8 +515,8 @@ namespace Resonance.Tests
             t2.RequestReceived += (s, e) =>
             {
                 Thread.Sleep(1000);
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
+                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
@@ -396,8 +625,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateRequest(), e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest; //Should be calculate response...
+                t2.SendResponse(new CalculateRequest(), e.Message.Token);
             };
 
             var request = new CalculateRequest();
@@ -424,8 +653,8 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest; //Should be calculate response...
-                t2.SendResponse(new CalculateResponse(), e.Request.Token);
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest; //Should be calculate response...
+                t2.SendResponse(new CalculateResponse(), e.Message.Token);
             };
 
             var request = new CalculateRequest();
@@ -589,7 +818,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new CalculateResponse(), e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse(), e.Message.Token);
             };
 
             t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
@@ -616,7 +845,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (s, e) =>
             {
-                CalculateRequest receivedRequest = e.Request.Message as CalculateRequest;
+                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
                 Assert.IsTrue(receivedRequest.A == 10);
             };
 
@@ -624,10 +853,10 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 1000; i++)
             {
-                t1.SendObject(new CalculateRequest() { A = 10 });
+                t1.Send(new CalculateRequest() { A = 10 });
             }
 
-            Assert.IsTrue(t1.PendingRequestsCount == 0);
+            Assert.IsTrue(t1.TotalPendingOutgoingMessages == 0);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -664,7 +893,7 @@ namespace Resonance.Tests
             Assert.IsTrue(t1.IsChannelSecure);
             Assert.IsTrue(t2.IsChannelSecure);
 
-            t1.SendObject(new CalculateRequest());
+            t1.Send(new CalculateRequest());
 
             t1.Dispose();
             t2.Dispose();

@@ -6,6 +6,7 @@ using Resonance.Transporters;
 using System;
 using Resonance.Exceptions;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Resonance.Tests
 {
@@ -138,9 +139,92 @@ namespace Resonance.Tests
         {
             public Task<ResonanceActionResult<CalculateResponse>> Calculate(CalculateRequest request)
             {
-                return Task.Factory.StartNew<ResonanceActionResult<CalculateResponse>>(() => 
+                return Task.Factory.StartNew<ResonanceActionResult<CalculateResponse>>(() =>
                 {
                     return new CalculateResponse() { Sum = request.A + request.B };
+                });
+            }
+
+            public void OnTransporterStateChanged(ResonanceComponentState state)
+            {
+
+            }
+        }
+
+        private static bool received = false;
+
+        [TestMethod]
+        public void Service_Handles_Message_Void()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            var testService = new MessageServiceVoid();
+
+            t2.RegisterService(testService);
+
+            t1.Send(new CalculateRequest() { A = 10, B = 15 });
+
+            Thread.Sleep(500);
+
+            Assert.IsTrue(received);
+            received = false;
+
+            t2.UnregisterService(testService);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        private class MessageServiceVoid : IResonanceService
+        {
+            public void Calculate(CalculateRequest request)
+            {
+                received = true;
+            }
+
+            public void OnTransporterStateChanged(ResonanceComponentState state)
+            {
+
+            }
+        }
+
+        [TestMethod]
+        public void Service_Handles_Message_Task()
+        {
+            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            var testService = new MessageServiceTask();
+
+            t2.RegisterService(testService);
+
+            t1.Send(new CalculateRequest() { A = 10, B = 15 });
+
+            Thread.Sleep(500);
+
+            Assert.IsTrue(received);
+            received = false;
+
+            t2.UnregisterService(testService);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        private class MessageServiceTask : IResonanceService
+        {
+            public Task Calculate(CalculateRequest request)
+            {
+                return Task.Factory.StartNew(() =>
+                {
+                    received = true;
                 });
             }
 

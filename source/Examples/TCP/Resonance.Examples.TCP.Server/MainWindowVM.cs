@@ -225,7 +225,7 @@ namespace Resonance.Examples.TCP.Server
         /// </summary>
         /// <param name="transporter">The transporter.</param>
         /// <param name="request">The request.</param>
-        private async void OnClientLeaveSessionRequest(IResonanceTransporter transporter, ResonanceRequest<LeaveSessionRequest> request)
+        private async void OnClientLeaveSessionRequest(IResonanceTransporter transporter, ResonanceMessage<LeaveSessionRequest> request)
         {
             ResonanceTcpClient client = transporter as ResonanceTcpClient;
 
@@ -235,7 +235,7 @@ namespace Resonance.Examples.TCP.Server
                 client.InSession = false;
                 client.RemoteClient.InSession = false;
 
-                await client.RemoteClient.SendObjectAsync(new LeaveSessionRequest()
+                await client.RemoteClient.SendAsync(new LeaveSessionRequest()
                 {
                     Reason = $"{client.RemoteClient.ClientID} has left the session"
                 });
@@ -267,7 +267,7 @@ namespace Resonance.Examples.TCP.Server
                 if (client.InSession)
                 {
                     client.RemoteClient.InSession = false;
-                    await client.RemoteClient.SendObjectAsync(new LeaveSessionRequest()
+                    await client.RemoteClient.SendAsync(new LeaveSessionRequest()
                     {
                         Reason = "The remote client has disconnected"
                     });
@@ -282,7 +282,7 @@ namespace Resonance.Examples.TCP.Server
         {
             _clients.ToList().ForEach(async x =>
             {
-                await x.SendObjectAsync(new NotifyAvailableClientsRequest()
+                await x.SendAsync(new NotifyAvailableClientsRequest()
                 {
                     Clients = _clients.Where(y => y != x).Select(y => y.ClientID).ToList()
                 });

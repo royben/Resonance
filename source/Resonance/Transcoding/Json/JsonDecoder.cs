@@ -37,7 +37,8 @@ namespace Resonance.Transcoding.Json
             using (BinaryReader reader = new BinaryReader(stream))
             {
                 String json = reader.ReadString();
-                return JsonConvert.DeserializeObject(json, Settings);
+                object obj = JsonConvert.DeserializeObject(json, Settings);
+                return obj;
             }
         }
     }

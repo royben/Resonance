@@ -222,7 +222,7 @@ namespace Resonance.Examples.TCP.Client
 
         private async void LeaveSession()
         {
-            await _transporter.SendObjectAsync(new LeaveSessionRequest()
+            await _transporter.SendAsync(new LeaveSessionRequest()
             {
 
             });
@@ -244,12 +244,12 @@ namespace Resonance.Examples.TCP.Client
             return new EchoTextResponse() { Message = request.Message };
         }
 
-        private async void OnJoinSessionRequest(IResonanceTransporter transporter, ResonanceRequest<JoinSessionRequest> request)
+        private async void OnJoinSessionRequest(IResonanceTransporter transporter, ResonanceMessage<JoinSessionRequest> request)
         {
-            if (await ShowQuestionMessage($"Client {request.Message.ClientID} wants to create a session. Confirm?"))
+            if (await ShowQuestionMessage($"Client {request.Object.ClientID} wants to create a session. Confirm?"))
             {
                 InSession = true;
-                SelectedClient = request.Message.ClientID;
+                SelectedClient = request.Object.ClientID;
                 await transporter.SendResponseAsync(new JoinSessionResponse(), request.Token);
             }
             else
@@ -258,19 +258,19 @@ namespace Resonance.Examples.TCP.Client
             }
         }
 
-        private void OnLeaveSessionRequest(IResonanceTransporter transporter, ResonanceRequest<LeaveSessionRequest> request)
+        private void OnLeaveSessionRequest(IResonanceTransporter transporter, ResonanceMessage<LeaveSessionRequest> request)
         {
-            Logger.LogWarning($"Session lost: {request.Message.Reason}");
+            Logger.LogWarning($"Session lost: {request.Object.Reason}");
             InSession = false;
         }
 
-        private void OnNotifyAvailableClientsRequest(IResonanceTransporter transporter, ResonanceRequest<NotifyAvailableClientsRequest> request)
+        private void OnNotifyAvailableClientsRequest(IResonanceTransporter transporter, ResonanceMessage<NotifyAvailableClientsRequest> request)
         {
             InvokeUI(() =>
             {
                 ConnectedClients.Clear();
 
-                foreach (var client in request.Message.Clients)
+                foreach (var client in request.Object.Clients)
                 {
                     ConnectedClients.Add(client);
                 }

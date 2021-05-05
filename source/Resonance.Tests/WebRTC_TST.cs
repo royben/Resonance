@@ -77,7 +77,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Message.Token);
             };
 
             t1.Connect();
@@ -116,7 +116,7 @@ namespace Resonance.Tests
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
-                adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
+                adapter1 = new WebRTCAdapter(signal1, request.Object, request.Token);
                 await adapter1.ConnectAsync();
             });
 
@@ -137,7 +137,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Request.Token);
+                t2.SendResponseAsync(new CalculateResponse() { Sum = 15 }, e.Message.Token);
             };
 
             t1.Connect();
@@ -176,7 +176,7 @@ namespace Resonance.Tests
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
-                adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
+                adapter1 = new WebRTCAdapter(signal1, request.Object, request.Token);
                 await adapter1.ConnectAsync();
             });
 
@@ -197,7 +197,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Message.Object as LargeMessageRequest).Data }, e.Message.Token);
             };
 
             t1.Connect();
@@ -239,7 +239,7 @@ namespace Resonance.Tests
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
-                adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
+                adapter1 = new WebRTCAdapter(signal1, request.Object, request.Token);
                 await adapter1.ConnectAsync();
             });
 
@@ -260,7 +260,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Message.Object as LargeMessageRequest).Data }, e.Message.Token);
             };
 
             t1.Connect();
@@ -305,7 +305,7 @@ namespace Resonance.Tests
 
             signal1.RegisterRequestHandler<WebRTCOfferRequest>(async (_, request) =>
             {
-                adapter1 = new WebRTCAdapter(signal1, request.Message, request.Token);
+                adapter1 = new WebRTCAdapter(signal1, request.Object, request.Token);
                 await adapter1.ConnectAsync();
             });
 
@@ -326,7 +326,7 @@ namespace Resonance.Tests
 
             t2.RequestReceived += (x, e) =>
             {
-                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Request.Message as LargeMessageRequest).Data }, e.Request.Token);
+                t2.SendResponseAsync(new LargeMessageResponse() { Data = (e.Message.Object as LargeMessageRequest).Data }, e.Message.Token);
             };
 
             t1.Connect();

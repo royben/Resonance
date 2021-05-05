@@ -14,7 +14,7 @@ namespace Resonance.Examples.TCP.Server
 
         public ResonanceTcpClient RemoteClient { get; set; }
 
-        protected async override void OnRequestReceived(ResonanceRequest request)
+        protected async override void OnRequestReceived(ResonanceMessage request)
         {
             if (InSession)
             {
@@ -22,11 +22,19 @@ namespace Resonance.Examples.TCP.Server
             }
         }
 
-        protected async override void OnResponseReceived(ResonanceResponse response)
+        protected async override void OnResponseReceived(ResonanceMessage response)
         {
             if (InSession)
             {
                 await RemoteClient?.SendResponseAsync(response);
+            }
+        }
+
+        protected async override void OnMessageReceived(ResonanceMessage message)
+        {
+            if (InSession)
+            {
+                await RemoteClient?.SendAsync(message);
             }
         }
     }

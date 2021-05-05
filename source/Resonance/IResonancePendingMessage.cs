@@ -7,11 +7,11 @@ namespace Resonance
     /// <summary>
     /// Represents a registration of an awaiting request.
     /// </summary>
-    public interface IResonancePendingRequest
+    public interface IResonancePendingMessage
     {
         /// <summary>
-        /// Gets or sets the Resonance request.
+        /// Gets or sets the Resonance message.
         /// </summary>
-        ResonanceRequest Request { get; set; }
+        ResonanceMessage Message { get; set; }
     }
 }

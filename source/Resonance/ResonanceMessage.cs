@@ -6,36 +6,36 @@ using System.Text;
 namespace Resonance
 {
     /// <summary>
-    /// Represents a resonance request.
+    /// Represents a resonance message.
     /// </summary>
     /// <seealso cref="Resonance.IResonanceMessage" />
-    public class ResonanceRequest : IResonanceMessage
+    public class ResonanceMessage : IResonanceMessage
     {
         /// <summary>
-        /// Gets or sets the request token.
+        /// Gets or sets the message token.
         /// </summary>
         public String Token { get; set; }
 
         /// <summary>
-        /// Gets or sets the request message.
+        /// Gets or sets the message object.
         /// </summary>
-        public object Message { get; set; }
+        public object Object { get; set; }
 
-        private String _messageTypeName;
+        private String _objectTypeName;
         /// <summary>
-        /// Gets the name of the message type.
+        /// Gets the name of the message object type.
         /// </summary>
         [JsonIgnore]
-        internal String MessageTypeName
+        internal String ObjectTypeName
         {
             get 
             {
-                if (_messageTypeName == null)
+                if (_objectTypeName == null)
                 {
-                    _messageTypeName = Message?.GetType().Name;
+                    _objectTypeName = Object?.GetType().Name;
                 }
 
-                return _messageTypeName; 
+                return _objectTypeName; 
             }
         }
 
@@ -44,27 +44,27 @@ namespace Resonance
         /// </summary>
         /// <param name="messageType">Type of the message.</param>
         /// <returns></returns>
-        internal static ResonanceRequest CreateGenericRequest(Type messageType)
+        internal static ResonanceMessage CreateGenericMessage(Type messageType)
         {
             Type[] typeArgs = { messageType };
-            var genericType = typeof(ResonanceRequest<>).MakeGenericType(typeArgs);
-            return Activator.CreateInstance(genericType) as ResonanceRequest;
+            var genericType = typeof(ResonanceMessage<>).MakeGenericType(typeArgs);
+            return Activator.CreateInstance(genericType) as ResonanceMessage;
         }
     }
 
     /// <summary>
-    /// Represents a resonance request.
+    /// Represents a resonance message.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <seealso cref="Resonance.IResonanceMessage" />
-    public class ResonanceRequest<T> : ResonanceRequest
+    public class ResonanceMessage<T> : ResonanceMessage
     {
         /// <summary>
-        /// Gets or sets the request message.
+        /// Gets or sets the message object.
         /// </summary>
-        public new T Message
+        public new T Object
         {
-            get { return (T)base.Message; }
+            get { return (T)base.Object; }
         }
     }
 }
