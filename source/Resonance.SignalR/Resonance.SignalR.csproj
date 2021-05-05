@@ -19,6 +19,7 @@ Resonance is a high-performance real-time C# communication library with built-in
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
     <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Debug\Resonance.SignalR.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
