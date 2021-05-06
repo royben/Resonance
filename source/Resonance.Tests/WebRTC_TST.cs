@@ -34,6 +34,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Basic_Test()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -95,6 +97,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Create_Adapter_From_Offer()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -155,6 +159,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Message_Larger_Than_16_KB_Splits()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -218,6 +224,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Stress_Test_With_Large_Data_Volume()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -284,6 +292,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Stress_Test_With_Small_Data_Volume()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -350,6 +360,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Connection_Timeout_Throws_Exception()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal1 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
@@ -385,6 +397,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Connection_No_Response_Throws_Exception()
         {
+            if (IsRunningOnAzurePipelines) return;
+
             IResonanceTransporter signal2 = ResonanceTransporter.Builder
                 .Create()
                 .WithInMemoryAdapter()
