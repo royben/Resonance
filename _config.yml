@@ -16,7 +16,7 @@ params:
   header_background_color_secondary: "#155799"
 
   # Text colors
-  section_headings_color: "#ff0000"
+  section_headings_color: "#FF0000"
   body_text_color: "#606c71"
   body_link_color: "#1e6bb8"
   blockquote_text_color: "#819198"
