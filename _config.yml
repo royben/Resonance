@@ -12,7 +12,7 @@ params:
 
   # Header colors
   header_heading_color: "#fff"
-  header_background_color: "#159957"
+  header_background_color: "#ff0000"
   header_background_color_secondary: "#155799"
 
   # Text colors
