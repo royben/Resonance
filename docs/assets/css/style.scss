@@ -1,8 +1,10 @@
 ---
 ---
 
-@import "";
+@import "{{ site.theme }}";
 
-h1{
-    color: red;
+.main-content {
+    h1 {
+        color: #ff0000;
+    }
 }
