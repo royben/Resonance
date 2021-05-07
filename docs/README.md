@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png?raw=true" />    
+  <img src="https://github.com/royben/Resonance/blob/pages/visuals/icon.png?raw=true" />    
 </p>
 
 [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=3&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/3) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
