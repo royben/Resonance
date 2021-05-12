@@ -50,7 +50,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.TCP.Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.TCP.Client", "Examples\TCP\Resonance.Examples.TCP.Client\Resonance.Examples.TCP.Client.csproj", "{326A2B29-3FC5-4AD7-95E3-A32E9EF9C6C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.LZ4", "Resonance.LZ4\Resonance.LZ4.csproj", "{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.LZ4", "Resonance.LZ4\Resonance.LZ4.csproj", "{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedMemory", "SharedMemory", "{C5D744BC-87A8-4E42-9495-C964796AE3B9}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\SharedMemory\README.md = Examples\SharedMemory\README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Example.SharedMemory.Client", "Examples\SharedMemory\Resonance.Example.SharedMemory.Client\Resonance.Example.SharedMemory.Client.csproj", "{3B58ABB5-0E59-4F62-AFA5-967020EC693F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,6 +154,12 @@ Global
 		{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.AzureBuild|Any CPU.ActiveCfg = AzureBuild|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.AzureBuild|Any CPU.Build.0 = AzureBuild|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -169,6 +182,8 @@ Global
 		{14F2742B-65E0-4DCA-B06A-B2E750E14574} = {AF8F1FEE-A931-45FD-874D-F16724178E7B}
 		{326A2B29-3FC5-4AD7-95E3-A32E9EF9C6C8} = {AF8F1FEE-A931-45FD-874D-F16724178E7B}
 		{4862D1A2-55AB-4DE4-BC8B-A05EE7FC6E43} = {E83CA78A-76E5-4DAA-9FE6-39FE93A7A1C9}
+		{C5D744BC-87A8-4E42-9495-C964796AE3B9} = {85155BCA-4E8B-4697-932E-B6B6EC41F2FA}
+		{3B58ABB5-0E59-4F62-AFA5-967020EC693F} = {C5D744BC-87A8-4E42-9495-C964796AE3B9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {742C7CB3-AF8C-42F7-A6DA-A1E67D1D7498}

@@ -81,11 +81,17 @@ namespace Resonance.Adapters.SharedMemory
 
         protected override Task OnDisconnect()
         {
-            _accessor.Dispose();
-            _mmf.Dispose();
+            _accessor?.Dispose();
+            _mmf?.Dispose();
+
             State = ResonanceComponentState.Disconnected;
-            _thisSemaphore.Set();
-            _thisSemaphore.Dispose();
+
+            if (_thisSemaphore != null)
+            {
+                _thisSemaphore.Set();
+                _thisSemaphore.Dispose();
+            }
+
             return Task.FromResult(true);
         }
 
