@@ -104,7 +104,7 @@ namespace Resonance.SignalR.Clients
             return Task.Factory.StartNew(() =>
             {
                 IsStarted = false;
-                _connection?.Stop();
+                _connection?.Stop(new TimeSpan(1000));
             });
         }
 

@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Resonance.SignalR\Resonance.SignalR.csproj" />
+    <ProjectReference Include="..\..\..\Resonance\Resonance.csproj" />
+  </ItemGroup>
+
+</Project>

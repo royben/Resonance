@@ -17,7 +17,7 @@ namespace Resonance.SignalR.Services
     /// <typeparam name="TResonanceServiceInformation">The type of the resonance service information.</typeparam>
     /// <typeparam name="TAdapterInformation">The type of the adapter information.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : IDisposable where TResonanceServiceInformation : IResonanceServiceInformation
+    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : IDisposable, IResonanceAsyncDisposable where TResonanceServiceInformation : IResonanceServiceInformation
     {
         private ISignalRClient _client;
 
@@ -42,6 +42,16 @@ namespace Resonance.SignalR.Services
         public SignalRMode Mode { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether this service is registered.
+        /// </summary>
+        public bool IsRegistered { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this service is disposed.
+        /// </summary>
+        public bool IsDisposed { get; private set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ResonanceRegisteredService{TCredentials, TResonanceServiceInformation, TAdapterInformation}"/> class.
         /// </summary>
         /// <param name="credentials">The credentials.</param>
@@ -50,6 +60,7 @@ namespace Resonance.SignalR.Services
         /// <param name="signalRClient">The signal r client.</param>
         internal ResonanceRegisteredService(TCredentials credentials, TResonanceServiceInformation serviceInformation, SignalRMode mode, ISignalRClient signalRClient)
         {
+            IsRegistered = true;
             Mode = mode;
             Credentials = credentials;
             ServiceInformation = serviceInformation;
@@ -57,11 +68,21 @@ namespace Resonance.SignalR.Services
             _client.On<String, TAdapterInformation>(ResonanceHubMethods.ConnectionRequest, OnConnectionRequest);
         }
 
+        /// <summary>
+        /// Called when a connection has been accepted.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <returns></returns>
         protected virtual SignalRAdapter<TCredentials> AcceptConnection(string sessionId)
         {
             return SignalRAdapter<TCredentials>.AcceptConnection(Credentials, _client.Url, ServiceInformation.ServiceId, sessionId, Mode);
         }
 
+        /// <summary>
+        /// Raises the connection request event.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
+        /// <param name="adapterInformation">The adapter information.</param>
         protected virtual void OnConnectionRequest(string sessionId, TAdapterInformation adapterInformation)
         {
             ConnectionRequest?.Invoke(this, new ConnectionRequestEventArgs<TCredentials, TAdapterInformation>(AcceptConnection, DeclineConnection)
@@ -71,6 +92,10 @@ namespace Resonance.SignalR.Services
             });
         }
 
+        /// <summary>
+        /// Called when a connection has been declined.
+        /// </summary>
+        /// <param name="sessionId">The session identifier.</param>
         protected virtual void DeclineConnection(string sessionId)
         {
             _client.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
@@ -81,10 +106,67 @@ namespace Resonance.SignalR.Services
         /// </summary>
         public void Dispose()
         {
-            _client.Invoke(ResonanceHubMethods.UnregisterService).GetAwaiter().GetResult();
-            _client?.Stop();
-            _client?.Dispose();
-            _client = null;
+            DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Unregisters the service.
+        /// </summary>
+        public async Task UnregisterAsync()
+        {
+            if (IsRegistered && !IsDisposed)
+            {
+                await _client?.Invoke(ResonanceHubMethods.UnregisterService);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters the service.
+        /// </summary>
+        public void Unregister()
+        {
+            if (IsRegistered && !IsDisposed)
+            {
+                UnregisterAsync().GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>
+        /// Registers the service.
+        /// </summary>
+        public async Task RegisterAsync()
+        {
+            if (!IsRegistered && !IsDisposed)
+            {
+                await _client?.Invoke(ResonanceHubMethods.RegisterService, ServiceInformation);
+            }
+        }
+
+        /// <summary>
+        /// Registers the service.
+        /// </summary>
+        public void Register()
+        {
+            if (!IsRegistered && !IsDisposed)
+            {
+                RegisterAsync().GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>
+        /// Disposes component resources asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        public async Task DisposeAsync()
+        {
+            if (!IsDisposed)
+            {
+                await UnregisterAsync();
+                IsDisposed = true;
+                await _client?.Stop();
+                await _client?.DisposeAsync();
+                _client = null;
+            }
         }
     }
 }

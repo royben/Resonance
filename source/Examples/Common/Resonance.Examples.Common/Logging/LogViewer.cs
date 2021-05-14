@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog.Events;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace Resonance.Examples.Common.Logging
     public class LogViewer : Control
     {
         private DataGrid _dataGrid;
+        private ComboBox _comboLogLevel;
 
         public ObservableCollection<LogEventVM> Logs
         {
@@ -54,6 +56,22 @@ namespace Resonance.Examples.Common.Logging
         {
             base.OnApplyTemplate();
             _dataGrid = GetTemplateChild("PART_Grid") as DataGrid;
+            _comboLogLevel = GetTemplateChild("PART_ComboLevel") as ComboBox;
+            _comboLogLevel.Items.Clear();
+            _comboLogLevel.SelectionChanged -= _comboLogLevel_SelectionChanged;
+            _comboLogLevel.SelectionChanged += _comboLogLevel_SelectionChanged;
+
+            foreach (var value in Enum.GetValues(typeof(LogEventLevel)).Cast<LogEventLevel>())
+            {
+                _comboLogLevel.Items.Add(value);
+            }
+
+            _comboLogLevel.SelectedItem = LoggingConfiguration.LoggingLevelSwitch.MinimumLevel;
+        }
+
+        private void _comboLogLevel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            LoggingConfiguration.LoggingLevelSwitch.MinimumLevel = (LogEventLevel)_comboLogLevel.SelectedItem;
         }
 
         private void LoggingConfiguration_LogReceived(object sender, LogReceivedEventArgs e)

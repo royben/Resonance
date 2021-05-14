@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.SignalR.Client;
+using Microsoft.Extensions.Logging;
 using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
@@ -13,7 +14,7 @@ namespace Resonance.SignalR.Services
     /// <summary>
     /// Represents a Resonance SignalR service factory used for querying and registering services.
     /// </summary>
-    public class ResonanceServiceFactory
+    public class ResonanceServiceFactory : ResonanceObject
     {
         private static Lazy<ResonanceServiceFactory> _default = new Lazy<ResonanceServiceFactory>(() => new ResonanceServiceFactory());
 
@@ -81,6 +82,8 @@ namespace Resonance.SignalR.Services
         /// <returns></returns>
         public async Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterServiceAsync<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
         {
+            Logger.LogDebug($"Registering service {{@ServiceInformation}}...", serviceInformation);
+
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
             await client.Start();

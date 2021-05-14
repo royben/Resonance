@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Resonance
 {
-    public class ResonanceDisconnectRequest
+    public class ResonanceDisconnectNotification
     {
 
     }

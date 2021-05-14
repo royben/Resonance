@@ -5,6 +5,7 @@ using Resonance.SignalR.Hubs;
 using Resonance.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -172,21 +173,26 @@ namespace Resonance.Adapters.SignalR
 
                     _client.On(ResonanceHubMethods.Disconnected, () =>
                     {
-                            //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
-                            //Maybe just raise an event..
-                        });
+                        //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
+                        //Maybe just raise an event..
+                    });
 
-                    Logger.LogInformation("Authenticating with the remote hub...");
+                    _client.On(ResonanceHubMethods.ServiceDown, () =>
+                    {
+                        OnFailed(new ServiceDownException());
+                    });
+
+                    Logger.LogInformation("Authenticating with the remote hub {HubUrl}...", _client.Url);
                     _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
 
                     if (Role == SignalRAdapterRole.Connect)
                     {
-                        Logger.LogInformation("Connecting to service ({ServiceId})...");
+                        Logger.LogInformation("Connecting to service {ServiceId}...", ServiceId);
                         SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                     }
                     else
                     {
-                        Logger.LogInformation($"Accepting connection ({SessionId})...");
+                        Logger.LogInformation("Accepting connection {SessionId}...", SessionId);
                         _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
 
                         if (!completed)
@@ -221,34 +227,31 @@ namespace Resonance.Adapters.SignalR
 
         protected override Task OnDisconnect()
         {
-            return OnDisconnect(true);
+            return OnDisconnect(!IsFailing);
         }
 
-        private Task OnDisconnect(bool notify)
+        private async Task OnDisconnect(bool notify)
         {
-            return Task.Factory.StartNew(() =>
+            try
             {
-                try
+                if (notify)
                 {
-                    if (notify)
-                    {
-                        _client.Invoke(ResonanceHubMethods.Disconnect).GetAwaiter().GetResult();
-                    }
-                    _client.Stop();
-                    _client.Dispose();
+                    await _client.Invoke(ResonanceHubMethods.Disconnect);
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, $"Error occurred while disconnecting.");
-                }
+                await _client.Stop();
+                await _client.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error occurred while disconnecting.");
+            }
 
-                Logger.LogInformation("Disconnected.");
+            Logger.LogInformation("Disconnected.");
 
-                if (!notify)
-                {
-                    OnFailed(new RemoteAdapterDisconnectedException(), "The remote SignalR adapter has disconnected.");
-                }
-            });
+            if (!notify && !IsFailing)
+            {
+                OnFailed(new RemoteAdapterDisconnectedException(), "The remote SignalR adapter has disconnected.");
+            }
         }
 
         protected override void OnWrite(byte[] data)
@@ -264,7 +267,7 @@ namespace Resonance.Adapters.SignalR
         /// </returns>
         public override string ToString()
         {
-            return $"{base.ToString()} ({Url})";
+            return $"SignalRAdapter {ComponentCount}";
         }
     }
 }
