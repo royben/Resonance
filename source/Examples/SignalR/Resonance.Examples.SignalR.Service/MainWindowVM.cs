@@ -152,12 +152,6 @@ namespace Resonance.Examples.SignalR.Service
             ResonanceSignalRClient newClient = new ResonanceSignalRClient();
             newClient.RemoteAdapterInformation = e.RemoteAdapterInformation;
 
-            //Enable keep alive so we are aware of clients losing contact.
-            newClient.KeepAliveConfiguration.Enabled = true;
-
-            //Configure the transporter fail when the keep alive determines no connection.
-            newClient.KeepAliveConfiguration.FailTransporterOnTimeout = true;
-
             newClient.StateChanged += OnClientStateChanged;
 
             var adapter = e.Accept();

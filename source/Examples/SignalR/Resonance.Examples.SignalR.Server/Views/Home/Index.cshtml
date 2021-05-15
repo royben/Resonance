@@ -9,16 +9,18 @@
         body {
             margin: 0;
             padding: 0;
+            color: #606060;
         }
 
         #title {
-            background-color: #c5c5c5;
+            background-color: #673AB7;
+            color: white;
             padding: 50px;
             margin: 0;
         }
 
         * {
-            font-family: 'Segoe UI';
+            font-family: 'Roboto';
         }
 
     </style>
@@ -37,7 +39,7 @@
         <h1 id="title">Resonance SignalR Server</h1>
     </div>
     <div id="tableContainer">
-        <table id="example" class="display" style="width:100%">
+        <table id="logsTable" class="display" style="width:100%">
             <thead>
                 <tr>
                     <th width="100">Level</th>
@@ -53,7 +55,7 @@
     </div>
 
     <script type="text/javascript">
-        var table = $('#example').DataTable(
+        var table = $('#logsTable').DataTable(
             {
                 "scrollY": "500px",
                 "scrollCollapse": true,
@@ -81,7 +83,7 @@
 
         connection.start().done(function () {
             // Wire up Send button to call NewContosoChatMessage on the server.
-            console.log("SignalR Connected!");
+            console.log("SignalR Started!");
         });
     </script>
 </body>

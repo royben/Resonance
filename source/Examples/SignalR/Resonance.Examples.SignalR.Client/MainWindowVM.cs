@@ -98,7 +98,7 @@ namespace Resonance.Examples.SignalR.Client
 
             ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID) && SelectedService != null);
             DisconnectCommand = new RelayCommand(Disconnect, () => IsConnected);
-            ResetDiscoveryCommand = new RelayCommand(ResetDiscovery, () => !IsConnected);
+            ResetDiscoveryCommand = new RelayCommand(ResetDiscovery, () => !IsConnected && IsFree);
 
             SendMessageCommand = new RelayCommand(SendMessage, () => IsConnected);
             RegisteredServices = new ObservableCollection<DemoServiceInformation>();
@@ -119,8 +119,21 @@ namespace Resonance.Examples.SignalR.Client
 
             _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
             _discoveryClient.ServiceLost += OnServiceLost;
+            _discoveryClient.Disconnected += OnDiscoveryError;
 
-            await _discoveryClient.StartAsync();
+            try
+            {
+                IsFree = false;
+                await _discoveryClient.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error starting discovery service. Make sure the remote SignalR Hub is running.");
+            }
+            finally
+            {
+                IsFree = true;
+            }
         }
 
         private async void ResetDiscovery()
@@ -129,7 +142,20 @@ namespace Resonance.Examples.SignalR.Client
             RegisteredServices.Clear();
             _discoveryClient.HubUrl = HubUrl;
             _discoveryClient.Credentials = new DemoCredentials() { Name = ClientID };
-            await _discoveryClient.StartAsync();
+            
+            try
+            {
+                IsFree = false;
+                await _discoveryClient.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error starting discovery service. Make sure the remote SignalR Hub is running.");
+            }
+            finally
+            {
+                IsFree = true;
+            }
         }
 
         private void OnServiceLost(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
@@ -146,6 +172,11 @@ namespace Resonance.Examples.SignalR.Client
             {
                 RegisteredServices.Add(e.DiscoveredService.DiscoveryInfo);
             });
+        }
+
+        private void OnDiscoveryError(object sender, ResonanceExceptionEventArgs e)
+        {
+            Logger.LogError(e.Exception, $"Discovery stopped due to {e.Exception.Message}");
         }
 
         private async void Connect()
