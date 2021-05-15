@@ -34,7 +34,10 @@
                     </Grid.RowDefinitions>
 
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top">Registered Services:</TextBlock>
+                        <DockPanel DockPanel.Dock="Top">
+                            <Button DockPanel.Dock="Right" Padding="5 0" Height="20" Command="{Binding ResetDiscoveryCommand}">Reset</Button>
+                            <TextBlock>Registered Services:</TextBlock>
+                        </DockPanel>
                         <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="33">
                             <Button Margin="0 0 5 0" Command="{Binding DisconnectCommand}">DISCONNECT</Button>
                             <Button Margin="5 0 0 0" Command="{Binding ConnectCommand}">CONNECT</Button>

@@ -18,7 +18,7 @@ namespace Resonance.Tests.SignalRCore.WebAPI.Hub
 
         }
 
-        protected override void Login(TestCredentials credentials, string connectionId)
+        protected override void Login(TestCredentials credentials, string connectionId, bool isDiscoveryClient)
         {
             if (credentials.Name != "Test")
             {
@@ -39,6 +39,11 @@ namespace Resonance.Tests.SignalRCore.WebAPI.Hub
         protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, TestCredentials credentials)
         {
             return services.ToList();
+        }
+
+        protected override TestServiceInformation FilterServiceInformation(TestServiceInformation service, TestCredentials credentials)
+        {
+            return service;
         }
 
         protected override TestAdapterInformation GetAdapterInformation(string connectionId)

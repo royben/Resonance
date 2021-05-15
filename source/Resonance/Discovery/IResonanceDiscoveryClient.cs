@@ -9,10 +9,9 @@ namespace Resonance.Discovery
     /// Represents a Resonance discovery client capable of detecting and fetching information aboute a remote service.
     /// </summary>
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>
-    /// <typeparam name="TDecoder">The type of the decoder.</typeparam>
     /// <typeparam name="TDiscoveredService">The type of the discovered service.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDecoder, TDiscoveredService> : IResonanceComponent, IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new() where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
+    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDiscoveredService> : IResonanceComponent, IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class, new() where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
     {
         /// <summary>
         /// Occurs when a matching service has been discovered.
@@ -25,11 +24,6 @@ namespace Resonance.Discovery
         event EventHandler<ResonanceDiscoveredServiceEventArgs<TDiscoveredService, TDiscoveryInfo>> ServiceLost;
 
         /// <summary>
-        /// Gets the decoder used to decode the service information message.
-        /// </summary>
-        TDecoder Decoder { get; }
-
-        /// <summary>
         /// Gets a value indicating whether this client has started.
         /// </summary>
         bool IsStarted { get; }
@@ -37,13 +31,22 @@ namespace Resonance.Discovery
         /// <summary>
         /// Start discovering.
         /// </summary>
-        Task Start();
+        Task StartAsync();
 
+        /// <summary>
+        /// Start discovering.
+        /// </summary>
+        void Start();
 
         /// <summary>
         /// Stop discovering.
         /// </summary>
-        Task Stop();
+        Task StopAsync();
+
+        /// <summary>
+        /// Start discovering.
+        /// </summary>
+        void Stop();
 
         /// <summary>
         /// Asynchronous method for collecting discovered services within the given duration.

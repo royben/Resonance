@@ -5,6 +5,7 @@ using Resonance.Examples.Common.Messages;
 using Resonance.Examples.SignalR.Common;
 using Resonance.Servers.Tcp;
 using Resonance.SignalR;
+using Resonance.SignalR.Discovery;
 using Resonance.SignalR.Services;
 using Resonance.Transcoding.Json;
 using System;
@@ -20,7 +21,7 @@ namespace Resonance.Examples.SignalR.Client
     public class MainWindowVM : ResonanceViewModel
     {
         private IResonanceTransporter _transporter;
-        private DispatcherTimer _discoverTimer;
+        private ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials> _discoveryClient;
 
         private bool _isConnected;
         /// <summary>
@@ -83,6 +84,11 @@ namespace Resonance.Examples.SignalR.Client
         public RelayCommand SendMessageCommand { get; set; }
 
         /// <summary>
+        /// Gets or sets the reset discovery command.
+        /// </summary>
+        public RelayCommand ResetDiscoveryCommand { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MainWindowVM"/> class.
         /// </summary>
         public MainWindowVM()
@@ -92,61 +98,54 @@ namespace Resonance.Examples.SignalR.Client
 
             ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID) && SelectedService != null);
             DisconnectCommand = new RelayCommand(Disconnect, () => IsConnected);
+            ResetDiscoveryCommand = new RelayCommand(ResetDiscovery, () => !IsConnected);
 
             SendMessageCommand = new RelayCommand(SendMessage, () => IsConnected);
             RegisteredServices = new ObservableCollection<DemoServiceInformation>();
-
-            _discoverTimer = new DispatcherTimer();
-            _discoverTimer.Interval = TimeSpan.FromSeconds(5);
-            _discoverTimer.Tick += _discoverTimer_Tick;
         }
 
         protected override void OnApplicationReady()
         {
             base.OnApplicationReady();
-            _discoverTimer.Start();
+            StartDiscovery();
         }
 
-        private async void _discoverTimer_Tick(object sender, EventArgs e)
+        private async void StartDiscovery()
         {
-            if (ClientID != null)
+            _discoveryClient = new ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials>(
+                HubUrl,
+                SignalRMode.Legacy,
+                new DemoCredentials() { Name = ClientID });
+
+            _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
+            _discoveryClient.ServiceLost += OnServiceLost;
+
+            await _discoveryClient.StartAsync();
+        }
+
+        private async void ResetDiscovery()
+        {
+            await _discoveryClient.StopAsync();
+            RegisteredServices.Clear();
+            _discoveryClient.HubUrl = HubUrl;
+            _discoveryClient.Credentials = new DemoCredentials() { Name = ClientID };
+            await _discoveryClient.StartAsync();
+        }
+
+        private void OnServiceLost(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
+        {
+            InvokeUI(() =>
             {
-                try
-                {
-                    var services = await ResonanceServiceFactory.Default.GetAvailableServicesAsync<
-                        DemoCredentials,
-                        DemoServiceInformation>(
-                        new DemoCredentials() { Name = ClientID },
-                        HubUrl,
-                        SignalRMode.Legacy);
+                RegisteredServices.Remove(e.DiscoveredService.DiscoveryInfo);
+            });
+        }
 
-                    for (int i = 0; i < RegisteredServices.Count; i++)
-                    {
-                        var existingService = RegisteredServices[i];
-
-                        if (!services.Exists(x => x.ServiceId == existingService.ServiceId))
-                        {
-                            RegisteredServices.Remove(existingService);
-                            i--;
-                        }
-                    }
-
-                    foreach (var service in services)
-                    {
-                        var existingService = RegisteredServices.FirstOrDefault(x => x.ServiceId == service.ServiceId);
-
-                        if (existingService == null)
-                        {
-                            RegisteredServices.Add(service);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Error trying to get the available registered services...");
-                    RegisteredServices.Clear();
-                }
-            }
+        private void OnServiceDiscovered(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
+        {
+            InvokeUI(() =>
+            {
+                RegisteredServices.Add(e.DiscoveredService.DiscoveryInfo);
+            });
         }
 
         private async void Connect()
@@ -170,7 +169,7 @@ namespace Resonance.Examples.SignalR.Client
 
                     await _transporter.ConnectAsync();
 
-                    _discoverTimer.Stop();
+                    await _discoveryClient.StopAsync();
 
                     IsConnected = true;
                 }
@@ -205,17 +204,20 @@ namespace Resonance.Examples.SignalR.Client
             var response = await _transporter.SendRequestAsync<EchoTextRequest, EchoTextResponse>(new EchoTextRequest()
             {
                 Message = Message
-            },new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
+            }, new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
         }
 
         private void ClearConnection()
         {
             IsConnected = false;
 
-            InvokeUI(() =>
+            InvokeUI(async () =>
             {
                 RegisteredServices.Clear();
-                _discoverTimer?.Start();
+
+                _discoveryClient.Credentials = new DemoCredentials() { Name = ClientID };
+                _discoveryClient.HubUrl = HubUrl;
+                await _discoveryClient.StartAsync();
             });
         }
     }

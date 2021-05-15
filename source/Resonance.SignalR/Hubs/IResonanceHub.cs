@@ -35,6 +35,12 @@ namespace Resonance.SignalR.Hubs
         void UnregisterService();
 
         /// <summary>
+        /// Registers a discovery client.
+        /// </summary>
+        /// <param name="credentials">The credentials.</param>
+        void RegisterDiscoveryClient(TCredentials credentials);
+
+        /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
         /// <param name="credentials">Credentials used to authenticate the requesting user.</param>

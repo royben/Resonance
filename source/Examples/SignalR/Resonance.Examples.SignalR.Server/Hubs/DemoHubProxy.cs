@@ -28,12 +28,17 @@ namespace Resonance.Examples.SignalR.Server.Hubs
             return services.ToList();
         }
 
+        protected override DemoServiceInformation FilterServiceInformation(DemoServiceInformation service, DemoCredentials credentials)
+        {
+            return service;
+        }
+
         protected override DemoAdapterInformation GetAdapterInformation(string connectionId)
         {
             return _loggedInClients[connectionId].AdapterInformation;
         }
 
-        protected override void Login(DemoCredentials credentials, string connectionId)
+        protected override void Login(DemoCredentials credentials, string connectionId, bool isDiscoveryClient)
         {
             if (!_loggedInClients.ContainsKey(connectionId))
             {
@@ -44,7 +49,10 @@ namespace Resonance.Examples.SignalR.Server.Hubs
                     AdapterInformation = new DemoAdapterInformation() { Name = credentials.Name },
                 };
 
-                Logger.LogInformation($"{credentials.Name} is now logged in.");
+                if (!isDiscoveryClient)
+                {
+                    Logger.LogInformation($"{credentials.Name} is now logged in.");
+                }
             }
         }
 
