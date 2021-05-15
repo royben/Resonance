@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Resonance.Examples.Common.Logging
 {
-    public class LogEventVM : ResonanceViewModel
+    public class LogEventVM
     {
         public String SourceContext { get; set; }
 

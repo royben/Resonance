@@ -22,6 +22,21 @@ namespace Resonance.SignalR.Services
         private ISignalRClient _client;
 
         /// <summary>
+        /// Occurs when an error has occurred on the internal SignalR client.
+        /// </summary>
+        public event EventHandler<ResonanceExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Occurs when the internal SignalR client is trying to reconnect after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnecting;
+
+        /// <summary>
+        /// Occurs when the internal SignalR client has successfully reconnected after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnected;
+
+        /// <summary>
         /// Occurs when a remote adapter has requested a connection.
         /// </summary>
         public event EventHandler<ConnectionRequestEventArgs<TCredentials, TAdapterInformation>> ConnectionRequest;
@@ -65,7 +80,55 @@ namespace Resonance.SignalR.Services
             Credentials = credentials;
             ServiceInformation = serviceInformation;
             _client = signalRClient;
+            _client.Reconnecting -= OnReconnecting;
+            _client.Reconnecting += OnReconnecting;
+            _client.Reconnected -= OnReconnected;
+            _client.Reconnected += OnReconnected;
+            _client.Error -= OnError;
+            _client.Error += OnError;
             _client.On<String, TAdapterInformation>(ResonanceHubMethods.ConnectionRequest, OnConnectionRequest);
+        }
+
+        /// <summary>
+        /// Called when the internal SignalR client has disconnected with an error.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="ResonanceExceptionEventArgs"/> instance containing the event data.</param>
+        protected virtual void OnError(object sender, ResonanceExceptionEventArgs e)
+        {
+            IsRegistered = false;
+            IsDisposed = false;
+            Error?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// Called when the internal SignalR client is reconnecting.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected virtual void OnReconnecting(object sender, EventArgs e)
+        {
+            IsRegistered = false;
+            Reconnecting?.Invoke(this, new EventArgs());
+        }
+
+        /// <summary>
+        /// Called when the internal SignalR client has successfully reconnected.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected async virtual void OnReconnected(object sender, EventArgs e)
+        {
+            try
+            {
+                await _client.InvokeAsync(ResonanceHubMethods.Login, Credentials);
+                await RegisterAsync();
+                Reconnected?.Invoke(this, new EventArgs());
+            }
+            catch (Exception ex)
+            {
+                Error?.Invoke(this, new ResonanceExceptionEventArgs(ex));
+            }
         }
 
         /// <summary>
@@ -98,7 +161,7 @@ namespace Resonance.SignalR.Services
         /// <param name="sessionId">The session identifier.</param>
         protected virtual void DeclineConnection(string sessionId)
         {
-            _client.Invoke(ResonanceHubMethods.DeclineConnection, sessionId);
+            _client.InvokeAsync(ResonanceHubMethods.DeclineConnection, sessionId);
         }
 
         /// <summary>
@@ -116,7 +179,7 @@ namespace Resonance.SignalR.Services
         {
             if (IsRegistered && !IsDisposed)
             {
-                await _client?.Invoke(ResonanceHubMethods.UnregisterService);
+                await _client?.InvokeAsync(ResonanceHubMethods.UnregisterService);
             }
         }
 
@@ -138,7 +201,7 @@ namespace Resonance.SignalR.Services
         {
             if (!IsRegistered && !IsDisposed)
             {
-                await _client?.Invoke(ResonanceHubMethods.RegisterService, ServiceInformation);
+                await _client?.InvokeAsync(ResonanceHubMethods.RegisterService, ServiceInformation);
             }
         }
 
@@ -163,7 +226,7 @@ namespace Resonance.SignalR.Services
             {
                 await UnregisterAsync();
                 IsDisposed = true;
-                await _client?.Stop();
+                await _client?.StopAsync();
                 await _client?.DisposeAsync();
                 _client = null;
             }

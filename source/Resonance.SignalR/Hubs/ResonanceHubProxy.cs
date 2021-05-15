@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,6 +23,7 @@ namespace Resonance.SignalR.Hubs
     {
         private InvokeClientMethodDelegate _invoke;
         private Func<String> _getConnectionId;
+        private static List<String> _serviceQueriesConnectionIds = new List<String>();
 
         /// <summary>
         /// Gets the hub repository.
@@ -111,7 +113,7 @@ namespace Resonance.SignalR.Hubs
 
             var service = Repository.GetService(x => x.ConnectionId == _getConnectionId());
 
-            if (service == null) throw new InvalidOperationException("The current client is not registered as a service.");
+            if (service == null) return;
 
             Repository.RemoveService(service);
 
@@ -136,20 +138,21 @@ namespace Resonance.SignalR.Hubs
         /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        public virtual List<TReportedServiceInformation> GetAvailableServices()
+        public virtual List<TReportedServiceInformation> GetAvailableServices(TCredentials credentials)
         {
-            Validate(_getConnectionId());
-            return FilterServicesInformation(Repository.GetServices(x => true).Select(x => x.ServiceInformation).ToList(), _getConnectionId());
+            _serviceQueriesConnectionIds.Add(GetConnectionId());
+            return FilterServicesInformation(Repository.GetServices(x => true).Select(x => x.ServiceInformation).ToList(), credentials);
         }
 
         /// <summary>
         /// Maps and filters the collection of service information to reported service information based on the specified connection id.
         /// </summary>
         /// <param name="services">The services.</param>
-        /// <param name="connectionId">The current connection identifier.</param>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services, String connectionId);
+        protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services, TCredentials credentials);
 
         /// <summary>
         /// Creates a new "pending session" and sends a connection request to the specified service.
@@ -311,6 +314,41 @@ namespace Resonance.SignalR.Hubs
         protected void Invoke(String methodName, String connectionId, params object[] args)
         {
             _invoke(methodName, connectionId, args);
+        }
+
+        /// <summary>
+        /// Called when a client has disconnected.
+        /// </summary>
+        public void ConnectionClosed()
+        {
+            String connectionId = GetConnectionId();
+
+            if (_serviceQueriesConnectionIds.Exists(x => x == connectionId))
+            {
+                _serviceQueriesConnectionIds.Remove(connectionId);
+                return;
+            }
+
+            if (Repository.GetService(x => x.ConnectionId == connectionId) != null)
+            {
+                UnregisterService();
+            }
+
+            if (GetContextSession() != null)
+            {
+                Disconnect();
+            }
+
+            OnConnectionClosed(connectionId);
+        }
+
+        /// <summary>
+        /// Called when a client has disconnected.
+        /// </summary>
+        /// <param name="connectionId">The connection identifier.</param>
+        protected virtual void OnConnectionClosed(String connectionId)
+        {
+            //For overrides...
         }
     }
 }

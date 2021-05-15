@@ -10,8 +10,23 @@ namespace Resonance.SignalR.Clients
     /// Represents a SignalR client.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
-    public interface ISignalRClient : IDisposable
+    public interface ISignalRClient : IDisposable, IResonanceAsyncDisposable
     {
+        /// <summary>
+        /// Occurs when an error has occurred on the client.
+        /// </summary>
+        event EventHandler<ResonanceExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Occurs when the client is trying to reconnect after a connection loss.
+        /// </summary>
+        event EventHandler Reconnecting;
+
+        /// <summary>
+        /// Occurs when the client has successfully reconnected after a connection loss.
+        /// </summary>
+        event EventHandler Reconnected;
+
         /// <summary>
         /// Gets the hub URL in SignalR core, or service url/hub in SignalR legacy.
         /// </summary>
@@ -20,14 +35,22 @@ namespace Resonance.SignalR.Clients
         /// <summary>
         /// Starts the connection.
         /// </summary>
-        /// <returns></returns>
-        Task Start();
+        Task StartAsync();
+
+        /// <summary>
+        /// Starts the connection.
+        /// </summary>
+        void Start();
 
         /// <summary>
         /// Stops the connection.
         /// </summary>
-        /// <returns></returns>
-        Task Stop();
+        Task StopAsync();
+
+        /// <summary>
+        /// Stops the connection.
+        /// </summary>
+        void Stop();
 
         /// <summary>
         /// Gets a value indicating whether this client has started.
@@ -39,7 +62,7 @@ namespace Resonance.SignalR.Clients
         /// </summary>
         /// <param name="methodName">Name of the method.</param>
         /// <param name="args">The arguments.</param>
-        Task Invoke(String methodName, params object[] args);
+        Task InvokeAsync(String methodName, params object[] args);
 
         /// <summary>
         /// Invokes the specified hub method and return a value of type T.
@@ -48,7 +71,7 @@ namespace Resonance.SignalR.Clients
         /// <param name="methodName">Name of the method.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        Task<T> Invoke<T>(String methodName, params object[] args);
+        Task<T> InvokeAsync<T>(String methodName, params object[] args);
 
         /// <summary>
         /// Register a callback method for a hub event.
@@ -87,11 +110,5 @@ namespace Resonance.SignalR.Clients
         /// <param name="action">The callback.</param>
         /// <returns></returns>
         IDisposable On<T1, T2, T3>(String eventName, Action<T1, T2, T3> action);
-
-        /// <summary>
-        /// Closes the connection.
-        /// </summary>
-        /// <returns></returns>
-        Task DisposeAsync();
     }
 }

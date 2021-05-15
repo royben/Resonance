@@ -15,6 +15,7 @@
     <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <converters:BooleanInverseConverter x:Key="BooleanInverseConverter" />
     <converters:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter" />
+    <converters:ToStringConverter x:Key="ToStringConverter" />
 
 
     <Style TargetType="{x:Type logging:LogViewer}">

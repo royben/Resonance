@@ -2,9 +2,10 @@
 using Microsoft.Owin;
 using Microsoft.Owin.Cors;
 using Owin;
+using Resonance.Examples.Common.Logging;
 using Resonance.Examples.SignalR.Common;
 using Resonance.Examples.SignalR.Server;
-using Resonance.Examples.SignalR.Server.Hubs.DemoHub;
+using Resonance.Examples.SignalR.Server.Hubs;
 using Resonance.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,8 @@ namespace Resonance.Examples.SignalR.Server
                 typeof(DemoHub),
                 () => new DemoHub(new DemoHubProxy(new ResonanceHubMemoryRepository<DemoServiceInformation>())));
 
+            GlobalHost.DependencyResolver.Register(typeof(LoggingHub), () => new LoggingHub());
+
             app.UseCors(CorsOptions.AllowAll);
             app.MapSignalR(new HubConfiguration() 
             {
@@ -30,6 +33,13 @@ namespace Resonance.Examples.SignalR.Server
             });
 
             GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null; //Unlimited message size.
+
+            LoggingConfiguration.ConfigureLogging();
+
+            LoggingConfiguration.LogReceived += (x, e) => 
+            {
+                LoggingHub.PublishLog(e);
+            };
         }
     }
 }

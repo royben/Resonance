@@ -36,7 +36,7 @@ namespace Resonance.Tests.SignalRCore.WebAPI.Hub
             }
         }
 
-        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, String connectionId)
+        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, TestCredentials credentials)
         {
             return services.ToList();
         }

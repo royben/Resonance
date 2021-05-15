@@ -18,6 +18,21 @@ namespace Resonance.SignalR.Clients
         private IHubProxy _proxy;
 
         /// <summary>
+        /// Occurs when an error has occurred on the client.
+        /// </summary>
+        public event EventHandler<ResonanceExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Occurs when the client is trying to reconnect after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnecting;
+
+        /// <summary>
+        /// Occurs when the client has successfully reconnected after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnected;
+
+        /// <summary>
         /// Gets the hub URL, meaning, service url + /hub.
         /// </summary>
         public String Url { get; private set; }
@@ -40,7 +55,7 @@ namespace Resonance.SignalR.Clients
         /// Starts the connection.
         /// </summary>
         /// <returns></returns>
-        public Task Start()
+        public Task StartAsync()
         {
             if (IsStarted) return Task.FromResult(true);
 
@@ -66,6 +81,28 @@ namespace Resonance.SignalR.Clients
                                 completion.SetResult(true);
                             }
                         }
+                    };
+
+                    bool reconnecting = false;
+
+                    _connection.Error += (exception) => 
+                    {
+                        if (reconnecting && _connection.State == ConnectionState.Reconnecting && exception.GetType() == typeof(TimeoutException))
+                        {
+                            Error?.Invoke(this, new ResonanceExceptionEventArgs(exception));
+                        }
+                    };
+
+                    _connection.Reconnecting += () =>
+                    {
+                        reconnecting = true;
+                        Reconnecting?.Invoke(this, new EventArgs());
+                    };
+
+                    _connection.Reconnected += () => 
+                    {
+                        reconnecting = false;
+                        Reconnected?.Invoke(this, new EventArgs());
                     };
 
                     _connection.Start();
@@ -97,7 +134,7 @@ namespace Resonance.SignalR.Clients
         /// Stops the connection.
         /// </summary>
         /// <returns></returns>
-        public Task Stop()
+        public Task StopAsync()
         {
             if (!IsStarted) return Task.FromResult(true);
 
@@ -109,12 +146,28 @@ namespace Resonance.SignalR.Clients
         }
 
         /// <summary>
+        /// Starts the connection.
+        /// </summary>
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Stops the connection.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Invokes the specified hub method without expecting a return value.
         /// </summary>
         /// <param name="methodName">Name of the method.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public Task Invoke(string methodName, params object[] args)
+        public Task InvokeAsync(string methodName, params object[] args)
         {
             return _proxy?.Invoke(methodName, args);
         }
@@ -126,7 +179,7 @@ namespace Resonance.SignalR.Clients
         /// <param name="methodName">Name of the method.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public Task<T> Invoke<T>(string methodName, params object[] args)
+        public Task<T> InvokeAsync<T>(string methodName, params object[] args)
         {
             return _proxy?.Invoke<T>(methodName, args);
         }
@@ -204,7 +257,7 @@ namespace Resonance.SignalR.Clients
         /// </summary>
         public async Task DisposeAsync()
         {
-            await Stop();
+            await StopAsync();
             await Task.Factory.StartNew(() => { _connection?.Dispose(); });
         }
     }

@@ -47,9 +47,8 @@ namespace Resonance.SignalR.Services
         {
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
-            await client.Start();
-            await client.Invoke(ResonanceHubMethods.Login, credentials);
-            var services = await client.Invoke<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices);
+            await client.StartAsync();
+            var services = await client.InvokeAsync<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices, credentials);
             await client.DisposeAsync();
 
             return services;
@@ -86,9 +85,9 @@ namespace Resonance.SignalR.Services
 
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
-            await client.Start();
-            await client.Invoke(ResonanceHubMethods.Login, credentials);
-            await client.Invoke(ResonanceHubMethods.RegisterService, serviceInformation);
+            await client.StartAsync();
+            await client.InvokeAsync(ResonanceHubMethods.Login, credentials);
+            await client.InvokeAsync(ResonanceHubMethods.RegisterService, serviceInformation);
             return new ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, mode, client);
         }
 

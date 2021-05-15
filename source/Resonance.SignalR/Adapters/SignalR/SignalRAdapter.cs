@@ -24,6 +24,21 @@ namespace Resonance.Adapters.SignalR
         private ISignalRClient _client;
 
         /// <summary>
+        /// Occurs when an error has occurred on the internal SignalR client.
+        /// </summary>
+        public event EventHandler<ResonanceExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Occurs when the internal SignalR client is trying to reconnect after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnecting;
+
+        /// <summary>
+        /// Occurs when the internal SignalR client has successfully reconnected after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnected;
+
+        /// <summary>
         /// Gets the credentials used to authenticate with the remote Resonance SignalR hub.
         /// </summary>
         public TCredentials Credentials { get; private set; }
@@ -109,6 +124,10 @@ namespace Resonance.Adapters.SignalR
             return adapter;
         }
 
+        /// <summary>
+        /// Called when the adapter is connecting.
+        /// </summary>
+        /// <returns></returns>
         protected override Task OnConnect()
         {
             bool completed = false;
@@ -120,7 +139,7 @@ namespace Resonance.Adapters.SignalR
                 try
                 {
                     _client = SignalRClientFactory.Default.Create(Mode, Url);
-                    _client.Start().GetAwaiter().GetResult();
+                    _client.StartAsync().GetAwaiter().GetResult();
 
                     if (Role == SignalRAdapterRole.Connect)
                     {
@@ -173,8 +192,11 @@ namespace Resonance.Adapters.SignalR
 
                     _client.On(ResonanceHubMethods.Disconnected, () =>
                     {
-                        //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
-                        //Maybe just raise an event..
+                        if (State == ResonanceComponentState.Connected)
+                        {
+                            //OnDisconnect(false); //Don't know what to do here.. We already have the resonance disconnection message.
+                            //Maybe just raise an event..
+                        }
                     });
 
                     _client.On(ResonanceHubMethods.ServiceDown, () =>
@@ -183,17 +205,17 @@ namespace Resonance.Adapters.SignalR
                     });
 
                     Logger.LogInformation("Authenticating with the remote hub {HubUrl}...", _client.Url);
-                    _client.Invoke(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
+                    _client.InvokeAsync(ResonanceHubMethods.Login, Credentials).GetAwaiter().GetResult();
 
                     if (Role == SignalRAdapterRole.Connect)
                     {
                         Logger.LogInformation("Connecting to service {ServiceId}...", ServiceId);
-                        SessionId = _client.Invoke<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
+                        SessionId = _client.InvokeAsync<String>(ResonanceHubMethods.Connect, ServiceId).GetAwaiter().GetResult();
                     }
                     else
                     {
                         Logger.LogInformation("Accepting connection {SessionId}...", SessionId);
-                        _client.Invoke(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
+                        _client.InvokeAsync(ResonanceHubMethods.AcceptConnection, SessionId).GetAwaiter().GetResult();
 
                         if (!completed)
                         {
@@ -203,6 +225,10 @@ namespace Resonance.Adapters.SignalR
                     }
 
                     _client.On<byte[]>(ResonanceHubMethods.DataAvailable, (data) => { OnDataAvailable(data); });
+
+                    _client.Error += OnError;
+                    _client.Reconnecting += OnReconnecting;
+                    _client.Reconnected += OnReconnected;
                 }
                 catch (Exception ex)
                 {
@@ -225,20 +251,59 @@ namespace Resonance.Adapters.SignalR
             return completionSource.Task;
         }
 
+        /// <summary>
+        /// Called when the internal SignalR client has failed to reconnect.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="ResonanceExceptionEventArgs"/> instance containing the event data.</param>
+        protected virtual void OnError(object sender, ResonanceExceptionEventArgs e)
+        {
+            Error?.Invoke(this, e);
+            OnFailed(e.Exception, "The internal SignalR client has lost the connection and failed to reconnect.");
+        }
+
+        /// <summary>
+        /// Called when the internal SignalR client is trying to reconnect after a connection loss.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected virtual void OnReconnecting(object sender, EventArgs e)
+        {
+            Reconnecting?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// Called when the internal SignalR client has successfully reconnected.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected virtual void OnReconnected(object sender, EventArgs e)
+        {
+            Reconnected?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// Called when the adapter is disconnecting.
+        /// </summary>
+        /// <returns></returns>
         protected override Task OnDisconnect()
         {
             return OnDisconnect(!IsFailing);
         }
 
+        /// <summary>
+        /// Called when the adapter is disconnecting.
+        /// </summary>
+        /// <param name="notify">if set to <c>true</c> to notify the other side about the disconnection.</param>
         private async Task OnDisconnect(bool notify)
         {
             try
             {
                 if (notify)
                 {
-                    await _client.Invoke(ResonanceHubMethods.Disconnect);
+                    await _client.InvokeAsync(ResonanceHubMethods.Disconnect);
                 }
-                await _client.Stop();
+                await _client.StopAsync();
                 await _client.DisposeAsync();
             }
             catch (Exception ex)
@@ -254,9 +319,13 @@ namespace Resonance.Adapters.SignalR
             }
         }
 
+        /// <summary>
+        /// Called when the adapter is writing.
+        /// </summary>
+        /// <param name="data">The data.</param>
         protected override void OnWrite(byte[] data)
         {
-            _client.Invoke(ResonanceHubMethods.Write, data).GetAwaiter().GetResult();
+            _client.InvokeAsync(ResonanceHubMethods.Write, data).GetAwaiter().GetResult();
         }
 
         /// <summary>

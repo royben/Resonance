@@ -70,10 +70,11 @@ namespace Resonance.SignalR.Hubs
         /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        public List<TReportedServiceInformation> GetAvailableServices()
+        public List<TReportedServiceInformation> GetAvailableServices(TCredentials credentials)
         {
-            return _proxy.GetAvailableServices();
+            return _proxy.GetAvailableServices(credentials);
         }
 
         /// <summary>
@@ -132,6 +133,12 @@ namespace Resonance.SignalR.Hubs
         {
             IClientProxy proxy = _context.Clients.Client(connectionId);
             await proxy.SendCoreAsync(methodName, args);
+        }
+
+        public override Task OnDisconnectedAsync(Exception exception)
+        {
+            _proxy.ConnectionClosed();
+            return base.OnDisconnectedAsync(exception);
         }
     }
 }

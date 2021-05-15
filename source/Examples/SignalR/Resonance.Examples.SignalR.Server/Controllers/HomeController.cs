@@ -8,9 +8,9 @@ namespace Resonance.Examples.SignalR.Server.Controllers
 {
     public class HomeController : Controller
     {
-        public String Index()
+        public ActionResult Index()
         {
-            return "Resonance SignalR Server Demo";
+            return View();
         }
     }
 }

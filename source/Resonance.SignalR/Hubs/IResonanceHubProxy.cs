@@ -34,5 +34,10 @@ namespace Resonance.SignalR.Hubs
         /// <param name="invokeClient">Provide the callback that will be used to invoke server methods.</param>
         /// <param name="getConnectionId">Provide the callback that will be used to get the current context connection id.</param>
         void Init(InvokeClientMethodDelegate invokeClient, Func<String> getConnectionId);
+
+        /// <summary>
+        /// Called when a client has disconnected.
+        /// </summary>
+        void ConnectionClosed();
     }
 }

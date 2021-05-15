@@ -9,6 +9,7 @@ using Resonance.SignalR.Services;
 using Resonance.Transcoding.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Security.Authentication;
 using System.Text;
@@ -18,7 +19,6 @@ namespace Resonance.Examples.SignalR.Service
 {
     public class MainWindowVM : ResonanceViewModel
     {
-        private List<ResonanceSignalRClient> _clients;
         private ResonanceRegisteredService<DemoCredentials, DemoServiceInformation, DemoAdapterInformation> _service;
 
         private String _serviceId;
@@ -47,6 +47,11 @@ namespace Resonance.Examples.SignalR.Service
         }
 
         /// <summary>
+        /// Gets or sets the connected clients.
+        /// </summary>
+        public ObservableCollection<ResonanceSignalRClient> Clients { get; set; }
+
+        /// <summary>
         /// Gets or sets the start command.
         /// </summary>
         public RelayCommand StartCommand { get; set; }
@@ -57,15 +62,21 @@ namespace Resonance.Examples.SignalR.Service
         public RelayCommand StopCommand { get; set; }
 
         /// <summary>
+        /// Gets or sets the disconnect client command.
+        /// </summary>
+        public RelayCommand<ResonanceSignalRClient> DisconnectClientCommand { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MainWindowVM"/> class.
         /// </summary>
         public MainWindowVM()
         {
+            Clients = new ObservableCollection<ResonanceSignalRClient>();
             ServiceId = "Service 1";
             HubUrl = "http://localhost:8080/DemoHub";
             StartCommand = new RelayCommand(Start, () => !IsStarted && !String.IsNullOrWhiteSpace(ServiceId));
             StopCommand = new RelayCommand(Stop, () => IsStarted);
-            _clients = new List<ResonanceSignalRClient>();
+            DisconnectClientCommand = new RelayCommand<ResonanceSignalRClient>(DisconnectClient);
         }
 
         /// <summary>
@@ -90,7 +101,25 @@ namespace Resonance.Examples.SignalR.Service
                 Logger.LogInformation("Service started.");
 
                 _service.ConnectionRequest += _service_ConnectionRequest;
+                _service.Reconnecting += _service_Reconnecting;
+                _service.Error += _service_Error;
+                _service.Reconnected += _service_Reconnected;
             }
+        }
+
+        private void _service_Reconnected(object sender, EventArgs e)
+        {
+            Logger.LogInformation("Service reconnected.");
+        }
+
+        private void _service_Error(object sender, ResonanceExceptionEventArgs e)
+        {
+            Logger.LogError("Service connection lost.", e.Exception);
+        }
+
+        private void _service_Reconnecting(object sender, EventArgs e)
+        {
+            Logger.LogWarning("Reconnecting service...");
         }
 
         /// <summary>
@@ -107,8 +136,8 @@ namespace Resonance.Examples.SignalR.Service
                 IsStarted = false;
 
                 //Disconnect all clients.
-                _clients.ToList().ForEach(async x => await x.DisconnectAsync());
-                _clients.Clear();
+                Clients.ToList().ForEach(async x => await x.DisposeAsync());
+                Clients.Clear();
             }
         }
 
@@ -131,8 +160,11 @@ namespace Resonance.Examples.SignalR.Service
 
             newClient.StateChanged += OnClientStateChanged;
 
+            var adapter = e.Accept();
+            adapter.Credentials.Name = $"{ServiceId} {adapter}";
+
             newClient.CreateBuilder()
-                .WithAdapter(e.Accept())
+                .WithAdapter(adapter)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -142,11 +174,23 @@ namespace Resonance.Examples.SignalR.Service
                 return new EchoTextResponse() { Message = "OK" };
             });
 
-            _clients.Add(newClient);
-
             await newClient.ConnectAsync();
 
+            InvokeUI(() =>
+            {
+                Clients.Add(newClient);
+            });
+
             Logger.LogInformation($"{newClient.RemoteAdapterInformation.Name} is now connected.");
+        }
+
+        private async void DisconnectClient(ResonanceSignalRClient client)
+        {
+            if (client != null)
+            {
+                await client.DisposeAsync();
+                Clients.Remove(client);
+            }
         }
 
         /// <summary>
@@ -161,7 +205,11 @@ namespace Resonance.Examples.SignalR.Service
             if (e.NewState == ResonanceComponentState.Failed)
             {
                 Logger.LogWarning($"Client {client.RemoteAdapterInformation.Name} disconnected.");
-                _clients.Remove(client);
+
+                InvokeUI(() =>
+                {
+                    Clients.Remove(client);
+                });
             }
         }
     }

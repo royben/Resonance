@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Resonance.Examples.SignalR.Server.Hubs.DemoHub
+namespace Resonance.Examples.SignalR.Server.Hubs
 {
     public class DemoHub : ResonanceHub<DemoCredentials, DemoServiceInformation, DemoServiceInformation, DemoAdapterInformation, DemoHub>
     {

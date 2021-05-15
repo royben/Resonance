@@ -37,8 +37,9 @@ namespace Resonance.SignalR.Hubs
         /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        List<TReportedServiceInformation> GetAvailableServices();
+        List<TReportedServiceInformation> GetAvailableServices(TCredentials credentials);
 
         /// <summary>
         /// Creates a new "pending session" and sends a connection request to the specified service.
