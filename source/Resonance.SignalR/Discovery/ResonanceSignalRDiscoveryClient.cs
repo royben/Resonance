@@ -42,6 +42,11 @@ namespace Resonance.SignalR.Discovery
         public String HubUrl { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable auto reconnection when connection has lost.
+        /// </summary>
+        public bool EnableAutoReconnection { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether this client has started.
         /// </summary>
         public bool IsStarted { get; private set; }
@@ -67,6 +72,7 @@ namespace Resonance.SignalR.Discovery
             HubUrl = hubUrl;
             Mode = mode;
             Credentials = credentials;
+            EnableAutoReconnection = true;
         }
 
         /// <summary>
@@ -125,6 +131,7 @@ namespace Resonance.SignalR.Discovery
                 _discoveredServices = new List<ResonanceSignalRDiscoveredService<TReportedServiceInformation>>();
 
                 _client = SignalRClientFactory.Default.Create(Mode, HubUrl);
+                _client.EnableAutoReconnection = EnableAutoReconnection;
                 _client.Error += OnDisconnected;
                 await _client.StartAsync();
 

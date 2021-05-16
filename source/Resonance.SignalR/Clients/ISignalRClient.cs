@@ -33,6 +33,11 @@ namespace Resonance.SignalR.Clients
         String Url { get; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable auto reconnection.
+        /// </summary>
+        bool EnableAutoReconnection { get; set; }
+
+        /// <summary>
         /// Starts the connection.
         /// </summary>
         Task StartAsync();

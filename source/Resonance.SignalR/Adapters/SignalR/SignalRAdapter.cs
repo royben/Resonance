@@ -24,11 +24,6 @@ namespace Resonance.Adapters.SignalR
         private ISignalRClient _client;
 
         /// <summary>
-        /// Occurs when an error has occurred on the internal SignalR client.
-        /// </summary>
-        public event EventHandler<ResonanceExceptionEventArgs> Error;
-
-        /// <summary>
         /// Occurs when the internal SignalR client is trying to reconnect after a connection loss.
         /// </summary>
         public event EventHandler Reconnecting;
@@ -258,8 +253,10 @@ namespace Resonance.Adapters.SignalR
         /// <param name="e">The <see cref="ResonanceExceptionEventArgs"/> instance containing the event data.</param>
         protected virtual void OnError(object sender, ResonanceExceptionEventArgs e)
         {
-            Error?.Invoke(this, e);
-            OnFailed(e.Exception, "The internal SignalR client has lost the connection and failed to reconnect.");
+            if (State == ResonanceComponentState.Connected)
+            {
+                OnFailed(e.Exception, "The internal SignalR client has lost the connection and failed to reconnect.");
+            }
         }
 
         /// <summary>
@@ -269,7 +266,10 @@ namespace Resonance.Adapters.SignalR
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected virtual void OnReconnecting(object sender, EventArgs e)
         {
-            Reconnecting?.Invoke(this, e);
+            if (State == ResonanceComponentState.Connected)
+            {
+                Reconnecting?.Invoke(this, e);
+            }
         }
 
         /// <summary>
@@ -279,7 +279,10 @@ namespace Resonance.Adapters.SignalR
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected virtual void OnReconnected(object sender, EventArgs e)
         {
-            Reconnected?.Invoke(this, e);
+            if (State == ResonanceComponentState.Connected)
+            {
+                Reconnected?.Invoke(this, e);
+            }
         }
 
         /// <summary>

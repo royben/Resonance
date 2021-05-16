@@ -20,11 +20,6 @@ namespace Resonance.Tests.SignalRCore.WebAPI.Hub
 
         protected override void Login(TestCredentials credentials, string connectionId, bool isDiscoveryClient)
         {
-            if (credentials.Name != "Test")
-            {
-                throw new AuthenticationException("Name is not 'Test'.");
-            }
-
             _loggedInClients[connectionId] = credentials;
         }
 

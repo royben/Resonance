@@ -43,6 +43,11 @@ namespace Resonance.SignalR.Clients
         public bool IsStarted { get; private set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable auto reconnection.
+        /// </summary>
+        public bool EnableAutoReconnection { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SignalRClient"/> class.
         /// </summary>
         /// <param name="url">the hub URL, meaning, service url + /hub.</param>
@@ -85,24 +90,46 @@ namespace Resonance.SignalR.Clients
 
                     bool reconnecting = false;
 
-                    _connection.Error += (exception) => 
+                    _connection.Error += (exception) =>
                     {
-                        if (reconnecting && _connection.State == ConnectionState.Reconnecting && exception.GetType() == typeof(TimeoutException))
+                        if (EnableAutoReconnection)
                         {
-                            Error?.Invoke(this, new ResonanceExceptionEventArgs(exception));
+                            if (reconnecting && _connection.State == ConnectionState.Reconnecting && exception.GetType() == typeof(TimeoutException))
+                            {
+                                Error?.Invoke(this, new ResonanceExceptionEventArgs(exception));
+                            }
                         }
                     };
 
                     _connection.Reconnecting += () =>
                     {
-                        reconnecting = true;
-                        Reconnecting?.Invoke(this, new EventArgs());
+                        if (!reconnecting)
+                        {
+                            reconnecting = true;
+
+                            if (EnableAutoReconnection)
+                            {
+                                Reconnecting?.Invoke(this, new EventArgs());
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    Stop();
+                                    Error?.Invoke(this, new ResonanceExceptionEventArgs(_connection.LastError));
+                                }
+                                catch { }
+                            }
+                        }
                     };
 
-                    _connection.Reconnected += () => 
+                    _connection.Reconnected += () =>
                     {
-                        reconnecting = false;
-                        Reconnected?.Invoke(this, new EventArgs());
+                        if (EnableAutoReconnection)
+                        {
+                            reconnecting = false;
+                            Reconnected?.Invoke(this, new EventArgs());
+                        }
                     };
 
                     _connection.Start();
