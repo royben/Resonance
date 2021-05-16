@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.SignalR.Client;
+using Microsoft.Extensions.Logging;
 using Resonance.Adapters.SignalR;
 using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
@@ -17,7 +18,7 @@ namespace Resonance.SignalR.Services
     /// <typeparam name="TResonanceServiceInformation">The type of the resonance service information.</typeparam>
     /// <typeparam name="TAdapterInformation">The type of the adapter information.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : IDisposable, IResonanceAsyncDisposable where TResonanceServiceInformation : IResonanceServiceInformation
+    public class ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation> : ResonanceObject, IDisposable, IResonanceAsyncDisposable where TResonanceServiceInformation : IResonanceServiceInformation
     {
         private ISignalRClient _client;
 
@@ -224,7 +225,15 @@ namespace Resonance.SignalR.Services
         {
             if (!IsDisposed)
             {
-                await UnregisterAsync();
+                try
+                {
+                    await UnregisterAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error occurred while disposing the registered service. Unregister service failed.");
+                }
+
                 IsDisposed = true;
                 await _client?.StopAsync();
                 await _client?.DisposeAsync();

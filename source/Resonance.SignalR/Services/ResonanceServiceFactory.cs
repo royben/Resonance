@@ -84,6 +84,7 @@ namespace Resonance.SignalR.Services
             Logger.LogDebug($"Registering service {{@ServiceInformation}}...", serviceInformation);
 
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
+            client.EnableAutoReconnection = true;
 
             await client.StartAsync();
             await client.InvokeAsync(ResonanceHubMethods.Login, credentials);
