@@ -714,7 +714,7 @@ namespace Resonance
                             try
                             {
                                 Logger.LogInformation("Sending disconnection request.");
-                                var response = await SendRequestAsync(new ResonanceDisconnectRequest());
+                                await SendAsync(new ResonanceDisconnectNotification());
                             }
                             catch { }
                         }
@@ -1261,7 +1261,7 @@ namespace Resonance
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
                 }
-                else if (pendingMessage.Message.Object is ResonanceDisconnectRequest)
+                else if (pendingMessage.Message.Object is ResonanceDisconnectNotification)
                 {
                     info.Type = ResonanceTranscodingInformationType.Disconnect;
                 }
@@ -1363,11 +1363,6 @@ namespace Resonance
                 if (pendingRequest.Message.Object is ResonanceKeepAliveRequest)
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
-                }
-                else if (pendingRequest.Message.Object is ResonanceDisconnectRequest)
-                {
-                    info.Type = ResonanceTranscodingInformationType.Disconnect;
-                    pendingRequest.SetResult(true);
                 }
                 else
                 {
@@ -1680,7 +1675,7 @@ namespace Resonance
                         }
                         else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
                         {
-                            OnDisconnectRequestReceived(info);
+                            OnDisconnectNotificationReceived(info);
                         }
                         else
                         {
@@ -1737,7 +1732,7 @@ namespace Resonance
                 {
                     try
                     {
-                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage(), Token = info.Token });
+                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage(), Token = info.Token },new ResonanceMessageConfig() { Priority = QueuePriority.High });
                     }
                     catch { }
                 }
@@ -2073,13 +2068,12 @@ namespace Resonance
         }
 
         /// <summary>
-        /// Called when a <see cref="ResonanceDisconnectRequest"/> has been received.
+        /// Called when a <see cref="ResonanceDisconnectNotification"/> has been received.
         /// </summary>
         /// <param name="info">The information.</param>
-        /// <exception cref="NotImplementedException"></exception>
-        protected virtual void OnDisconnectRequestReceived(ResonanceDecodingInformation info)
+        protected virtual void OnDisconnectNotificationReceived(ResonanceDecodingInformation info)
         {
-            Logger.LogDebug("Disconnect request received. Failing transporter...");
+            Logger.LogDebug("Disconnection notification received. Failing transporter...");
             OnFailed(new ResonanceConnectionClosedException());
         }
 
@@ -2311,7 +2305,7 @@ namespace Resonance
 
                         if (pending.Message.Object != null)
                         {
-                            if (pending.Message.Object is ResonanceDisconnectRequest) continue;
+                            if (pending.Message.Object is ResonanceDisconnectNotification) continue;
                             if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(pending.Message.Token, "Aborting request '{Message}'...", pending.Message.ObjectTypeName);
                         }
 

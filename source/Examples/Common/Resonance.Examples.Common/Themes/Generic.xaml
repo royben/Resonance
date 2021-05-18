@@ -15,6 +15,7 @@
     <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <converters:BooleanInverseConverter x:Key="BooleanInverseConverter" />
     <converters:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter" />
+    <converters:ToStringConverter x:Key="ToStringConverter" />
 
 
     <Style TargetType="{x:Type logging:LogViewer}">
@@ -25,51 +26,63 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}">
 
-                        <DataGrid x:Name="PART_Grid" 
+                        <Grid>
+                            <DataGrid x:Name="PART_Grid" 
                                   ItemsSource="{TemplateBinding Logs}" 
                                   AutoGenerateColumns="False" 
                                   IsReadOnly="True"
+                                  CanUserResizeColumns="True"
                                   SelectionMode="Single"
                                   SelectionUnit="FullRow"
                                   FontSize="12"
                                   HeadersVisibility="Column">
-                            <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <material:PackIcon Width="16" Height="16">
-                                                <material:PackIcon.Style>
-                                                    <Style TargetType="material:PackIcon">
-                                                        <Setter Property="Kind" Value="InfoCircleOutline"></Setter>
-                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"></Setter>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                        <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self},Path=Content.Text,Mode=OneWay}"/>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <material:PackIcon Width="16" Height="16">
+                                                    <material:PackIcon.Style>
+                                                        <Style TargetType="material:PackIcon">
+                                                            <Setter Property="Kind" Value="InfoCircleOutline"></Setter>
+                                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"></Setter>
 
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Level}" Value="Warning">
-                                                                <Setter Property="Kind" Value="AlertOutline"></Setter>
-                                                                <Setter Property="Foreground" Value="Orange"></Setter>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Level}" Value="Error">
-                                                                <Setter Property="Kind" Value="AlertOutline"></Setter>
-                                                                <Setter Property="Foreground" Value="Red"></Setter>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Level}" Value="Debug">
-                                                                <Setter Property="Kind" Value="Buggy"></Setter>
-                                                                <Setter Property="Foreground" Value="Gray"></Setter>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </material:PackIcon.Style>
-                                            </material:PackIcon>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Time" Binding="{Binding Time}"/>
-                                <DataGridTextColumn Header="Source" Binding="{Binding SourceContext}"/>
-                                <DataGridTextColumn Header="Message" Binding="{Binding Message}"/>
-                                <DataGridTextColumn Header="Token" Binding="{Binding Token}"/>
-                                <DataGridTextColumn Header="Exception" Binding="{Binding Exception}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                                    <Setter Property="Kind" Value="AlertOutline"></Setter>
+                                                                    <Setter Property="Foreground" Value="Orange"></Setter>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                    <Setter Property="Kind" Value="AlertOutline"></Setter>
+                                                                    <Setter Property="Foreground" Value="Red"></Setter>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Level}" Value="Debug">
+                                                                    <Setter Property="Kind" Value="Bug"></Setter>
+                                                                    <Setter Property="Foreground" Value="Gray"></Setter>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </material:PackIcon.Style>
+                                                </material:PackIcon>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Time" Binding="{Binding Time}"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceContext}"/>
+                                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" MaxWidth="600" />
+                                    <DataGridTextColumn Header="Token" Binding="{Binding Token}"/>
+                                    <DataGridTextColumn Header="Exception" Binding="{Binding Exception}" Width="200" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0 -8 0 0" Background="{StaticResource MaterialDesignLightBackground}">
+                                <ComboBox x:Name="PART_ComboLevel" material:HintAssist.Hint="Log Level" material:HintAssist.IsFloating="True" Width="100"/>
+                            </Grid>
+                        </Grid>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

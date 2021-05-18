@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Resonance.Tests.SignalR
 {
-    public class SignalRServer : IDisposable
+    public class SignalRServer : ISignalRServer
     {
         private IDisposable _server;
 
@@ -31,6 +31,11 @@ namespace Resonance.Tests.SignalR
         public void Start()
         {
             _server = WebApp.Start(Url);
+        }
+
+        public void Stop()
+        {
+            _server?.Dispose();
         }
 
         public void Dispose()

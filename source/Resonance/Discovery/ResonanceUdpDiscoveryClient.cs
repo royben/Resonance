@@ -17,7 +17,7 @@ namespace Resonance.Discovery
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>
     /// <typeparam name="TDecoder">The type of the decoder.</typeparam>
     /// <seealso cref="Resonance.ResonanceObject" />
-    public class ResonanceUdpDiscoveryClient<TDiscoveryInfo, TDecoder> : ResonanceObject, IResonanceDiscoveryClient<TDiscoveryInfo, TDecoder, ResonanceUdpDiscoveredService<TDiscoveryInfo>> where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new()
+    public class ResonanceUdpDiscoveryClient<TDiscoveryInfo, TDecoder> : ResonanceObject, IResonanceDiscoveryClient<TDiscoveryInfo, ResonanceUdpDiscoveredService<TDiscoveryInfo>> where TDiscoveryInfo : class, new() where TDecoder : IResonanceDecoder, new()
     {
         private int _componentCounter;
         private UdpClient _udpClient;
@@ -100,7 +100,7 @@ namespace Resonance.Discovery
         /// <summary>
         /// Start discovering.
         /// </summary>
-        public Task Start()
+        public Task StartAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -128,7 +128,7 @@ namespace Resonance.Discovery
         /// <summary>
         /// Stop discovering.
         /// </summary>
-        public Task Stop()
+        public Task StopAsync()
         {
             return Task.Factory.StartNew(() =>
             {
@@ -154,6 +154,22 @@ namespace Resonance.Discovery
         }
 
         /// <summary>
+        /// Start discovering.
+        /// </summary>
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Start discovering.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Asynchronous method for collecting discovered services within the given duration.
         /// Will start the discovery client if not started already, but will not stop it on completion.
         /// </summary>
@@ -162,7 +178,7 @@ namespace Resonance.Discovery
         /// <returns></returns>
         public async Task<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>> DiscoverAsync(TimeSpan maxDuration, int? maxServices = null)
         {
-            await Start();
+            await StartAsync();
 
             return await Task.Factory.StartNew<List<ResonanceUdpDiscoveredService<TDiscoveryInfo>>>(() =>
             {
@@ -289,7 +305,7 @@ namespace Resonance.Discovery
         /// <returns></returns>
         public Task DisposeAsync()
         {
-            return Stop();
+            return StopAsync();
         }
 
         /// <summary>

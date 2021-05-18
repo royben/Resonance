@@ -12,6 +12,9 @@ namespace Resonance.SignalR
         public const string RegisterService = nameof(RegisterService); // Service
         public const string UnregisterService = nameof(UnregisterService); // Service
         public const string GetAvailableServices = nameof(GetAvailableServices); // Client
+        public const string ServiceRegistered = nameof(ServiceRegistered); // Service
+        public const string ServiceUnRegistered = nameof(ServiceUnRegistered); // Service
+        public const string RegisterDiscoveryClient = nameof(RegisterDiscoveryClient); // Client
 
         public const string Connect = nameof(Connect); // Client
         public const string ConnectionRequest = nameof(ConnectionRequest); // Hub
