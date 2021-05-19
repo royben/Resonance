@@ -75,6 +75,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.Bluetooth", "Resonance.Bluetooth\Resonance.Bluetooth.csproj", "{B7A8ED5A-54A1-4AEA-B07E-898BE3BCD186}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bluetooth", "Bluetooth", "{57C93191-925D-4DC6-B4B5-0029F4ED491F}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\Bluetooth\README.md = Examples\Bluetooth\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.Bluetooth.Server", "Examples\Bluetooth\Resonance.Examples.Bluetooth.Server\Resonance.Examples.Bluetooth.Server.csproj", "{0E31336B-B201-4E82-9CCF-82A27DF39088}"
 EndProject
