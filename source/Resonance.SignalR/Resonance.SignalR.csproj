@@ -38,6 +38,11 @@ Resonance is a high-performance real-time C# communication library with built-in
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net5.0'">
+    <PackageReference Remove="Microsoft.AspNet.SignalR.Core" Version="2.4.1" />
+    <PackageReference Remove="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
   </ItemGroup>

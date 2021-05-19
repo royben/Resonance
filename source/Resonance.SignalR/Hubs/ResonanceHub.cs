@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNet.SignalR;
+﻿#if NET461
+using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Hubs
 {
-#if NET461
     /// <summary>
     /// Represents a SignalR legacy Resonance hub base class.
     /// </summary>
@@ -149,5 +149,5 @@ namespace Resonance.SignalR.Hubs
             return base.OnDisconnected(stopCalled);
         }
     }
-#endif
 }
+#endif

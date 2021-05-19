@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNet.SignalR.Client;
+﻿#if NET461
+using Microsoft.AspNet.SignalR.Client;
 using Resonance.Threading;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Clients
 {
-    #if NET461
     /// <summary>
     /// Represents a SignalR legacy client wrapper.
     /// </summary>
@@ -289,5 +289,5 @@ namespace Resonance.SignalR.Clients
             await Task.Factory.StartNew(() => { _connection?.Dispose(); });
         }
     }
-#endif
 }
+#endif

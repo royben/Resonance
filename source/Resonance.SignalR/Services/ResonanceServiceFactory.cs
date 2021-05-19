@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNet.SignalR.Client;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
