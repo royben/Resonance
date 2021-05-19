@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="XamarinClient.ChatPage" BindingContext="{StaticResource ViewModel}" NavigationPage.HasBackButton="False">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="100" />
+        </Grid.RowDefinitions>
+        <Frame BackgroundColor="#3F51B5" Padding="10" CornerRadius="0">
+            <AbsoluteLayout>
+                <StackLayout>
+                    <Label Text="Resonance" TextColor="White" FontSize="Small" />
+                    <Label Margin="0,-10,0,0" Text="Bluetooth Client" HorizontalTextAlignment="Center" TextColor="White" FontSize="36"/>
+                </StackLayout>
+            </AbsoluteLayout>
+        </Frame>
+
+        <ListView Grid.Row="1" ItemsSource="{Binding Logs}" x:Name="list" HasUnevenRows="True" Background="#202020">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Label Text="{Binding}"></Label>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackLayout Grid.Row="2">
+            <Label>Send Message:</Label>
+            <Entry Text="{Binding Message}" />
+        </StackLayout>
+
+        <Button Grid.Row="3" Margin="0,10,0,0" Text="Send" Command="{Binding SendCommand}" Background="#3F51B5"></Button>
+    </Grid>
+</ContentPage>

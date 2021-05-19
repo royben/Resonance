@@ -42,5 +42,10 @@ namespace Resonance.Examples.Common.Logging
                 Token = tokenValue?.ToString();
             }
         }
+
+        public override string ToString()
+        {
+            return $"[{Level}] [{SourceContext}]: {Message}";
+        }
     }
 }

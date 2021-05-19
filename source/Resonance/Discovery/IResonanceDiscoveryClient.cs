@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 namespace Resonance.Discovery
 {
     /// <summary>
-    /// Represents a Resonance discovery client capable of detecting and fetching information aboute a remote service.
+    /// Represents a Resonance discovery client capable of detecting and fetching information about a remote service.
     /// </summary>
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>
     /// <typeparam name="TDiscoveredService">The type of the discovered service.</typeparam>
     /// <seealso cref="System.IDisposable" />
-    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDiscoveredService> : IResonanceComponent, IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class, new() where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
+    public interface IResonanceDiscoveryClient<TDiscoveryInfo, TDiscoveredService> : IResonanceComponent, IDisposable, IResonanceAsyncDisposable where TDiscoveryInfo : class where TDiscoveredService : IResonanceDiscoveredService<TDiscoveryInfo>
     {
         /// <summary>
         /// Occurs when a matching service has been discovered.
