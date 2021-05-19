@@ -46,4 +46,8 @@
     <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.Bluetooth\bin\$(Configuration)\Resonance.Bluetooth.xml</DocumentationFile>
+  </PropertyGroup>
+  
 </Project>

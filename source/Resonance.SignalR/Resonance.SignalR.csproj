@@ -16,18 +16,9 @@ Resonance is a high-performance real-time C# communication library with built-in
     <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
     <Version>1.0.0</Version>
   </PropertyGroup>
- 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Debug\Resonance.SignalR.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Release\Resonance.SignalR.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='AzureBuild|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\AzureBuild\Resonance.SignalR.xml</DocumentationFile>
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.SignalR\bin\$(Configuration)\Resonance.SignalR.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

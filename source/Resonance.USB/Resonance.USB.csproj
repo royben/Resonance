@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461;net5.0;monoandroid11</TargetFrameworks>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Configurations>Debug;Release;AzureBuild</Configurations>
     <Authors>Roy Ben Shabat</Authors>
     <Company>Roy Ben Shabat</Company>
@@ -25,16 +25,8 @@ Resonance is a high-performance real-time C# communication library with built-in
     <LanguageTargets>$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets</LanguageTargets>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\Debug\Resonance.USB.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\Release\Resonance.USB.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='AzureBuild|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\AzureBuild\Resonance.USB.xml</DocumentationFile>
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.USB\bin\$(Configuration)\Resonance.USB.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
