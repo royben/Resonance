@@ -91,6 +91,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.Bluetooth\Resonance.Bluetooth.csproj">
+      <Project>{b7a8ed5a-54a1-4aea-b07e-898be3bcd186}</Project>
+      <Name>Resonance.Bluetooth</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Resonance.LZ4\Resonance.LZ4.csproj">
       <Project>{4862d1a2-55ab-4de4-bc8b-a05ee7fc6e43}</Project>
       <Name>Resonance.LZ4</Name>

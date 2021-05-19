@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Resonance.Adapters.Bluetooth;
 using Resonance.Adapters.InMemory;
 using Resonance.Adapters.SharedMemory;
 using Resonance.Adapters.SignalR;
@@ -273,6 +274,30 @@ namespace Resonance.Tests
             Assert.IsTrue(transporter.Decoder.CompressionConfiguration.Enabled);
             Assert.IsInstanceOfType(transporter.Encoder.CompressionConfiguration.Compressor, typeof(LZ4Compressor));
             Assert.IsInstanceOfType(transporter.Decoder.CompressionConfiguration.Compressor, typeof(LZ4Compressor));
+        }
+
+        [TestMethod]
+        public void Transporter_Builder_With_Bluetooth_Adapter()
+        {
+            IResonanceTransporter usbTransporter = ResonanceTransporter.Builder
+               .Create()
+               .WithBluetoothAdapter()
+               .WithAddress("fake address")
+               .WithTranscoding<JsonEncoder, JsonDecoder>()
+               .NoKeepAlive()
+               .WithEncryption()
+               .WithCompression()
+               .Build();
+
+            Assert.IsNotNull(usbTransporter);
+            Assert.IsInstanceOfType(usbTransporter.Adapter, typeof(BluetoothAdapter));
+            Assert.IsTrue((usbTransporter.Adapter as BluetoothAdapter).Address == "fake address");
+            Assert.IsInstanceOfType(usbTransporter.Encoder, typeof(JsonEncoder));
+            Assert.IsInstanceOfType(usbTransporter.Decoder, typeof(JsonDecoder));
+            Assert.IsFalse(usbTransporter.KeepAliveConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.CryptographyConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.Encoder.CompressionConfiguration.Enabled);
+            Assert.IsTrue(usbTransporter.Decoder.CompressionConfiguration.Enabled);
         }
     }
 }
