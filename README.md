@@ -18,7 +18,8 @@ This library provides an intuitive API for asynchronous communication between ma
 | Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
 | Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
 | Resonance.WebRTC | [![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC)](https://www.nuget.org/packages/Resonance.WebRTC/) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
-Resonance.LZ4 | [![Nuget](https://img.shields.io/nuget/v/Resonance.LZ4)](https://www.nuget.org/packages/Resonance.LZ4/) | LZ4 Compression support. | .NET Standard |
+Resonance.LZ4 | [![Nuget](https://img.shields.io/nuget/v/Resonance.LZ4)](https://www.nuget.org/packages/Resonance.LZ4/) | LZ4 Compression support. | .NET Standard 2.0 |
+Resonance.Bluetooth | [![Nuget](https://img.shields.io/nuget/v/Resonance.Bluetooth)](https://www.nuget.org/packages/Resonance.Bluetooth/) | Bluetooth Communication Adapter, Server and Discovery. | .NET 4.6.1, .NET 5, Xamarin.Forms |
 
 <br/>
 <br/>
