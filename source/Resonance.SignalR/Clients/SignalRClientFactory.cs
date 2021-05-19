@@ -22,8 +22,12 @@ namespace Resonance.SignalR.Clients
 
         public ISignalRClient Create(SignalRMode mode, String url)
         {
+#if NET461
             if (mode == SignalRMode.Legacy) return new SignalRClient(url);
             return new SignalRCoreClient(url);
+#else
+            return new SignalRCoreClient(url);
+#endif
         }
     }
 }

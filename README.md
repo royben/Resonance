@@ -16,7 +16,7 @@ This library provides an intuitive API for asynchronous communication between ma
 | Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | All |
 | Resonance.MessagePack | [![Nuget](https://img.shields.io/nuget/v/Resonance.MessagePack)](https://www.nuget.org/packages/Resonance.MessagePack/) | MessagePack Encoder & Decoder | All |
 | Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5, Xamarin.Forms |
-| Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
+| Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | All |
 | Resonance.WebRTC | [![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC)](https://www.nuget.org/packages/Resonance.WebRTC/) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
 | Resonance.LZ4 | [![Nuget](https://img.shields.io/nuget/v/Resonance.LZ4)](https://www.nuget.org/packages/Resonance.LZ4/) | LZ4 Compression support. | All |
 | Resonance.Bluetooth | [![Nuget](https://img.shields.io/nuget/v/Resonance.Bluetooth)](https://www.nuget.org/packages/Resonance.Bluetooth/) | Bluetooth Communication Adapter, Server and Discovery. | .NET 4.6.1, .NET 5, Xamarin.Forms |

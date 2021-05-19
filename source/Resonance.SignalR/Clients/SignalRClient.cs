@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Resonance.SignalR.Clients
 {
+    #if NET461
     /// <summary>
     /// Represents a SignalR legacy client wrapper.
     /// </summary>
@@ -288,4 +289,5 @@ namespace Resonance.SignalR.Clients
             await Task.Factory.StartNew(() => { _connection?.Dispose(); });
         }
     }
+#endif
 }

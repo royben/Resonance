@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Configurations>Debug;Release;AzureBuild</Configurations>
     <Authors>Roy Ben Shabat</Authors>
@@ -16,7 +16,7 @@ Resonance is a high-performance real-time C# communication library with built-in
     <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
     <Version>1.0.0</Version>
   </PropertyGroup>
-
+ 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
     <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.SignalR\bin\Debug\Resonance.SignalR.xml</DocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
