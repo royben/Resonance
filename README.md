@@ -10,7 +10,7 @@ This library provides an intuitive API for asynchronous communication between ma
 <br/>
 <br/>
 
-| Module | Nuget | Description | Supports
+| Module | Nuget | Description | Frameworks
 |:---------------------------------------------|:----------|:--------|:--------|
 | Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) <img width=30/> | Core components | All |
 | Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | All |
