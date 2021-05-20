@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,8 @@ namespace Resonance.Examples.Common.Logging
     {
         public static event EventHandler<LogReceivedEventArgs> LogReceived;
 
+        public static LoggingLevelSwitch LoggingLevelSwitch { get; set; }
+
         public static void RaiseLogEvent(LogEvent logEvent,IFormatProvider formatProvider)
         {
             LogReceived?.Invoke(null, new LogReceivedEventArgs() { LogEvent = logEvent, FormatProvider = formatProvider });
@@ -22,9 +25,11 @@ namespace Resonance.Examples.Common.Logging
         {
             var loggerFactory = new LoggerFactory();
 
+            LoggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+
             var logger = new LoggerConfiguration()
                 .MinimumLevel
-                .Information()
+                .ControlledBy(LoggingLevelSwitch)
                 .WriteTo
                 .SerilogEventSink()
                 .CreateLogger();

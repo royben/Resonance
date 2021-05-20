@@ -11,10 +11,12 @@ namespace Resonance.SignalR
     /// </summary>
     public enum SignalRMode   
     {
+#if NET461
         /// <summary>
         /// Using .NET Framework.
         /// </summary>
         Legacy,
+#endif
         /// <summary>
         /// Using .NET Core.
         /// </summary>

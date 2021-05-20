@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Resonance.Tests.Common
@@ -38,6 +39,21 @@ namespace Resonance.Tests.Common
             byte[] b = new byte[sizeInKb * 1024];
             rnd.NextBytes(b);
             return b;
+        }
+
+        public static void WaitWhile(Func<bool> func, TimeSpan timeout)
+        {
+            DateTime startTime = DateTime.Now;
+
+            while (func())
+            {
+                Thread.Sleep(10);
+
+                if (DateTime.Now > startTime + timeout)
+                {
+                    throw new TimeoutException("Could not complete the WaitWhile statement within the given timeout.");
+                }
+            }
         }
     }
 }

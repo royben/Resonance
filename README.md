@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png" />    
+  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png?raw=true" />    
 </p>
 
-# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=3&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/3) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
+# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png?raw=true" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=3&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/3) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
 
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
@@ -10,15 +10,16 @@ This library provides an intuitive API for asynchronous communication between ma
 <br/>
 <br/>
 
-| Module | Nuget | Description | Target Framework
-|:---------------------------------------------|:---------|:--------|:--------|
-| Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) | Core components | .NET Standard 2.0 |
-| Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | .NET Standard 2.0 |
-| Resonance.MessagePack | [![Nuget](https://img.shields.io/nuget/v/Resonance.MessagePack)](https://www.nuget.org/packages/Resonance.MessagePack/) | MessagePack Encoder & Decoder | .NET Standard 2.0 |
-| Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5 |
-| Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | .NET 4.6.1, .NET 5 |
+| Module | Nuget | Description | Supports
+|:---------------------------------------------|:----------|:--------|:--------|
+| Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) | Core components | All |
+| Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | All |
+| Resonance.MessagePack | [![Nuget](https://img.shields.io/nuget/v/Resonance.MessagePack)](https://www.nuget.org/packages/Resonance.MessagePack/) | MessagePack Encoder & Decoder | All |
+| Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 4.6.1, .NET 5, Xamarin.Forms |
+| Resonance.SignalR | [![Nuget](https://img.shields.io/nuget/v/Resonance.SignalR)](https://www.nuget.org/packages/Resonance.SignalR/) | SignalR (core and legacy) Adapters and Hubs. | All |
 | Resonance.WebRTC | [![Nuget](https://img.shields.io/nuget/v/Resonance.WebRTC)](https://www.nuget.org/packages/Resonance.WebRTC/) | WebRTC Adapter support. | .NET 4.6.1, .NET 5 |
-Resonance.LZ4 | [![Nuget](https://img.shields.io/nuget/v/Resonance.LZ4)](https://www.nuget.org/packages/Resonance.LZ4/) | LZ4 Compression support. | .NET Standard |
+| Resonance.LZ4 | [![Nuget](https://img.shields.io/nuget/v/Resonance.LZ4)](https://www.nuget.org/packages/Resonance.LZ4/) | LZ4 Compression support. | All |
+| Resonance.Bluetooth | [![Nuget](https://img.shields.io/nuget/v/Resonance.Bluetooth)](https://www.nuget.org/packages/Resonance.Bluetooth/) | Bluetooth Communication Adapter, Server and Discovery. | .NET 4.6.1, .NET 5, Xamarin.Forms |
 
 <br/>
 <br/>
@@ -33,7 +34,7 @@ Although the request-response pattern is the recommended approach, it is not enf
 
 The following diagram provides a basic overview of a message being sent.
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png?raw=true)
 
 <br/>
 <br/>
@@ -68,7 +69,7 @@ The following built-in adapters are currently supported by the library:
 
 The following diagram described a simple request-response scenario.
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png?raw=true)
 
 <br/>
 
@@ -677,7 +678,7 @@ Once the password is acquired by both participants, they can start send and rece
 
 <br/>
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png?raw=true)
 
 <br/>
 
@@ -792,7 +793,7 @@ The recommended way of viewing the Resonance communication logs is using  [Seq](
 The Seq logs viewer supports structured logs that fits nicely with Resonance logging implementation.<br/>
 
 Here is a screenshot of a request being traced using its `Token` property through Seq.<br/>
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png?raw=true)
 
 <br/>
 

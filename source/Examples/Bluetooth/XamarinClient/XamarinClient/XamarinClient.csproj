@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AzureBuild|AnyCPU'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\Common\Resonance.Examples.Common\Logging\LogEventVM.cs" Link="Logging\LogEventVM.cs" />
+    <Compile Include="..\..\..\Common\Resonance.Examples.Common\Logging\LoggingConfiguration.cs" Link="Logging\LoggingConfiguration.cs" />
+    <Compile Include="..\..\..\Common\Resonance.Examples.Common\Logging\LogReceivedEventArgs.cs" Link="Logging\LogReceivedEventArgs.cs" />
+    <Compile Include="..\..\..\Common\Resonance.Examples.Common\Logging\SerilogEventSink.cs" Link="Logging\SerilogEventSink.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Acr.UserDialogs" Version="7.1.0.514" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Resonance.Bluetooth\Resonance.Bluetooth.csproj" />
+    <ProjectReference Include="..\..\..\..\Resonance\Resonance.csproj" />
+    <ProjectReference Include="..\..\Resonance.Example.Bluetooth.Common\Resonance.Example.Bluetooth.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Logging\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="ChatPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

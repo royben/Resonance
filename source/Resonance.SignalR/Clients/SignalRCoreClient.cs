@@ -17,6 +17,21 @@ namespace Resonance.SignalR.Clients
         private HubConnection _connection;
 
         /// <summary>
+        /// Occurs when an error has occurred on the client.
+        /// </summary>
+        public event EventHandler<ResonanceExceptionEventArgs> Error;
+
+        /// <summary>
+        /// Occurs when the client is trying to reconnect after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnecting;
+
+        /// <summary>
+        /// Occurs when the client has successfully reconnected after a connection loss.
+        /// </summary>
+        public event EventHandler Reconnected;
+
+        /// <summary>
         /// Gets the hub URL.
         /// </summary>
         public String Url { get; }
@@ -32,6 +47,11 @@ namespace Resonance.SignalR.Clients
         public bool UseMessagePackProtocol { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable auto reconnection.
+        /// </summary>
+        public bool EnableAutoReconnection { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SignalRCoreClient"/> class.
         /// </summary>
         /// <param name="url">The hub URL.</param>
@@ -45,7 +65,7 @@ namespace Resonance.SignalR.Clients
         /// Starts the connection.
         /// </summary>
         /// <returns></returns>
-        public async Task Start()
+        public async Task StartAsync()
         {
             if (IsStarted) return;
 
@@ -57,7 +77,68 @@ namespace Resonance.SignalR.Clients
                 builder = builder.AddMessagePackProtocol();
             }
 
+            if (EnableAutoReconnection)
+            {
+                builder = builder.WithAutomaticReconnect(new TimeSpan[]
+                {
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(1)
+                });
+            }
+
             _connection = builder.Build();
+
+            bool reconnecting = false;
+
+            _connection.Closed += (exception) =>
+            {
+                if (EnableAutoReconnection)
+                {
+                    if (reconnecting && _connection.State == HubConnectionState.Disconnected && exception.GetType() == typeof(OperationCanceledException))
+                    {
+                        Error?.Invoke(this, new ResonanceExceptionEventArgs(exception));
+                    }
+                }
+
+                return Task.FromResult(true);
+            };
+
+            _connection.Reconnecting += (ex) =>
+            {
+                if (!reconnecting)
+                {
+                    reconnecting = true;
+
+                    if (EnableAutoReconnection)
+                    {
+                        Reconnecting?.Invoke(this, new EventArgs());
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Stop();
+                            Error?.Invoke(this, new ResonanceExceptionEventArgs(ex));
+                        }
+                        catch { }
+                    }
+                }
+
+                return Task.FromResult(true);
+            };
+
+            _connection.Reconnected += (msg) =>
+            {
+                if (EnableAutoReconnection)
+                {
+                    Reconnected?.Invoke(this, new EventArgs());
+                    reconnecting = false;
+                }
+
+                return Task.FromResult(true);
+            };
 
             await _connection.StartAsync();
             IsStarted = true;
@@ -66,12 +147,28 @@ namespace Resonance.SignalR.Clients
         /// <summary>
         /// Stops the connection.
         /// </summary>
-        public async Task Stop()
+        public async Task StopAsync()
         {
             if (!IsStarted) return;
 
             await _connection.StopAsync();
             IsStarted = false;
+        }
+
+        /// <summary>
+        /// Starts the connection.
+        /// </summary>
+        public void Start()
+        {
+            StartAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Stops the connection.
+        /// </summary>
+        public void Stop()
+        {
+            StopAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -81,7 +178,7 @@ namespace Resonance.SignalR.Clients
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">This method does not support more than 3 arguments.</exception>
-        public Task Invoke(string methodName, params object[] args)
+        public Task InvokeAsync(string methodName, params object[] args)
         {
             if (args == null || args.Length == 0)
             {
@@ -111,7 +208,7 @@ namespace Resonance.SignalR.Clients
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">This method does not support more than 3 arguments.</exception>
-        public Task<T> Invoke<T>(string methodName, params object[] args)
+        public Task<T> InvokeAsync<T>(string methodName, params object[] args)
         {
             if (args == null || args.Length == 0)
             {
@@ -196,7 +293,7 @@ namespace Resonance.SignalR.Clients
         /// </summary>
         public async Task DisposeAsync()
         {
-            await Stop();
+            await StopAsync();
             await _connection.DisposeAsync();
         }
     }

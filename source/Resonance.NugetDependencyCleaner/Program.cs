@@ -57,6 +57,10 @@ namespace Resonance.NugetDependencyCleaner
                     {
                         targetFramework = "net5.0";
                     }
+                    else if (dep.Key == "standard")
+                    {
+                        targetFramework = ".NETStandard2.0";
+                    }
                     else
                     {
                         throw new ArgumentException($"Error processing dependency with target framework '{dep.Key}'.");

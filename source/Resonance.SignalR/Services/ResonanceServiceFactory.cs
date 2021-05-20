@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNet.SignalR.Client;
+﻿using Microsoft.Extensions.Logging;
 using Resonance.SignalR.Clients;
 using Resonance.SignalR.Hubs;
 using Resonance.Threading;
@@ -13,7 +13,7 @@ namespace Resonance.SignalR.Services
     /// <summary>
     /// Represents a Resonance SignalR service factory used for querying and registering services.
     /// </summary>
-    public class ResonanceServiceFactory
+    public class ResonanceServiceFactory : ResonanceObject
     {
         private static Lazy<ResonanceServiceFactory> _default = new Lazy<ResonanceServiceFactory>(() => new ResonanceServiceFactory());
 
@@ -46,9 +46,8 @@ namespace Resonance.SignalR.Services
         {
             ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
 
-            await client.Start();
-            await client.Invoke(ResonanceHubMethods.Login, credentials);
-            var services = await client.Invoke<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices);
+            await client.StartAsync();
+            var services = await client.InvokeAsync<List<TReportedServiceInformation>>(ResonanceHubMethods.GetAvailableServices, credentials);
             await client.DisposeAsync();
 
             return services;
@@ -81,11 +80,14 @@ namespace Resonance.SignalR.Services
         /// <returns></returns>
         public async Task<ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>> RegisterServiceAsync<TCredentials, TResonanceServiceInformation, TAdapterInformation>(TCredentials credentials, TResonanceServiceInformation serviceInformation, String url, SignalRMode mode) where TResonanceServiceInformation : IResonanceServiceInformation
         {
-            ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
+            Logger.LogDebug($"Registering service {{@ServiceInformation}}...", serviceInformation);
 
-            await client.Start();
-            await client.Invoke(ResonanceHubMethods.Login, credentials);
-            await client.Invoke(ResonanceHubMethods.RegisterService, serviceInformation);
+            ISignalRClient client = SignalRClientFactory.Default.Create(mode, url);
+            client.EnableAutoReconnection = true;
+
+            await client.StartAsync();
+            await client.InvokeAsync(ResonanceHubMethods.Login, credentials);
+            await client.InvokeAsync(ResonanceHubMethods.RegisterService, serviceInformation);
             return new ResonanceRegisteredService<TCredentials, TResonanceServiceInformation, TAdapterInformation>(credentials, serviceInformation, mode, client);
         }
 

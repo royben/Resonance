@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSBuild.Sdk.Extras/3.0.23">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461;net5.0;monoandroid11</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Configurations>Debug;Release;AzureBuild</Configurations>
     <Authors>Roy Ben Shabat</Authors>
@@ -17,22 +17,26 @@ Resonance is a high-performance real-time C# communication library with built-in
     <Version>1.0.0</Version>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\Debug\Resonance.USB.xml</DocumentationFile>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'monoandroid11'">
+    <TargetFrameworkIdentifier>MonoAndroid</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v9.0</TargetFrameworkVersion>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <DefineConstants>$(DefineConstants);MONOANDROID</DefineConstants>
+    <LanguageTargets>$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets</LanguageTargets>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\Release\Resonance.USB.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='AzureBuild|net461|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.USB\bin\AzureBuild\Resonance.USB.xml</DocumentationFile>
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.USB\bin\$(Configuration)\Resonance.USB.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />
     <PackageReference Include="System.Management" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net461'">
+    <PackageReference Remove="System.IO.Ports" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>

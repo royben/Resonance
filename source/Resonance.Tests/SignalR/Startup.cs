@@ -24,6 +24,8 @@ namespace Resonance.Tests //This must be here because OWIN requires AssemblyName
 
             app.UseCors(CorsOptions.AllowAll);
             app.MapSignalR(new HubConfiguration() { EnableDetailedErrors = true }); //Use this to include exception messages from hub.
+
+            GlobalHost.Configuration.DisconnectTimeout = TimeSpan.FromSeconds(10); //Optional, configure the reconnection timeout.
         }
     }
 }

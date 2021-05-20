@@ -2,6 +2,7 @@
 using Resonance.Adapters.SignalR;
 using Resonance.Messages;
 using Resonance.SignalR;
+using Resonance.SignalR.Discovery;
 using Resonance.SignalR.Services;
 using Resonance.Tests.Common;
 using Resonance.Tests.SignalR;
@@ -12,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,18 +24,21 @@ namespace Resonance.Tests
     [TestCategory("SignalR")]
     public class SignalR_TST : ResonanceTest
     {
+        private String legacyHostUrl = "http://localhost:8080";
+        private String legacyHubUrl = "http://localhost:8080/TestHub";
+
+        private String coreHostUrl = "http://localhost:27210";
+        private String coreHubUrl = "http://localhost:27210/hubs/TestHub";
+
         [TestMethod]
         public void SignalR_Legacy_Reading_Writing()
         {
             if (IsRunningOnAzurePipelines) return;
 
-            String hostUrl = "http://localhost:8080";
-            String hubUrl = $"{hostUrl}/TestHub";
-
-            SignalRServer server = new SignalRServer(hostUrl);
+            SignalRServer server = new SignalRServer(legacyHostUrl);
             server.Start();
 
-            SignalR_Reading_Writing(hubUrl, SignalRMode.Legacy);
+            SignalR_Reading_Writing(legacyHubUrl, SignalRMode.Legacy);
         }
 
         [TestMethod]
@@ -41,50 +46,10 @@ namespace Resonance.Tests
         {
             if (IsRunningOnAzurePipelines) return;
 
-            String webApiProjectPath = Path.Combine(TestHelper.GetSolutionFolder(), "Resonance.Tests.SignalRCore.WebAPI");
-
-            Process cmd = new Process();
-            cmd.StartInfo.WorkingDirectory = webApiProjectPath;
-            cmd.StartInfo.FileName = "dotnet";
-            cmd.StartInfo.Arguments = "run";
-            cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            cmd.StartInfo.CreateNoWindow = true;
-            cmd.Start();
-
-            Thread.Sleep(4000);
-
-            String expected = "Resonance SignalR Core Unit Test Feedback Service";
-            String result = String.Empty;
-
-            try
+            using (SignalRCoreServer server = new SignalRCoreServer(coreHostUrl))
             {
-                while (result != expected)
-                {
-                    try
-                    {
-                        using (HttpClient http = new HttpClient())
-                        {
-                            result = http.GetStringAsync("http://localhost:27210/home").GetAwaiter().GetResult();
-                        }
-                    }
-                    catch { }
-
-                    Thread.Sleep(1000);
-                }
-
-                SignalR_Reading_Writing("http://localhost:27210/hubs/TestHub", SignalRMode.Core);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                try
-                {
-                    cmd.Kill();
-                }
-                catch { }
+                server.Start();
+                SignalR_Reading_Writing(coreHubUrl, SignalRMode.Core);
             }
         }
 
@@ -123,12 +88,112 @@ namespace Resonance.Tests
 
             clientTransporter.Connect();
 
+            TestHelper.WaitWhile(() => !connected, TimeSpan.FromSeconds(30));
+
+            TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, 1000, 20);
+        }
+
+
+        [TestMethod]
+        public void SignalR_Legacy_Adapter_Fails_On_Client_Error()
+        {
+            if (IsRunningOnAzurePipelines) return;
+
+            SignalR_Adapter_Fails_On_Client_Error(new SignalRServer(legacyHostUrl), legacyHostUrl, legacyHubUrl, SignalRMode.Legacy);
+        }
+
+        [TestMethod]
+        public void SignalR_Core_Adapter_Fails_On_Client_Error()
+        {
+            if (IsRunningOnAzurePipelines) return;
+
+            SignalR_Adapter_Fails_On_Client_Error(new SignalRCoreServer(coreHostUrl), coreHostUrl, coreHubUrl, SignalRMode.Core);
+        }
+
+        private void SignalR_Adapter_Fails_On_Client_Error(ISignalRServer server, String hostUrl, String hubUrl, SignalRMode mode)
+        {
+            server.Start();
+
+            var registeredService = ResonanceServiceFactory.Default.RegisterService<
+                TestCredentials,
+                TestServiceInformation,
+                TestAdapterInformation>(
+                new TestCredentials() { Name = "Service User" },
+                new TestServiceInformation() { ServiceId = "Service 1" },
+                hubUrl,
+                mode);
+
+            bool connected = false;
+            IResonanceAdapter serviceAdapter = null;
+
+
+            registeredService.ConnectionRequest += (x, e) =>
+            {
+                serviceAdapter = e.Accept();
+                serviceAdapter.Connect();
+                connected = true;
+            };
+
+            SignalRAdapter<TestCredentials> adapter = new SignalRAdapter<TestCredentials>(
+                new TestCredentials() { Name = "Test User" },
+                hubUrl, "Service 1", mode);
+
+            adapter.Connect();
+
             while (!connected)
             {
                 Thread.Sleep(10);
             }
 
-            TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, 1000, 20);
+            Thread.Sleep(1000);
+
+            server.Dispose();
+            serviceAdapter.Dispose();
+
+            TestHelper.WaitWhile(() => adapter.State != ResonanceComponentState.Failed, TimeSpan.FromSeconds(10));
+
+            Assert.IsTrue(adapter.State == ResonanceComponentState.Failed);
+
+            Assert.IsInstanceOfType(adapter.FailedStateException, typeof(WebSocketException));
+        }
+
+
+        [TestMethod]
+        public void SignalR_Discovery()
+        {
+            if (IsRunningOnAzurePipelines) return;
+
+            SignalRServer server = new SignalRServer(legacyHostUrl);
+            server.Start();
+
+            var registeredService = ResonanceServiceFactory.Default.RegisterService<
+                TestCredentials,
+                TestServiceInformation,
+                TestAdapterInformation>(
+                new TestCredentials() { Name = "Service User" },
+                new TestServiceInformation() { ServiceId = "Service 1" },
+                legacyHubUrl,
+                SignalRMode.Legacy);
+
+            ResonanceSignalRDiscoveryClient<TestServiceInformation, TestCredentials> discoveryClient = 
+                new ResonanceSignalRDiscoveryClient<TestServiceInformation, TestCredentials>(
+                    legacyHubUrl, 
+                    SignalRMode.Legacy, 
+                    new TestCredentials() { Name = "Test User" });
+
+
+            var discoveredServices = discoveryClient.Discover(TimeSpan.FromSeconds(10), 1);
+
+            Assert.IsTrue(discoveredServices.Count == 1);
+            Assert.IsTrue(discoveredServices[0].DiscoveryInfo.ServiceId == "Service 1");
+
+            registeredService.Dispose();
+
+            discoveredServices = discoveryClient.Discover(TimeSpan.FromSeconds(5), 1);
+
+            Assert.IsTrue(discoveredServices.Count == 0);
+
+            server.Dispose();
         }
     }
 }

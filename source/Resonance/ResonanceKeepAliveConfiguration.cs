@@ -45,10 +45,10 @@ namespace Resonance
         public ResonanceKeepAliveConfiguration()
         {
             EnableAutoResponse = true;
-            Delay = TimeSpan.FromSeconds(2);
-            Interval = TimeSpan.FromSeconds(2);
+            Delay = TimeSpan.FromSeconds(5);
+            Interval = TimeSpan.FromSeconds(5);
             FailTransporterOnTimeout = true;
-            Retries = 5;
+            Retries = 4;
         }
     }
 }

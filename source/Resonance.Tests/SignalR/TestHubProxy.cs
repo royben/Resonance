@@ -18,13 +18,8 @@ namespace Resonance.Tests.SignalR
 
         }
 
-        protected override void Login(TestCredentials credentials, string connectionId)
+        protected override void Login(TestCredentials credentials, string connectionId, bool isDiscoveryClient)
         {
-            if (credentials.Name != "Test")
-            {
-                throw new AuthenticationException("Name is not 'Test'.");
-            }
-
             _loggedInClients[connectionId] = credentials;
         }
 
@@ -36,9 +31,14 @@ namespace Resonance.Tests.SignalR
             }
         }
 
-        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, String connectionId)
+        protected override List<TestServiceInformation> FilterServicesInformation(List<TestServiceInformation> services, TestCredentials credentials)
         {
             return services.ToList();
+        }
+
+        protected override TestServiceInformation FilterServiceInformation(TestServiceInformation service, TestCredentials credentials)
+        {
+            return service;
         }
 
         protected override TestAdapterInformation GetAdapterInformation(string connectionId)

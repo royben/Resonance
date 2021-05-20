@@ -39,6 +39,19 @@ namespace Resonance
 
         #region Properties
 
+        /// <summary>
+        /// Gets a value indicating whether the adapter is currently performing fail state operations.
+        /// </summary>
+        protected bool IsFailing { get; private set; }
+
+        /// <summary>
+        /// Gets the component count.
+        /// </summary>
+        protected int ComponentCount
+        {
+            get { return _componentCounter; }
+        }
+
         private long _totalBytesReceived;
         /// <summary>
         /// Gets the total bytes received.
@@ -135,6 +148,7 @@ namespace Resonance
         {
             if (State == ResonanceComponentState.Connected)
             {
+                IsFailing = true;
                 FailedStateException = ex;
                 Logger.LogError(ex, message);
                 try
@@ -143,7 +157,17 @@ namespace Resonance
                 }
                 catch { }
                 State = ResonanceComponentState.Failed;
+                IsFailing = false;
             }
+        }
+
+        /// <summary>
+        /// Called when the adapter has failed.
+        /// </summary>
+        /// <param name="ex">The exception.</param>
+        protected virtual void OnFailed(Exception ex)
+        {
+            OnFailed(ex, ex.Message);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,6 +23,8 @@ namespace Resonance.SignalR.Hubs
     {
         private InvokeClientMethodDelegate _invoke;
         private Func<String> _getConnectionId;
+        private static List<String> _serviceQueriesConnectionIds = new List<String>();
+        private static List<ResonanceHubDiscoveryClient<TCredentials>> _discoveryClients = new List<ResonanceHubDiscoveryClient<TCredentials>>();
 
         /// <summary>
         /// Gets the hub repository.
@@ -52,9 +55,19 @@ namespace Resonance.SignalR.Hubs
         /// Authenticates the specified service or adapter with the system.
         /// </summary>
         /// <param name="credentials">The service/adapter credentials.</param>
+        /// <param name="isDiscoveryClient">Determines whether the requesting client is a discovery client.</param>
+        private void Login(TCredentials credentials, bool isDiscoveryClient)
+        {
+            Login(credentials, _getConnectionId(), isDiscoveryClient);
+        }
+
+        /// <summary>
+        /// Authenticates the specified service or adapter with the system.
+        /// </summary>
+        /// <param name="credentials">The service/adapter credentials.</param>
         public virtual void Login(TCredentials credentials)
         {
-            Login(credentials, _getConnectionId());
+            Login(credentials, _getConnectionId(), false);
         }
 
         /// <summary>
@@ -62,7 +75,8 @@ namespace Resonance.SignalR.Hubs
         /// </summary>
         /// <param name="credentials">The credentials.</param>
         /// <param name="connectionId">The current connection identifier.</param>
-        protected abstract void Login(TCredentials credentials, String connectionId);
+        /// <param name="isDiscoveryClient">Determines whether the requesting client is a discovery client.</param>
+        protected abstract void Login(TCredentials credentials, String connectionId, bool isDiscoveryClient);
 
         /// <summary>
         /// Validates the specified connection identifier (should be done as quickly as possible).
@@ -98,6 +112,16 @@ namespace Resonance.SignalR.Hubs
                 service.ConnectionId = _getConnectionId();
                 service.ServiceInformation = serviceInformation;
             }
+
+            foreach (var discoveryClient in _discoveryClients.ToList())
+            {
+                var reportedService = FilterServiceInformation(serviceInformation, discoveryClient.Credentials);
+
+                if (reportedService != null)
+                {
+                    Invoke(ResonanceHubMethods.ServiceRegistered, discoveryClient.ConnectionId, reportedService);
+                }
+            }
         }
 
         /// <summary>
@@ -111,7 +135,7 @@ namespace Resonance.SignalR.Hubs
 
             var service = Repository.GetService(x => x.ConnectionId == _getConnectionId());
 
-            if (service == null) throw new InvalidOperationException("The current client is not registered as a service.");
+            if (service == null) return;
 
             Repository.RemoveService(service);
 
@@ -131,25 +155,65 @@ namespace Resonance.SignalR.Hubs
 
                 Repository.RemoveSession(session);
             });
+
+            foreach (var discoveryClient in _discoveryClients.ToList())
+            {
+                var reportedService = FilterServiceInformation(service.ServiceInformation, discoveryClient.Credentials);
+
+                if (reportedService != null)
+                {
+                    Invoke(ResonanceHubMethods.ServiceUnRegistered, discoveryClient.ConnectionId, reportedService);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Registers a discovery client.
+        /// </summary>
+        /// <param name="credentials">The credentials.</param>
+        public virtual void RegisterDiscoveryClient(TCredentials credentials)
+        {
+            Login(credentials, true);
+
+            String connectionId = GetConnectionId();
+
+            if (!_discoveryClients.Exists(x => x.ConnectionId == connectionId))
+            {
+                _discoveryClients.Add(new ResonanceHubDiscoveryClient<TCredentials>()
+                {
+                    ConnectionId = connectionId,
+                    Credentials = credentials
+                });
+            }
         }
 
         /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        public virtual List<TReportedServiceInformation> GetAvailableServices()
+        public virtual List<TReportedServiceInformation> GetAvailableServices(TCredentials credentials)
         {
-            Validate(_getConnectionId());
-            return FilterServicesInformation(Repository.GetServices(x => true).Select(x => x.ServiceInformation).ToList(), _getConnectionId());
+            Login(credentials, true);
+            _serviceQueriesConnectionIds.Add(GetConnectionId());
+            return FilterServicesInformation(Repository.GetServices(x => true).Select(x => x.ServiceInformation).ToList(), credentials);
         }
 
         /// <summary>
-        /// Maps and filters the collection of service information to reported service information based on the specified connection id.
+        /// Maps and filters the collection of service information to reported service information based on the specified credentials.
         /// </summary>
         /// <param name="services">The services.</param>
-        /// <param name="connectionId">The current connection identifier.</param>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services, String connectionId);
+        protected abstract List<TReportedServiceInformation> FilterServicesInformation(List<TServiceInformation> services, TCredentials credentials);
+
+        /// <summary>
+        /// Maps and filters a single service information to reported service information based on the specified credentials.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
+        /// <returns></returns>
+        protected abstract TReportedServiceInformation FilterServiceInformation(TServiceInformation service, TCredentials credentials);
 
         /// <summary>
         /// Creates a new "pending session" and sends a connection request to the specified service.
@@ -311,6 +375,43 @@ namespace Resonance.SignalR.Hubs
         protected void Invoke(String methodName, String connectionId, params object[] args)
         {
             _invoke(methodName, connectionId, args);
+        }
+
+        /// <summary>
+        /// Called when a client has disconnected.
+        /// </summary>
+        public void ConnectionClosed()
+        {
+            String connectionId = GetConnectionId();
+
+            if (_serviceQueriesConnectionIds.Exists(x => x == connectionId))
+            {
+                _serviceQueriesConnectionIds.Remove(connectionId);
+                return;
+            }
+
+            if (Repository.GetService(x => x.ConnectionId == connectionId) != null)
+            {
+                UnregisterService();
+            }
+
+            if (GetContextSession() != null)
+            {
+                Disconnect();
+            }
+
+            _discoveryClients.RemoveAll(x => x.ConnectionId == connectionId);
+
+            OnConnectionClosed(connectionId);
+        }
+
+        /// <summary>
+        /// Called when a client has disconnected.
+        /// </summary>
+        /// <param name="connectionId">The connection identifier.</param>
+        protected virtual void OnConnectionClosed(String connectionId)
+        {
+            //For overrides...
         }
     }
 }

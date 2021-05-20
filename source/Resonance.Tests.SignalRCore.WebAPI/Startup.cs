@@ -32,7 +32,11 @@ namespace Resonance.Tests.SignalRCore.WebAPI
 
 
             services
-                .AddSignalR((x) => x.EnableDetailedErrors = true)
+                .AddSignalR((x) => 
+                { 
+                    x.EnableDetailedErrors = true;
+                    x.MaximumReceiveMessageSize = null;
+                })
                 .AddMessagePackProtocol(); //Add MessagePack protocol !
         }
 

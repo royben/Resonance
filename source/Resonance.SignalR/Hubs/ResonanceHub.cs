@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNet.SignalR;
+﻿#if NET461
+using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using System;
 using System.Collections.Generic;
@@ -65,12 +66,22 @@ namespace Resonance.SignalR.Hubs
         }
 
         /// <summary>
+        /// Registers a discovery client.
+        /// </summary>
+        /// <param name="credentials">The credentials.</param>
+        public void RegisterDiscoveryClient(TCredentials credentials)
+        {
+            _proxy.RegisterDiscoveryClient(credentials);
+        }
+
+        /// <summary>
         /// Gets the available services for the current connected client.
         /// </summary>
+        /// <param name="credentials">Credentials used to authenticate the requesting user.</param>
         /// <returns></returns>
-        public List<TReportedServiceInformation> GetAvailableServices()
+        public List<TReportedServiceInformation> GetAvailableServices(TCredentials credentials)
         {
-            return _proxy.GetAvailableServices();
+            return _proxy.GetAvailableServices(credentials);
         }
 
         /// <summary>
@@ -132,5 +143,11 @@ namespace Resonance.SignalR.Hubs
             proxy.Invoke(methodName, args);
         }
 
+        public override Task OnDisconnected(bool stopCalled)
+        {
+            _proxy.ConnectionClosed();
+            return base.OnDisconnected(stopCalled);
+        }
     }
 }
+#endif

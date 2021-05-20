@@ -20,16 +20,8 @@ Resonance is a high-performance real-time C# communication library with built-in
     <Version>1.0.0</Version>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.LZ4\bin\Debug\Resonance.LZ4.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.LZ4\bin\Release\Resonance.LZ4.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AzureBuild|AnyCPU'">
-    <DocumentationFile>C:\DATA\Development\Resonance\source\Resonance.LZ4\bin\AzureBuild\Resonance.LZ4.xml</DocumentationFile>
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.LZ4\bin\$(Configuration)\Resonance.LZ4.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

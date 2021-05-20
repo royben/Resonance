@@ -129,7 +129,7 @@ namespace Resonance.Examples.TCP.Client
         protected async override void OnApplicationReady()
         {
             base.OnApplicationReady();
-            await _discoveryClient.Start();
+            await _discoveryClient.StartAsync();
         }
 
         private void ServiceDiscovered(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceUdpDiscoveredService<DiscoveryInfo>, DiscoveryInfo> e)
@@ -173,7 +173,7 @@ namespace Resonance.Examples.TCP.Client
                     await _transporter.ConnectAsync();
                     await _transporter.SendRequestAsync<LoginRequest, LoginResponse>(new LoginRequest() { ClientID = ClientID });
 
-                    await _discoveryClient.Stop();
+                    await _discoveryClient.StopAsync();
 
                     IsConnected = true;
                 }
@@ -285,7 +285,7 @@ namespace Resonance.Examples.TCP.Client
             InvokeUI(() =>
             {
                 DiscoveredServices.Clear();
-                _discoveryClient?.Start();
+                _discoveryClient?.StartAsync();
             });
         }
     }

@@ -34,7 +34,6 @@ namespace Resonance.Adapters.Usb
             return Description;
         }
 
-#pragma warning disable CA1416 //This method is supported only on Windows.
         /// <summary>
         /// Gets the available USB serial devices.
         /// </summary>
@@ -44,13 +43,12 @@ namespace Resonance.Adapters.Usb
             return Task.Factory.StartNew<List<UsbDevice>>(() =>
             {
                 List<UsbDevice> devices = new List<UsbDevice>();
+                var portnames = SerialPort.GetPortNames();
+                List<String> portsInfo = new List<String>();
 
+#if NET461
                 using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
                 {
-                    var portnames = SerialPort.GetPortNames();
-
-                    List<String> portsInfo = new List<String>();
-
                     foreach (var item in searcher.Get())
                     {
                         try
@@ -68,20 +66,18 @@ namespace Resonance.Adapters.Usb
                         }
                         catch { }
                     }
+                }
+#endif
 
-                    foreach (var port in portnames)
+                foreach (var port in portnames)
+                {
+                    var info = portsInfo.FirstOrDefault(x => x.Contains(port));
+
+                    devices.Add(new UsbDevice()
                     {
-                        var info = portsInfo.FirstOrDefault(x => x.Contains(port));
-
-                        if (info != null)
-                        {
-                            devices.Add(new UsbDevice()
-                            {
-                                Port = port,
-                                Description = info
-                            });
-                        }
-                    }
+                        Port = port,
+                        Description = info != null ? info : port
+                    });
                 }
 
                 return devices;
@@ -96,6 +92,5 @@ namespace Resonance.Adapters.Usb
         {
             return GetAvailableDevicesAsync().GetAwaiter().GetResult();
         }
-#pragma warning restore CA1416
     }
 }

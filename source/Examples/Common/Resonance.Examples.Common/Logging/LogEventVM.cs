@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Resonance.Examples.Common.Logging
 {
-    public class LogEventVM : ResonanceViewModel
+    public class LogEventVM
     {
         public String SourceContext { get; set; }
 
@@ -41,6 +41,11 @@ namespace Resonance.Examples.Common.Logging
             {
                 Token = tokenValue?.ToString();
             }
+        }
+
+        public override string ToString()
+        {
+            return $"[{Level}] [{SourceContext}]: {Message}";
         }
     }
 }

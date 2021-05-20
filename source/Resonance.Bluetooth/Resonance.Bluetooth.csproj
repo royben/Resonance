@@ -1,0 +1,53 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras/3.0.23">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net5.0;net461;monoandroid11</TargetFrameworks>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Configurations>Debug;Release;AzureBuild</Configurations>
+    <Authors>Roy Ben Shabat</Authors>
+    <Company>Roy Ben Shabat</Company>
+    <Description>
+      Bluetooth Adapter for Resonance.
+      
+      Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods. This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
+    </Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/royben/Resonance</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
+    <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR;Bluetooth</PackageTags>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'monoandroid11'">
+    <TargetFrameworkIdentifier>MonoAndroid</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v9.0</TargetFrameworkVersion>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <DefineConstants>$(DefineConstants);MONOANDROID</DefineConstants>
+    <LanguageTargets>$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets</LanguageTargets>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Resonance\Resonance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\visuals\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DocumentationFile>$(SolutionDir)Resonance.Bluetooth\bin\$(Configuration)\Resonance.Bluetooth.xml</DocumentationFile>
+  </PropertyGroup>
+  
+</Project>
