@@ -78,6 +78,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resonance.Example.Bluetooth.Common", "Examples\Bluetooth\Resonance.Example.Bluetooth.Common\Resonance.Example.Bluetooth.Common.csproj", "{CDDF8F01-564F-49DD-8870-C7A2AA43807B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebRTC", "WebRTC", "{A95BF087-85D1-468C-BA4C-7CF59505F3CA}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\WebRTC\README.md = Examples\WebRTC\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.WebRTC.Common", "Examples\WebRTC\Resonance.Examples.WebRTC.Common\Resonance.Examples.WebRTC.Common.csproj", "{01BECDB3-5B56-4301-9580-3C5BBB2E5E09}"
 EndProject
