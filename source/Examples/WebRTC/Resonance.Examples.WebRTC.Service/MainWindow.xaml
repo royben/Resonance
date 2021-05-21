@@ -1,0 +1,55 @@
+﻿<Window x:Class="Resonance.Examples.WebRTC.Service.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:logging="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Common"
+        xmlns:local="clr-namespace:Resonance.Examples.WebRTC.Service"
+        mc:Ignorable="d"
+        Title="Resonance WebRTC Service - Demo" Height="450" Width="1000" d:DataContext="{d:DesignInstance Type=local:MainWindowVM,IsDesignTimeCreatable=False}" Style="{StaticResource ResonanceWindowStyle}">
+    <Grid Margin="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" FontSize="30">Resonance WebRTC Service</TextBlock>
+
+            <DockPanel DockPanel.Dock="Bottom" Height="40">
+                <DockPanel VerticalAlignment="Center" IsEnabled="{Binding IsStarted,Converter={StaticResource BooleanInverseConverter}}">
+                    <TextBlock VerticalAlignment="Center" Margin="0 0 0 0">SERVICE ID:</TextBlock>
+                    <TextBox Margin="5 0 0 0" Width="60" Text="{Binding ServiceId,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+
+                    <TextBlock VerticalAlignment="Center" Margin="10 0 0 0">HUB URL:</TextBlock>
+                    <TextBox Margin="5 0 0 0" Width="180" Text="{Binding HubUrl,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                </DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Width="180" Command="{Binding StopCommand}">STOP</Button>
+                    <Button Width="180" Margin="5 0 0 0" Command="{Binding StartCommand}">START</Button>
+                </StackPanel>
+            </DockPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="575*"/>
+                    <ColumnDefinition Width="375"/>
+                </Grid.ColumnDefinitions>
+                <logging:LogViewer Margin="0 10" />
+
+                <Grid Grid.Column="1" Margin="10 0 0 0">
+                    <GroupBox Header="Active Session">
+                        <DataGrid Margin="0 5 0 0" ItemsSource="{Binding Clients}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HeadersVisibility="Column">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Local" Width="100" Binding="{Binding Adapter,Converter={StaticResource ToStringConverter}}" />
+                                <DataGridTextColumn Header="Remote" Width="100" Binding="{Binding RemoteAdapterInformation.Name}" />
+                                <DataGridTemplateColumn Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding RelativeSource={RelativeSource AncestorType=Window},Path=DataContext.DisconnectClientCommand}" CommandParameter="{Binding}">Disconnect</Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                </Grid>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</Window>

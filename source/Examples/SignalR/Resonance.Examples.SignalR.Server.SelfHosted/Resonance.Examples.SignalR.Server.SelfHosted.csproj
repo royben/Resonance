@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DDC83CDA-5039-4DE2-8D00-A888654DF2D2}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Resonance.Examples.SignalR.Server</RootNamespace>
+    <AssemblyName>Resonance.Examples.SignalR.Server.SelfHosted</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Build\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Build\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AzureBuild|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Build\Resonance SignalR Demo\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Resonance.Examples.SignalR.Server\Hubs\DemoHub.cs">
+      <Link>Hubs\DemoHub.cs</Link>
+    </Compile>
+    <Compile Include="..\Resonance.Examples.SignalR.Server\Hubs\DemoHubProxy.cs">
+      <Link>Hubs\DemoHubProxy.cs</Link>
+    </Compile>
+    <Compile Include="..\Resonance.Examples.SignalR.Server\Hubs\LoggedInClient.cs">
+      <Link>Hubs\LoggedInClient.cs</Link>
+    </Compile>
+    <Compile Include="..\Resonance.Examples.SignalR.Server\Hubs\LoggingHub.cs">
+      <Link>Hubs\LoggingHub.cs</Link>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Startup.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.SignalR.SelfHost">
+      <Version>2.4.2</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost">
+      <Version>5.2.7</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging">
+      <Version>5.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Owin.Cors">
+      <Version>4.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Owin.StaticFiles">
+      <Version>4.2.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Views\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Resonance.SignalR\Resonance.SignalR.csproj">
+      <Project>{57ff56e2-caf0-4c70-8539-19747bc3c893}</Project>
+      <Name>Resonance.SignalR</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Resonance\Resonance.csproj">
+      <Project>{67f02cfb-010f-47f2-8752-2d615cef135f}</Project>
+      <Name>Resonance</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\Resonance.Examples.Common\Resonance.Examples.Common.csproj">
+      <Project>{f98440d4-d8fc-44c1-beb6-f5d0dcbb68c5}</Project>
+      <Name>Resonance.Examples.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Resonance.Examples.SignalR.Common\Resonance.Examples.SignalR.Common.csproj">
+      <Project>{cb51b1a7-9c2a-454b-b899-6fea205b88d4}</Project>
+      <Name>Resonance.Examples.SignalR.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Resonance.Examples.SignalR.Server\Index.html">
+      <Link>Index.html</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
