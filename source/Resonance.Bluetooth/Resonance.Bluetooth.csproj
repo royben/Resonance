@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net5.0;net461;monoandroid11</TargetFrameworks>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <DisableTransitiveProjectReferences>false</DisableTransitiveProjectReferences>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Configurations>Debug;Release;AzureBuild</Configurations>
     <Authors>Roy Ben Shabat</Authors>
     <Company>Roy Ben Shabat</Company>
@@ -40,10 +41,10 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
-  </ItemGroup>
+  </ItemGroup> 
 
   <ItemGroup>
-    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" />
+    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" PrivateAssets="build"   />
   </ItemGroup>
 
   <PropertyGroup>
