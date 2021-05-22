@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,24 +50,32 @@ namespace Resonance.Examples.Common.Logging
         public LogViewer()
         {
             Logs = new ObservableCollection<LogEventVM>();
-            LoggingConfiguration.LogReceived += LoggingConfiguration_LogReceived;
+
+            if (!DesignerProperties.GetIsInDesignMode(this))
+            {
+                LoggingConfiguration.LogReceived += LoggingConfiguration_LogReceived;
+            }
         }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            _dataGrid = GetTemplateChild("PART_Grid") as DataGrid;
-            _comboLogLevel = GetTemplateChild("PART_ComboLevel") as ComboBox;
-            _comboLogLevel.Items.Clear();
-            _comboLogLevel.SelectionChanged -= _comboLogLevel_SelectionChanged;
-            _comboLogLevel.SelectionChanged += _comboLogLevel_SelectionChanged;
 
-            foreach (var value in Enum.GetValues(typeof(LogEventLevel)).Cast<LogEventLevel>())
+            if (!DesignerProperties.GetIsInDesignMode(this))
             {
-                _comboLogLevel.Items.Add(value);
-            }
+                _dataGrid = GetTemplateChild("PART_Grid") as DataGrid;
+                _comboLogLevel = GetTemplateChild("PART_ComboLevel") as ComboBox;
+                _comboLogLevel.Items.Clear();
+                _comboLogLevel.SelectionChanged -= _comboLogLevel_SelectionChanged;
+                _comboLogLevel.SelectionChanged += _comboLogLevel_SelectionChanged;
 
-            _comboLogLevel.SelectedItem = LoggingConfiguration.LoggingLevelSwitch.MinimumLevel;
+                foreach (var value in Enum.GetValues(typeof(LogEventLevel)).Cast<LogEventLevel>())
+                {
+                    _comboLogLevel.Items.Add(value);
+                }
+
+                _comboLogLevel.SelectedItem = LoggingConfiguration.LoggingLevelSwitch.MinimumLevel;
+            }
         }
 
         private void _comboLogLevel_SelectionChanged(object sender, SelectionChangedEventArgs e)

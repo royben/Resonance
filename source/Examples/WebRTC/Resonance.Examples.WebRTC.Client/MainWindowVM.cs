@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Resonance.Adapters.WebRTC;
 using Resonance.Discovery;
 using Resonance.Examples.Common;
 using Resonance.Examples.Common.Messages;
@@ -8,6 +9,7 @@ using Resonance.SignalR;
 using Resonance.SignalR.Discovery;
 using Resonance.SignalR.Services;
 using Resonance.Transcoding.Json;
+using Resonance.WebRTC.Messages;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,7 +23,9 @@ namespace Resonance.Examples.WebRTC.Client
     public class MainWindowVM : ResonanceViewModel
     {
         private IResonanceTransporter _transporter;
+        private IResonanceTransporter _webRTCTransporter;
         private ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials> _discoveryClient;
+        private ResonanceRegisteredService<DemoCredentials, DemoServiceInformation, DemoAdapterInformation> _service;
 
         private bool _isConnected;
         /// <summary>
@@ -31,6 +35,13 @@ namespace Resonance.Examples.WebRTC.Client
         {
             get { return _isConnected; }
             set { _isConnected = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
+        }
+
+        private bool _isInSession;
+        public bool IsInSession
+        {
+            get { return _isInSession; }
+            set { _isInSession = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
         private String _clientID;
@@ -51,16 +62,16 @@ namespace Resonance.Examples.WebRTC.Client
         /// <summary>
         /// Gets or sets the available services discovered by the discovery client.
         /// </summary>
-        public ObservableCollection<DemoServiceInformation> RegisteredServices { get; set; }
+        public ObservableCollection<DemoServiceInformation> ConnectedClients { get; set; }
 
-        private DemoServiceInformation selectedService;
+        private DemoServiceInformation selectedClient;
         /// <summary>
         /// Gets or sets the selected service to connect to.
         /// </summary>
-        public DemoServiceInformation SelectedService
+        public DemoServiceInformation SelectedClient
         {
-            get { return selectedService; }
-            set { selectedService = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
+            get { return selectedClient; }
+            set { selectedClient = value; RaisePropertyChangedAuto(); InvalidateRelayCommands(); }
         }
 
         /// <summary>
@@ -72,6 +83,10 @@ namespace Resonance.Examples.WebRTC.Client
         /// Gets or sets the connect command.
         /// </summary>
         public RelayCommand ConnectCommand { get; set; }
+
+        public RelayCommand StartSessionCommand { get; set; }
+
+        public RelayCommand LeaveSessionCommand { get; set; }
 
         /// <summary>
         /// Gets or sets the disconnect command.
@@ -96,53 +111,28 @@ namespace Resonance.Examples.WebRTC.Client
             ClientID = "C" + new Random().Next(0, 100);
             HubUrl = "http://localhost:8081/DemoHub";
 
-            ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID) && SelectedService != null);
+            ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID));
+            StartSessionCommand = new RelayCommand(StartSession, () => IsConnected && SelectedClient != null && !IsInSession);
+
             DisconnectCommand = new RelayCommand(Disconnect, () => IsConnected);
             ResetDiscoveryCommand = new RelayCommand(ResetDiscovery, () => !IsConnected && IsFree);
 
             SendMessageCommand = new RelayCommand(SendMessage, () => IsConnected);
-            RegisteredServices = new ObservableCollection<DemoServiceInformation>();
+            ConnectedClients = new ObservableCollection<DemoServiceInformation>();
         }
 
         protected override void OnApplicationReady()
         {
             base.OnApplicationReady();
-            StartDiscovery();
-        }
-
-        private async void StartDiscovery()
-        {
-            _discoveryClient = new ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials>(
-                HubUrl,
-                SignalRMode.Legacy,
-                new DemoCredentials() { Name = ClientID });
-
-            _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
-            _discoveryClient.ServiceLost += OnServiceLost;
-            _discoveryClient.Disconnected += OnDiscoveryError;
-
-            try
-            {
-                IsFree = false;
-                await _discoveryClient.StartAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error starting discovery service. Make sure the remote WebRTC Hub is running.");
-            }
-            finally
-            {
-                IsFree = true;
-            }
         }
 
         private async void ResetDiscovery()
         {
             await _discoveryClient.StopAsync();
-            RegisteredServices.Clear();
+            ConnectedClients.Clear();
             _discoveryClient.HubUrl = HubUrl;
             _discoveryClient.Credentials = new DemoCredentials() { Name = ClientID };
-            
+
             try
             {
                 IsFree = false;
@@ -156,27 +146,6 @@ namespace Resonance.Examples.WebRTC.Client
             {
                 IsFree = true;
             }
-        }
-
-        private void OnServiceLost(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
-        {
-            InvokeUI(() =>
-            {
-                RegisteredServices.Remove(e.DiscoveredService.DiscoveryInfo);
-            });
-        }
-
-        private void OnServiceDiscovered(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
-        {
-            InvokeUI(() =>
-            {
-                RegisteredServices.Add(e.DiscoveredService.DiscoveryInfo);
-            });
-        }
-
-        private void OnDiscoveryError(object sender, ResonanceExceptionEventArgs e)
-        {
-            Logger.LogError(e.Exception, $"Discovery stopped due to {e.Exception.Message}");
         }
 
         private async void Connect()
@@ -187,20 +156,27 @@ namespace Resonance.Examples.WebRTC.Client
                 {
                     IsFree = false;
 
-                    _transporter = ResonanceTransporter.Builder
-                        .Create()
-                        .WithSignalRAdapter(SignalRMode.Legacy)
-                        .WithCredentials(new DemoCredentials() { Name = ClientID })
-                        .WithServiceId(SelectedService.ServiceId)
-                        .WithUrl(HubUrl)
-                        .WithJsonTranscoding()
-                        .Build();
+                    _service = await ResonanceServiceFactory.Default.RegisterServiceAsync<
+                                DemoCredentials,
+                                DemoServiceInformation,
+                                DemoAdapterInformation>(
+                                new DemoCredentials() { Name = ClientID },
+                                new DemoServiceInformation() { ServiceId = ClientID },
+                                HubUrl,
+                                SignalRMode.Legacy);
 
-                    _transporter.ConnectionLost += ConnectionLost;
+                    _service.ConnectionRequest += _service_ConnectionRequest;
 
-                    await _transporter.ConnectAsync();
+                    _discoveryClient = new ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials>(
+                                HubUrl,
+                                SignalRMode.Legacy,
+                                new DemoCredentials() { Name = ClientID });
 
-                    await _discoveryClient.StopAsync();
+                    _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
+                    _discoveryClient.ServiceLost += OnServiceLost;
+                    _discoveryClient.Disconnected += OnDiscoveryError;
+
+                    await _discoveryClient.StartAsync();
 
                     IsConnected = true;
                 }
@@ -215,12 +191,118 @@ namespace Resonance.Examples.WebRTC.Client
             }
         }
 
+        private void OnServiceLost(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
+        {
+            InvokeUI(() =>
+            {
+                ConnectedClients.Remove(e.DiscoveredService.DiscoveryInfo);
+            });
+        }
+
+        private void OnServiceDiscovered(object sender, ResonanceDiscoveredServiceEventArgs<ResonanceSignalRDiscoveredService<DemoServiceInformation>, DemoServiceInformation> e)
+        {
+            if (e.DiscoveredService.DiscoveryInfo.ServiceId != _service.ServiceInformation.ServiceId)
+            {
+                InvokeUI(() =>
+                {
+                    ConnectedClients.Add(e.DiscoveredService.DiscoveryInfo);
+                });
+            }
+        }
+
+        private void OnDiscoveryError(object sender, ResonanceExceptionEventArgs e)
+        {
+            Logger.LogError(e.Exception, $"Discovery stopped due to {e.Exception.Message}");
+        }
+
+        private async void StartSession()
+        {
+            IsFree = false;
+
+            _transporter = ResonanceTransporter.Builder
+                .Create()
+                .WithSignalRAdapter(SignalRMode.Legacy)
+                .WithCredentials(new DemoCredentials() { Name = ClientID })
+                .WithServiceId(SelectedClient.ServiceId)
+                .WithUrl(HubUrl)
+                .WithJsonTranscoding()
+                .Build();
+
+            await _transporter.ConnectAsync();
+
+            _webRTCTransporter = ResonanceTransporter.Builder
+                .Create()
+                .WithWebRTCAdapter()
+                .WithSignalingTransporter(_transporter)
+                .WithRole(WebRTCAdapterRole.Connect)
+                .WithDefaultIceServers()
+                .WithJsonTranscoding()
+                .Build();
+
+            _webRTCTransporter.RegisterRequestHandler<EchoTextRequest, EchoTextResponse>(OnEchoTextMessageReceived);
+
+            await _webRTCTransporter.ConnectAsync();
+
+            IsInSession = true;
+            IsFree = true;
+
+            Logger.LogInformation("You are now connected through WebRTC !");
+        }
+
+        private async void _service_ConnectionRequest(object sender, ConnectionRequestEventArgs<DemoCredentials, DemoAdapterInformation> e)
+        {
+            if (IsInSession)
+            {
+                e.Decline();
+                return;
+            }
+
+            SelectedClient = ConnectedClients.FirstOrDefault(x => x.ServiceId == e.RemoteAdapterInformation.Name);
+
+            IsFree = false;
+
+            _transporter = ResonanceTransporter.Builder
+                .Create()
+                .WithAdapter(e.Accept())
+                .WithJsonTranscoding()
+                .Build();
+
+            _transporter.RegisterRequestHandler<WebRTCOfferRequest>(async (t, request) =>
+            {
+                _webRTCTransporter = ResonanceTransporter.Builder
+                .Create()
+                .WithWebRTCAdapter()
+                .WithSignalingTransporter(_transporter)
+                .WithOfferRequest(request.Object, request.Token)
+                .WithDefaultIceServers()
+                .WithJsonTranscoding()
+                .Build();
+
+                _webRTCTransporter.RegisterRequestHandler<EchoTextRequest, EchoTextResponse>(OnEchoTextMessageReceived);
+
+                await _webRTCTransporter.ConnectAsync();
+
+                IsInSession = true;
+
+                Logger.LogInformation("You are now connected through WebRTC !");
+
+                IsFree = true;
+            });
+
+            await _transporter.ConnectAsync();
+        }
+
+        private ResonanceActionResult<EchoTextResponse> OnEchoTextMessageReceived(EchoTextRequest request)
+        {
+            Logger.LogInformation($"{SelectedClient.ServiceId} says: {request.Message}");
+            return new EchoTextResponse() { Message = request.Message };
+        }
+
         private async void Disconnect()
         {
             if (IsConnected)
             {
-                await _transporter?.DisposeAsync();
-                ClearConnection();
+                await _service.DisposeAsync();
             }
         }
 
@@ -232,10 +314,10 @@ namespace Resonance.Examples.WebRTC.Client
 
         private async void SendMessage()
         {
-            var response = await _transporter.SendRequestAsync<EchoTextRequest, EchoTextResponse>(new EchoTextRequest()
+            var response = await _webRTCTransporter.SendRequestAsync<EchoTextRequest, EchoTextResponse>(new EchoTextRequest()
             {
                 Message = Message
-            }, new ResonanceRequestConfig() { LoggingMode = ResonanceMessageLoggingMode.Content });
+            }, new ResonanceRequestConfig());
         }
 
         private void ClearConnection()
@@ -244,7 +326,7 @@ namespace Resonance.Examples.WebRTC.Client
 
             InvokeUI(async () =>
             {
-                RegisteredServices.Clear();
+                ConnectedClients.Clear();
 
                 _discoveryClient.Credentials = new DemoCredentials() { Name = ClientID };
                 _discoveryClient.HubUrl = HubUrl;

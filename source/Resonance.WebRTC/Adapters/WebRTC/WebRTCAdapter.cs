@@ -58,11 +58,6 @@ namespace Resonance.Adapters.WebRTC
         public TimeSpan ConnectionTimeout { get; set; }
 
         /// <summary>
-        /// Gets or sets the signaling logging mode.
-        /// </summary>
-        public ResonanceMessageLoggingMode LoggingMode { get; set; }
-
-        /// <summary>
         /// Gets a value indicating whether this adapter was initialized by an offer request.
         /// </summary>
         public bool InitializedByOffer
@@ -87,7 +82,7 @@ namespace Resonance.Adapters.WebRTC
         /// </summary>
         private WebRTCAdapter()
         {
-            ConnectionTimeout = TimeSpan.FromSeconds(10);
+            ConnectionTimeout = TimeSpan.FromSeconds(30);
             _pendingCandidates = new List<RTCIceCandidate>();
             _incomingQueue = new ProducerConsumerQueue<byte[]>();
             IceServers = new List<WebRTCIceServer>();
@@ -149,7 +144,7 @@ namespace Resonance.Adapters.WebRTC
                             Logger.LogDebug("Adapter initialized by an offer request.");
                             var response = OnWebRTCOfferRequest(_offerRequest);
 
-                            _signalingTransporter.SendResponseAsync(response.Response, _offerRequestToken, new ResonanceResponseConfig() { LoggingMode = LoggingMode }).GetAwaiter().GetResult();
+                            _signalingTransporter.SendResponseAsync(response.Response, _offerRequestToken).GetAwaiter().GetResult();
                         }
                         catch (Exception ex)
                         {
@@ -179,8 +174,7 @@ namespace Resonance.Adapters.WebRTC
                             Offer = WebRTCSessionDescription.FromSessionDescription(offer)
                         }, new ResonanceRequestConfig()
                         {
-                            Timeout = TimeSpan.FromSeconds(30),
-                            LoggingMode = LoggingMode
+                            Timeout = TimeSpan.FromSeconds(30)
                         });
 
                         if (response.Answer.InternalType == RTCSdpType.answer)
@@ -194,7 +188,7 @@ namespace Resonance.Adapters.WebRTC
                         }
 
                         _canSendIceCandidates = true;
-                        FlushIceCandidates().GetAwaiter().GetResult();
+                        await FlushIceCandidates();
                     }
                     catch (Exception ex)
                     {
@@ -322,8 +316,7 @@ namespace Resonance.Adapters.WebRTC
                     _connection.setLocalDescription(answer).GetAwaiter().GetResult();
 
                     return new ResonanceActionResult<WebRTCOfferResponse>(
-                        new WebRTCOfferResponse() { Answer = WebRTCSessionDescription.FromSessionDescription(answer) },
-                        new ResonanceResponseConfig() { LoggingMode = LoggingMode });
+                        new WebRTCOfferResponse() { Answer = WebRTCSessionDescription.FromSessionDescription(answer) });
                 }
 
                 throw new Exception("Invalid offer request.");
@@ -353,16 +346,13 @@ namespace Resonance.Adapters.WebRTC
                     usernameFragment = request.UserNameFragment
                 });
 
-                Task.Factory.StartNew(() =>
+                Task.Factory.StartNew(async () =>
                 {
                     _canSendIceCandidates = true;
-                    FlushIceCandidates().GetAwaiter().GetResult();
+                    await FlushIceCandidates();
                 });
 
-                return new ResonanceActionResult<WebRTCIceCandidateResponse>(new WebRTCIceCandidateResponse(), new ResonanceResponseConfig()
-                {
-                    LoggingMode = LoggingMode
-                });
+                return new ResonanceActionResult<WebRTCIceCandidateResponse>(new WebRTCIceCandidateResponse());
             }
             catch (Exception ex)
             {
@@ -510,7 +500,7 @@ namespace Resonance.Adapters.WebRTC
                             SdpMid = iceCandidate.sdpMid,
                             SdpMLineIndex = iceCandidate.sdpMLineIndex,
                             UserNameFragment = iceCandidate.usernameFragment
-                        }, new ResonanceRequestConfig() { LoggingMode = LoggingMode });
+                        }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(5) });
                     }
                     catch (Exception ex)
                     {

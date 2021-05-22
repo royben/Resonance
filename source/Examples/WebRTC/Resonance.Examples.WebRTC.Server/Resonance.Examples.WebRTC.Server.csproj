@@ -234,6 +234,10 @@
       <Project>{57ff56e2-caf0-4c70-8539-19747bc3c893}</Project>
       <Name>Resonance.SignalR</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\Resonance.WebRTC\Resonance.WebRTC.csproj">
+      <Project>{3d016bc8-a82d-4f72-97a3-66728cfc29a0}</Project>
+      <Name>Resonance.WebRTC</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Resonance\Resonance.csproj">
       <Project>{67f02cfb-010f-47f2-8752-2d615cef135f}</Project>
       <Name>Resonance</Name>
