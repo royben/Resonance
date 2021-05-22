@@ -411,7 +411,6 @@ namespace Resonance.Tests
             Thread.Sleep(100);
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.LoggingMode = ResonanceMessageLoggingMode.Title;
 
             Assert.ThrowsException<ResonanceWebRTCConnectionFailedException>(() =>
             {
