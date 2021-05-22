@@ -71,7 +71,7 @@ namespace Resonance.Examples.WebRTC.Server.Hubs
         public override void RegisterService(DemoServiceInformation serviceInformation)
         {
             base.RegisterService(serviceInformation);
-            Logger.LogInformation($"{serviceInformation.ServiceId} registered.");
+            Logger.LogInformation($"{serviceInformation.ServiceId} service registered.");
         }
 
         public override void UnregisterService()
@@ -80,7 +80,7 @@ namespace Resonance.Examples.WebRTC.Server.Hubs
 
             if (service != null)
             {
-                Logger.LogInformation($"{service.ServiceInformation.ServiceId} unregistered.");
+                Logger.LogInformation($"{service.ServiceInformation.ServiceId} service unregistered.");
             }
 
             base.UnregisterService();

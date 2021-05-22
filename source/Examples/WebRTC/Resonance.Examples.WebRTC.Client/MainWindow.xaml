@@ -36,18 +36,20 @@
                                 <TextBox VerticalAlignment="Center" Margin="5 0 0 0" Text="{Binding ClientID,UpdateSourceTrigger=PropertyChanged}"></TextBox>
                             </DockPanel>
 
-                            <Button Margin="0 10 0 0" Command="{Binding ConnectCommand}">CONNECT</Button>
+                            <UniformGrid Columns="2" Margin="0 10 0 0">
+                                <Button Margin="0 0 5 0" Command="{Binding DisconnectCommand}">DISCONNECT</Button>
+                                <Button Margin="5 0 0 0" Command="{Binding ConnectCommand}">CONNECT</Button>
+                            </UniformGrid>
 
                             <DockPanel Margin="0 20 0 0">
-                                <Button DockPanel.Dock="Right" Padding="5 0" Height="20" Command="{Binding ResetDiscoveryCommand}">Reset</Button>
-                                <TextBlock>Connected Clients:</TextBlock>
+                                <TextBlock>Connected Clients (registered services):</TextBlock>
                             </DockPanel>
                         </StackPanel>
                         <UniformGrid Margin="0 5 0 0" Columns="2" DockPanel.Dock="Bottom" Height="33">
                             <Button Margin="0 0 5 0" Command="{Binding LeaveSessionCommand}">LEAVE SESSION</Button>
                             <Button Margin="5 0 0 0" Command="{Binding StartSessionCommand}">START SESSION</Button>
                         </UniformGrid>
-                        <ProgressBar DockPanel.Dock="Bottom" Margin="0 5 0 0" IsIndeterminate="{Binding IsConnected,Converter={StaticResource BooleanInverseConverter}}" />
+                        <ProgressBar DockPanel.Dock="Bottom" Margin="0 5 0 0" IsIndeterminate="{Binding IsConnected}" />
 
                         <DataGrid IsEnabled="{Binding IsConnected}" Margin="0 5 0 0" ItemsSource="{Binding ConnectedClients,UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedClient}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HeadersVisibility="Column">
                             <DataGrid.Columns>

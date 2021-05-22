@@ -1,5 +1,5 @@
 ## WebRTC Demo
-This example project demonstrates how WebRTC communication while using SignalR as the signaling server.
+This example project demonstrates how WebRTC communication while using `Resonance.SignalR` as the signaling method.
 
 [Download Binaries](https://sirilix.blob.core.windows.net/resonance/demos/Resonance%20WebRTC%20Demo.zip)
 
