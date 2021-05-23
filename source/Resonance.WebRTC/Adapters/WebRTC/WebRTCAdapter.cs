@@ -146,7 +146,7 @@ namespace Resonance.Adapters.WebRTC
                             Logger.LogDebug("Adapter initialized by an offer request.");
                             var response = OnWebRTCOfferRequest(_offerRequest);
 
-                            _signalingTransporter.SendResponseAsync(response.Response, _offerRequestToken).GetAwaiter().GetResult();
+                            _signalingTransporter.SendResponse(response.Response, _offerRequestToken);
                         }
                         catch (Exception ex)
                         {
