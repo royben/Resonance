@@ -350,3 +350,4 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/source/Examples/WebRTC/Resonance.Examples.WebRTC.Server/Properties/ServiceDependencies/resonance - Web Deploy/profile.arm.json

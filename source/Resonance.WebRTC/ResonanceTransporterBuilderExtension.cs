@@ -128,28 +128,12 @@ namespace Resonance.USB.BuilderExtension
         }
 
         /// <summary>
-        /// Clears and fills the adapter IceServers list with the default free, built-in servers.
+        /// Clears and fills the adapter Ice Servers list with the default free, built-in servers.
+        /// Use only for development/testing purpose, not production.
         /// </summary>
-        /// <returns></returns>
         public WebRTCIceServersBuilder WithDefaultIceServers()
         {
-            var servers = new List<WebRTCIceServer>()
-            {
-                 new WebRTCIceServer() { Url = "stun:stun.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun1.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun2.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun3.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "turn:numb.viagenie.ca:3478", UserName = "roy.mail.net@gmail.com", Credentials = "X7jPGh8Y@BjTi8G" },
-            };
-
-            Info.adapter.IceServers.Clear();
-
-            foreach (var server in servers)
-            {
-                Info.adapter.IceServers.Add(server);
-            }
-
+            Info.adapter.InitDefaultIceServers();
             return this;
         }
 

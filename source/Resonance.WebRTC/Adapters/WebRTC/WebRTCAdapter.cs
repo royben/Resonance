@@ -117,6 +117,8 @@ namespace Resonance.Adapters.WebRTC
 
         protected override Task OnConnect()
         {
+            //SIPSorcery.LogFactory.Set(Resonance.ResonanceGlobalSettings.Default.LoggerFactory);
+
             _connectionCompleted = false;
             _receivedSegments = new List<byte[]>();
             _expectedSegments = 0;
@@ -291,6 +293,35 @@ namespace Resonance.Adapters.WebRTC
                 _connection?.Dispose();
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Clears and fills the adapter Ice Servers list with the default, free, built-in servers.
+        /// Use only for development/testing purpose, not production.
+        /// </summary>
+        public void InitDefaultIceServers()
+        {
+            var servers = new List<WebRTCIceServer>()
+            {
+                 new WebRTCIceServer() { Url = "stun:stun1.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun2.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun3.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun.sipsorcery.com" },
+                 new WebRTCIceServer() { Url = "stun:eu-turn4.xirsys.com" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:80?transport=udp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:3478?transport=udp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:80?transport=tcp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:3478?transport=tcp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" }
+            };
+
+            IceServers.Clear();
+
+            foreach (var server in servers)
+            {
+                IceServers.Add(server);
+            }
         }
 
         #endregion
