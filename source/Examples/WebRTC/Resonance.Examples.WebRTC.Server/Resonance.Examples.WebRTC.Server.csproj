@@ -248,7 +248,7 @@
       <Name>Resonance.Examples.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\Resonance.Examples.WebRTC.Common\Resonance.Examples.WebRTC.Common.csproj">
-      <Project>{cb51b1a7-9c2a-454b-b899-6fea205b88d4}</Project>
+      <Project>{01BECDB3-5B56-4301-9580-3C5BBB2E5E09}</Project>
       <Name>Resonance.Examples.WebRTC.Common</Name>
     </ProjectReference>
   </ItemGroup>
