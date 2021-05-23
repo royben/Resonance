@@ -25,7 +25,7 @@ Resonance is a high-performance real-time C# communication library with built-in
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="K4os.Compression.LZ4" Version="1.2.6" />
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.2.6" PrivateAssets="build" />
   </ItemGroup>
 
   <ItemGroup>

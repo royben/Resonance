@@ -4,4 +4,4 @@ This example project demonstrates how to implement Bluetooth communication betwe
 
 [Download Binaries & APK](https://sirilix.blob.core.windows.net/resonance/demos/Resonance%20Bluetooth%20Demo.zip)
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/source/Examples/Bluetooth/preview.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/source/Examples/Bluetooth/preview.png?raw=true)

@@ -92,6 +92,17 @@ namespace Resonance.USB.BuilderExtension
             return new WebRTCIceServersBuilder(Info);
         }
 
+        /// <summary>
+        /// Initializes the adapter from an existing offer request.
+        /// The adapter role with be <see cref="WebRTCAdapterRole.Accept"/> and response will be sent upon connection.
+        /// </summary>
+        /// <param name="request">The offer request.</param>
+        /// <returns></returns>
+        public WebRTCIceServersBuilder WithOfferRequest(ResonanceMessage<WebRTCOfferRequest> request)
+        {
+            return WithOfferRequest(request.Object, request.Token);
+        }
+
         private void SetAdapter()
         {
             IResonanceTransporter transporter = Info.builder.GetType().GetProperty("Transporter", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(Info.builder) as IResonanceTransporter;

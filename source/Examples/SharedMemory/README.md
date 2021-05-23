@@ -4,4 +4,4 @@ This example project demonstrates how to implement a shared memory inter-process
 
 [Download Binaries](https://sirilix.blob.core.windows.net/resonance/demos/Resonance%20Shared%20Memory%20Demo.zip)
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/source/Examples/SharedMemory/preview.png)
+![alt tag](https://github.com/royben/Resonance/blob/dev/source/Examples/SharedMemory/preview.png?raw=true)

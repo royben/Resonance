@@ -4,7 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace Resonance.Examples.SignalR.Server.Controllers
+namespace Resonance.Examples.WebRTC.Server.Controllers
 {
     public class HomeController : Controller
     {
