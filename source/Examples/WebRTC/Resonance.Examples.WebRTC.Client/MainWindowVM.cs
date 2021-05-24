@@ -304,10 +304,7 @@ namespace Resonance.Examples.WebRTC.Client
 
                         _webRtcTransporter = ResonanceTransporter.Builder
                             .Create()
-                            .WithWebRTCAdapter()
-                            .WithSignalingTransporter(_signalingTransporter)
-                            .WithOfferRequest(request)
-                            .WithDefaultIceServers()
+                            .WithAdapter(new WebRTCAdapterNative(_signalingTransporter, request.Object, request.Token))
                             .WithJsonTranscoding()
                             .Build();
 
@@ -377,10 +374,7 @@ namespace Resonance.Examples.WebRTC.Client
 
                     _webRtcTransporter = ResonanceTransporter.Builder
                         .Create()
-                        .WithWebRTCAdapter()
-                        .WithSignalingTransporter(_signalingTransporter)
-                        .WithRole(WebRTCAdapterRole.Connect)
-                        .WithDefaultIceServers()
+                        .WithAdapter(new WebRTCAdapterNative(_signalingTransporter, WebRTCAdapterRole.Connect))
                         .WithJsonTranscoding()
                         .Build();
 

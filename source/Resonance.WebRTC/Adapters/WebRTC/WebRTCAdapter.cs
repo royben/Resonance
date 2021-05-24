@@ -204,6 +204,18 @@ namespace Resonance.Adapters.WebRTC
                 });
             }
 
+            TimeoutTask.StartNew(() =>
+            {
+
+                if (!_connectionCompleted)
+                {
+                    _connectionCompleted = true;
+                    _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(new TimeoutException("Could not initialize the connection within the given timeout.")));
+                    CloseConnection();
+                }
+
+            }, ConnectionTimeout);
+
             return _connectionCompletionSource.Task;
         }
 
@@ -270,18 +282,6 @@ namespace Resonance.Adapters.WebRTC
             _dataChannel.onclose += OnDataChannelClosed;
 
             _connection.Start().GetAwaiter().GetResult();
-
-            TimeoutTask.StartNew(() =>
-            {
-
-                if (!_connectionCompleted)
-                {
-                    _connectionCompleted = true;
-                    _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(new TimeoutException("Could not initialize the connection within the given timeout.")));
-                    CloseConnection();
-                }
-
-            }, ConnectionTimeout);
         }
 
         private void CloseConnection()
@@ -371,10 +371,10 @@ namespace Resonance.Adapters.WebRTC
             {
                 _connection.addIceCandidate(new RTCIceCandidateInit()
                 {
-                    candidate = request.Candidate,
-                    sdpMid = request.SdpMid,
-                    sdpMLineIndex = request.SdpMLineIndex,
-                    usernameFragment = request.UserNameFragment
+                    candidate = request.Candidate.Candidate,
+                    sdpMid = request.Candidate.SdpMid,
+                    sdpMLineIndex = request.Candidate.SdpMLineIndex,
+                    usernameFragment = request.Candidate.UserNameFragment
                 });
 
                 Task.Factory.StartNew(async () =>
@@ -527,10 +527,13 @@ namespace Resonance.Adapters.WebRTC
                     {
                         await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
                         {
-                            Candidate = iceCandidate.candidate,
-                            SdpMid = iceCandidate.sdpMid,
-                            SdpMLineIndex = iceCandidate.sdpMLineIndex,
-                            UserNameFragment = iceCandidate.usernameFragment
+                              Candidate = new WebRTCIceCandidate() 
+                              {
+                                  Candidate = iceCandidate.candidate,
+                                  SdpMid = iceCandidate.sdpMid,
+                                  SdpMLineIndex = iceCandidate.sdpMLineIndex,
+                                  UserNameFragment = iceCandidate.usernameFragment
+                              }
                         }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(5) });
                     }
                     catch (Exception ex)

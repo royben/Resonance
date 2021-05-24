@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Roy Ben Shabat</Authors>
@@ -26,6 +26,7 @@ Resonance is a high-performance real-time C# communication library with built-in
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Resonance.WebRTC.Native\Resonance.WebRTC.Native.vcxproj" />
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
   </ItemGroup>
 
