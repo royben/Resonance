@@ -289,12 +289,12 @@ namespace Resonance.Adapters.WebRTC
 
             _connection.ondatachannel += OnDataChannelInitialized;
             _connection.onicecandidate += OnIceCandidateAvailable;
-            _connection.onconnectionstatechange += InConnectionStateChanged;
+            _connection.onconnectionstatechange += OnConnectionStateChanged;
+
 
             Logger.LogInformation($"Creating data channel {ChannelName}...");
-            var channel = _connection.createDataChannel(ChannelName).GetAwaiter().GetResult();
 
-            _dataChannel = channel;
+            _dataChannel = _connection.createDataChannel(ChannelName).GetAwaiter().GetResult();
             _dataChannel.onopen += OnDataChannelOpened;
             _dataChannel.onclose += OnDataChannelClosed;
 
@@ -310,13 +310,18 @@ namespace Resonance.Adapters.WebRTC
             {
                 Logger.LogInformation("Disposing connection...");
 
-                _dataChannel?.close();
+                if (_dataChannel != null)
+                {
+                    _dataChannel.onopen -= OnDataChannelOpened;
+                    _dataChannel.onclose -= OnDataChannelClosed;
+                    _dataChannel.close();
+                }
 
                 if (_connection != null)
                 {
                     _connection.ondatachannel += OnDataChannelInitialized;
                     _connection.onicecandidate += OnIceCandidateAvailable;
-                    _connection.onconnectionstatechange += InConnectionStateChanged;
+                    _connection.onconnectionstatechange += OnConnectionStateChanged;
                     _connection.close();
                     _connection.Dispose();
                     _connection = null;
@@ -548,7 +553,7 @@ namespace Resonance.Adapters.WebRTC
             }
         }
 
-        private async void InConnectionStateChanged(RTCPeerConnectionState state)
+        private async void OnConnectionStateChanged(RTCPeerConnectionState state)
         {
             if (state == RTCPeerConnectionState.failed)
             {
