@@ -112,7 +112,7 @@ namespace Resonance.SignalR.Clients
                             {
                                 Reconnecting?.Invoke(this, new EventArgs());
                             }
-                            else
+                            else if (_connection.LastError != null)
                             {
                                 try
                                 {

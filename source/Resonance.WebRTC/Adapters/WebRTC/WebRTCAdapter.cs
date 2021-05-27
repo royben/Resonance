@@ -38,6 +38,8 @@ namespace Resonance.Adapters.WebRTC
         private Thread _receiveThread;
         private ProducerConsumerQueue<byte[]> _incomingQueue;
         private bool _connectionCompleted;
+        private bool _connectionInitialized;
+        private bool _rolesReversed;
 
         #region Properties
 
@@ -50,12 +52,6 @@ namespace Resonance.Adapters.WebRTC
         /// Gets this adapter role in the WebRTC session.
         /// </summary>
         public WebRTCAdapterRole Role { get; private set; }
-
-        /// <summary>
-        /// Gets or sets the connection timeout.
-        /// Meaning, the data channel must be establish within this given time.
-        /// </summary>
-        public TimeSpan ConnectionTimeout { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether this adapter was initialized by an offer request.
@@ -73,6 +69,15 @@ namespace Resonance.Adapters.WebRTC
             get { return _signalingTransporter; }
         }
 
+        /// <summary>
+        /// Gets the name of the channel.
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </summary>
+        public String ChannelName { get; internal set; }
+
         #endregion
 
         #region Constructors
@@ -82,10 +87,10 @@ namespace Resonance.Adapters.WebRTC
         /// </summary>
         private WebRTCAdapter()
         {
-            ConnectionTimeout = TimeSpan.FromSeconds(30);
             _pendingCandidates = new List<RTCIceCandidate>();
             _incomingQueue = new ProducerConsumerQueue<byte[]>();
             IceServers = new List<WebRTCIceServer>();
+            ChannelName = "resonance";
         }
 
         /// <summary>
@@ -97,6 +102,25 @@ namespace Resonance.Adapters.WebRTC
         {
             Role = role;
             _signalingTransporter = signalingTransporter;
+
+            _signalingTransporter.RegisterRequestHandler<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(OnWebRTCCandidateRequest);
+            _signalingTransporter.RegisterRequestHandler<WebRTCOfferRequest, WebRTCOfferResponse>(OnWebRTCOfferRequest);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WebRTCAdapter"/> class.
+        /// </summary>
+        /// <param name="signalingTransporter">The signaling transporter.</param>
+        /// <param name="role">The role.</param>
+        /// <param name="channelName">
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </param>
+        public WebRTCAdapter(IResonanceTransporter signalingTransporter, WebRTCAdapterRole role, String channelName) : this(signalingTransporter, role)
+        {
+            ChannelName = channelName;
         }
 
         /// <summary>
@@ -107,6 +131,7 @@ namespace Resonance.Adapters.WebRTC
         /// <param name="requestToken">The offer request token.</param>
         public WebRTCAdapter(IResonanceTransporter signalingTransporter, WebRTCOfferRequest offerRequest, String requestToken) : this(signalingTransporter, WebRTCAdapterRole.Accept)
         {
+            ChannelName = offerRequest.ChannelName;
             _offerRequest = offerRequest;
             _offerRequestToken = requestToken;
         }
@@ -117,6 +142,10 @@ namespace Resonance.Adapters.WebRTC
 
         protected override Task OnConnect()
         {
+            //SIPSorcery.LogFactory.Set(Resonance.ResonanceGlobalSettings.Default.LoggerFactory);
+
+            _connectionInitialized = false;
+            _rolesReversed = false;
             _connectionCompleted = false;
             _receivedSegments = new List<byte[]>();
             _expectedSegments = 0;
@@ -125,52 +154,41 @@ namespace Resonance.Adapters.WebRTC
 
             _connectionCompletionSource = new TaskCompletionSource<object>();
 
-            _signalingTransporter.RegisterRequestHandler<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(OnWebRTCCandidateRequest);
+            Logger.LogInformation("Initializing adapter with role '{Role}'.", Role);
 
-            Logger.LogDebug("Initializing adapter with role '{Role}'.", Role);
-
-            if (Role == WebRTCAdapterRole.Accept)
+            Task.Factory.StartNew(async () =>
             {
-                if (_offerRequest == null)
+                try
                 {
-                    _signalingTransporter.RegisterRequestHandler<WebRTCOfferRequest, WebRTCOfferResponse>(OnWebRTCOfferRequest);
-                }
-                else
-                {
-                    Task.Factory.StartNew(() =>
+                    Thread.Sleep(50);
+
+                    if (Role == WebRTCAdapterRole.Accept)
                     {
-                        try
+                        if (_offerRequest != null)
                         {
-                            Logger.LogDebug("Adapter initialized by an offer request.");
+                            Logger.LogInformation("Adapter initialized by an offer request. Sending answer...");
                             var response = OnWebRTCOfferRequest(_offerRequest);
-
-                            _signalingTransporter.SendResponseAsync(response.Response, _offerRequestToken).GetAwaiter().GetResult();
+                            _signalingTransporter.SendResponse(response.Response, _offerRequestToken);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            if (!_connectionCompleted)
-                            {
-                                _connectionCompleted = true;
-                                _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
-                                CloseConnection();
-                            }
+                            Logger.LogInformation("Waiting for offer...");
                         }
-                    });
-                }
-            }
-            else
-            {
-                Task.Factory.StartNew(async () =>
-                {
-                    try
+                    }
+                    else
                     {
                         InitConnection();
 
+                        Logger.LogInformation("Creating offer...");
                         RTCSessionDescriptionInit offer = _connection.createOffer(new RTCOfferOptions());
+
+                        Logger.LogInformation("Setting local description...");
                         await _connection.setLocalDescription(offer);
 
+                        Logger.LogInformation("Sending offer request...");
                         var response = await _signalingTransporter.SendRequestAsync<WebRTCOfferRequest, WebRTCOfferResponse>(new WebRTCOfferRequest()
                         {
+                            ChannelName = ChannelName,
                             Offer = WebRTCSessionDescription.FromSessionDescription(offer)
                         }, new ResonanceRequestConfig()
                         {
@@ -179,6 +197,8 @@ namespace Resonance.Adapters.WebRTC
 
                         if (response.Answer.InternalType == RTCSdpType.answer)
                         {
+                            Logger.LogInformation("Answer received, setting remove description...");
+
                             var result = _connection.setRemoteDescription(response.Answer.ToSessionDescription());
 
                             if (result != SetDescriptionResultEnum.OK)
@@ -186,21 +206,20 @@ namespace Resonance.Adapters.WebRTC
                                 throw new Exception("Error setting the remote description.");
                             }
                         }
-
-                        _canSendIceCandidates = true;
-                        await FlushIceCandidates();
-                    }
-                    catch (Exception ex)
-                    {
-                        if (!_connectionCompleted)
+                        else
                         {
-                            _connectionCompleted = true;
-                            _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
-                            CloseConnection();
+                            Logger.LogError($"Invalid answer type received '{response.Answer.InternalType}'.");
                         }
+
+                        FlushIceCandidates();
                     }
-                });
-            }
+                }
+                catch (Exception ex)
+                {
+                    FailConnection(ex);
+                }
+
+            });
 
             return _connectionCompletionSource.Task;
         }
@@ -212,7 +231,8 @@ namespace Resonance.Adapters.WebRTC
                 try
                 {
                     State = ResonanceComponentState.Disconnected;
-                    CloseConnection();
+                    UnregisterRequestHandlers();
+                    DisposeConnection();
                 }
                 catch { }
                 finally
@@ -244,13 +264,22 @@ namespace Resonance.Adapters.WebRTC
 
         #endregion
 
-        #region Init
+        #region Init / Dispose
 
         private void InitConnection()
         {
+            Logger.LogInformation("Initializing connection...");
+
+            var servers = IceServers.DistinctBy(x => x.Url).ToList();
+
+            foreach (var ice in servers)
+            {
+                Logger.LogInformation($"Adding ice server: '{ice}'...");
+            }
+
             _connection = new RTCPeerConnection(new RTCConfiguration()
             {
-                iceServers = IceServers.Select(x => new RTCIceServer()
+                iceServers = servers.Select(x => new RTCIceServer()
                 {
                     urls = x.Url,
                     username = x.UserName,
@@ -260,49 +289,120 @@ namespace Resonance.Adapters.WebRTC
 
             _connection.ondatachannel += OnDataChannelInitialized;
             _connection.onicecandidate += OnIceCandidateAvailable;
+            _connection.onconnectionstatechange += OnConnectionStateChanged;
 
-            var channel = _connection.createDataChannel("resonance").GetAwaiter().GetResult();
 
-            _dataChannel = channel;
+            Logger.LogInformation($"Creating data channel {ChannelName}...");
+
+            _dataChannel = _connection.createDataChannel(ChannelName).GetAwaiter().GetResult();
             _dataChannel.onopen += OnDataChannelOpened;
             _dataChannel.onclose += OnDataChannelClosed;
 
+            Logger.LogInformation("Starting connection...");
             _connection.Start().GetAwaiter().GetResult();
 
-            TimeoutTask.StartNew(() =>
-            {
-
-                if (!_connectionCompleted)
-                {
-                    _connectionCompleted = true;
-                    _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(new TimeoutException("Could not initialize the connection within the given timeout.")));
-                    CloseConnection();
-                }
-
-            }, ConnectionTimeout);
+            _connectionInitialized = true;
         }
 
-        private void CloseConnection()
+        private void DisposeConnection()
         {
             try
             {
-                _dataChannel?.close();
-                _connection?.close();
-                _connection?.Dispose();
+                Logger.LogInformation("Disposing connection...");
+
+                if (_dataChannel != null)
+                {
+                    _dataChannel.onopen -= OnDataChannelOpened;
+                    _dataChannel.onclose -= OnDataChannelClosed;
+                    _dataChannel.close();
+                }
+
+                if (_connection != null)
+                {
+                    _connection.ondatachannel += OnDataChannelInitialized;
+                    _connection.onicecandidate += OnIceCandidateAvailable;
+                    _connection.onconnectionstatechange += OnConnectionStateChanged;
+                    _connection.close();
+                    _connection.Dispose();
+                    _connection = null;
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Error occurred while trying to dispose the connection.");
+            }
+        }
+
+        private void UnregisterRequestHandlers()
+        {
+            Logger.LogInformation("Unregistering request handlers...");
+
+            _signalingTransporter.UnregisterRequestHandler<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(OnWebRTCCandidateRequest);
+            _signalingTransporter.UnregisterRequestHandler<WebRTCOfferRequest, WebRTCOfferResponse>(OnWebRTCOfferRequest);
+        }
+
+        /// <summary>
+        /// Clears and fills the adapter Ice Servers list with the default, free, built-in servers.
+        /// Use only for development/testing purpose, not production.
+        /// </summary>
+        public void AddDefaultIceServers()
+        {
+            var servers = new List<WebRTCIceServer>()
+            {
+                 new WebRTCIceServer() { Url = "stun:stun1.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun2.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun3.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
+                 new WebRTCIceServer() { Url = "stun:stun.sipsorcery.com" },
+                 new WebRTCIceServer() { Url = "stun:eu-turn4.xirsys.com" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:80?transport=udp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:3478?transport=udp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:80?transport=tcp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" },
+                 new WebRTCIceServer() { Url = "turn:eu-turn4-back.xirsys.com:3478?transport=tcp", UserName = "DakLbB9dDKSF730T4aYcLeLIxXDfSNUIuXofS0-Geu-1vZN-MWYh6FaMDVy5-qWwAAAAAGCpr51TaXJpbGl4", Credentials = "1b037dd2-bb66-11eb-8a51-0242ac140004" }
+            };
+
+            IceServers.AddRange(servers);
+            IceServers = IceServers.DistinctBy(x => x.Url).ToList();
+        }
+
+        private void FailConnection(Exception ex, String message = null)
+        {
+            if (!_connectionCompleted)
+            {
+                if (message == null)
+                {
+                    Logger.LogError(ex, "Connection failed.");
+                }
+                else
+                {
+                    Logger.LogError(ex, $"Connection failed. {message}");
+                }
+                _connectionCompleted = true;
+                _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
+                UnregisterRequestHandlers();
+                DisposeConnection();
+            }
         }
 
         #endregion
 
-        #region Request Handlers
+        #region Signaling Request Handlers
 
         private ResonanceActionResult<WebRTCOfferResponse> OnWebRTCOfferRequest(WebRTCOfferRequest request)
         {
+            if (request.ChannelName != ChannelName) return null;
+
             try
             {
-                InitConnection();
+                Logger.LogInformation("Offer received...");
 
+                if (!_connectionInitialized)
+                {
+                    InitConnection();
+                }
+
+                Logger.LogInformation("Setting remote description...");
                 var result = _connection.setRemoteDescription(request.Offer.ToSessionDescription());
 
                 if (result != SetDescriptionResultEnum.OK)
@@ -312,51 +412,58 @@ namespace Resonance.Adapters.WebRTC
 
                 if (request.Offer.InternalType == RTCSdpType.offer)
                 {
+                    Logger.LogInformation("Creating answer...");
                     var answer = _connection.createAnswer(null);
+
+                    Logger.LogInformation("Setting local description...");
                     _connection.setLocalDescription(answer).GetAwaiter().GetResult();
 
+                    Logger.LogInformation("Sending answer response...");
                     return new ResonanceActionResult<WebRTCOfferResponse>(
-                        new WebRTCOfferResponse() { Answer = WebRTCSessionDescription.FromSessionDescription(answer) });
+                        new WebRTCOfferResponse()
+                        {
+                            ChannelName = ChannelName,
+                            Answer = WebRTCSessionDescription.FromSessionDescription(answer)
+                        });
+                }
+                else
+                {
+                    Logger.LogError($"Invalid offer type received '{request.Offer.InternalType}'.");
                 }
 
                 throw new Exception("Invalid offer request.");
             }
             catch (Exception ex)
             {
-                if (!_connectionCompleted)
-                {
-                    _connectionCompleted = true;
-                    _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
-                    CloseConnection();
-                }
-
+                FailConnection(ex);
                 throw ex;
             }
         }
 
         private ResonanceActionResult<WebRTCIceCandidateResponse> OnWebRTCCandidateRequest(WebRTCIceCandidateRequest request)
         {
+            if (request.ChannelName != ChannelName) return null;
+
             try
             {
+                Logger.LogInformation("Ice candidate request received. Adding...");
+
                 _connection.addIceCandidate(new RTCIceCandidateInit()
                 {
-                    candidate = request.Candidate,
-                    sdpMid = request.SdpMid,
-                    sdpMLineIndex = request.SdpMLineIndex,
-                    usernameFragment = request.UserNameFragment
+                    candidate = request.Candidate.Candidate,
+                    sdpMid = request.Candidate.SdpMid,
+                    sdpMLineIndex = request.Candidate.SdpMLineIndex,
+                    usernameFragment = request.Candidate.UserNameFragment
                 });
 
-                Task.Factory.StartNew(async () =>
-                {
-                    _canSendIceCandidates = true;
-                    await FlushIceCandidates();
-                });
+                FlushIceCandidates();
 
-                return new ResonanceActionResult<WebRTCIceCandidateResponse>(new WebRTCIceCandidateResponse());
+                return new ResonanceActionResult<WebRTCIceCandidateResponse>(new WebRTCIceCandidateResponse() { ChannelName = ChannelName });
             }
             catch (Exception ex)
             {
-                throw new Exception("Error adding ice candidate", ex);
+                Logger.LogError(ex, "Error adding ice {@candidate}.", request.Candidate);
+                throw new Exception("Error adding ice candidate.");
             }
         }
 
@@ -366,6 +473,7 @@ namespace Resonance.Adapters.WebRTC
 
         private void OnDataChannelInitialized(RTCDataChannel dataChannel)
         {
+            Logger.LogInformation("Data channel initialized...");
             dataChannel.onmessage += OnDataChannelMessage;
         }
 
@@ -378,20 +486,26 @@ namespace Resonance.Adapters.WebRTC
                     _incomingQueue.BlockEnqueue(data);
                 }
             }
+            else
+            {
+                Logger.LogWarning("None binary message received on the data channel.");
+            }
         }
 
         private void OnDataChannelClosed()
         {
             if (State == ResonanceComponentState.Connected)
             {
-                OnFailed(new ResonanceWebRTCChannelClosedException(), "The WebRTC data channel has closed unexpectedly.");
+                OnFailed(new ResonanceWebRTCChannelClosedException(), "The data channel has closed unexpectedly.");
             }
         }
 
-        protected virtual void OnDataChannelOpened()
+        private void OnDataChannelOpened()
         {
             if (!_connectionCompleted)
             {
+                Logger.LogInformation("Data channel opened.");
+
                 _connectionCompleted = true;
 
                 State = ResonanceComponentState.Connected;
@@ -404,9 +518,111 @@ namespace Resonance.Adapters.WebRTC
             }
         }
 
-        private void OnIceCandidateAvailable(RTCIceCandidate iceCandidate)
+        private async void OnIceCandidateAvailable(RTCIceCandidate iceCandidate)
         {
-            _pendingCandidates.Add(iceCandidate);
+            var candidate = new WebRTCIceCandidate()
+            {
+                Candidate = iceCandidate.candidate,
+                SdpMid = iceCandidate.sdpMid,
+                SdpMLineIndex = iceCandidate.sdpMLineIndex,
+                UserNameFragment = iceCandidate.usernameFragment
+            };
+
+            if (_canSendIceCandidates)
+            {
+                Logger.LogInformation("New ice candidate found. Sending ice {@candidate} to remote peer.", candidate);
+
+                try
+                {
+                    await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
+                    {
+                        ChannelName = ChannelName,
+                        Candidate = candidate
+                    }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(10) });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error sending ice {@candidate} request.", candidate);
+                }
+            }
+            else
+            {
+                Logger.LogInformation("New ice candidate found. queuing {@candidate}.", candidate);
+
+                _pendingCandidates.Add(iceCandidate);
+            }
+        }
+
+        private async void OnConnectionStateChanged(RTCPeerConnectionState state)
+        {
+            if (state == RTCPeerConnectionState.failed)
+            {
+                if (!_connectionCompleted)
+                {
+                    if (!_rolesReversed)
+                    {
+                        Logger.LogInformation("First connection attempt failed. Reversing roles...");
+
+                        _rolesReversed = true;
+                        _canSendIceCandidates = false;
+
+                        DisposeConnection();
+                        InitConnection();
+
+                        if (Role == WebRTCAdapterRole.Accept)
+                        {
+                            try
+                            {
+                                Logger.LogInformation("Creating offer...");
+
+                                RTCSessionDescriptionInit offer = _connection.createOffer(new RTCOfferOptions());
+
+                                Logger.LogInformation("Setting local description...");
+                                await _connection.setLocalDescription(offer);
+
+                                Logger.LogInformation("Sending offer request...");
+
+                                var response = await _signalingTransporter.SendRequestAsync<WebRTCOfferRequest, WebRTCOfferResponse>(new WebRTCOfferRequest()
+                                {
+                                    ChannelName = ChannelName,
+                                    Offer = WebRTCSessionDescription.FromSessionDescription(offer)
+                                }, new ResonanceRequestConfig()
+                                {
+                                    Timeout = TimeSpan.FromSeconds(10)
+                                });
+
+                                if (response.Answer.InternalType == RTCSdpType.answer)
+                                {
+                                    var result = _connection.setRemoteDescription(response.Answer.ToSessionDescription());
+
+                                    if (result != SetDescriptionResultEnum.OK)
+                                    {
+                                        throw new Exception("Error setting the remote description.");
+                                    }
+                                }
+                                else
+                                {
+                                    Logger.LogError($"Invalid answer type received '{response.Answer.InternalType}'.");
+                                }
+
+                                FlushIceCandidates();
+                            }
+                            catch (Exception ex)
+                            {
+                                FailConnection(ex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        FailConnection(new Exception("Second connection attempt failed."));
+                    }
+                }
+                else
+                {
+                    OnFailed(new ResonanceWebRTCChannelClosedException("The WebRTC connection has failed."));
+                }
+            }
         }
 
         #endregion
@@ -415,66 +631,79 @@ namespace Resonance.Adapters.WebRTC
 
         private void IncomingQueueThreadMethod()
         {
+            Logger.LogInformation("Message processing thread started...");
+
             while (State == ResonanceComponentState.Connected)
             {
-                byte[] data = _incomingQueue.BlockDequeue();
-                if (data == null) return;
-
-                if (_expectedSegments == 0)
+                try
                 {
-                    _expectedSegments = BitConverter.ToInt32(data, 0);
-                    _expectedSegmentsCheckSum = data.Skip(4).Take(16).ToArray();
-
-                    byte[] segment = data.TakeFrom(20);
-
-                    if (_expectedSegments == 1) //Take the shortcut if only one.
+                    byte[] data = _incomingQueue.BlockDequeue();
+                    if (data == null)
                     {
-                        _expectedSegments = 0;
+                        Logger.LogInformation("Message processing thread terminated.");
+                        return;
+                    }
 
-                        var checkSum = MD5.Create().ComputeHash(segment);
-                        if (checkSum.SequenceEqual(_expectedSegmentsCheckSum))
+                    if (_expectedSegments == 0)
+                    {
+                        _expectedSegments = BitConverter.ToInt32(data, 0);
+                        _expectedSegmentsCheckSum = data.Skip(4).Take(16).ToArray();
+
+                        byte[] segment = data.TakeFrom(20);
+
+                        if (_expectedSegments == 1) //Take the shortcut if only one.
                         {
-                            OnDataAvailable(segment);
+                            _expectedSegments = 0;
+
+                            var checkSum = MD5.Create().ComputeHash(segment);
+                            if (checkSum.SequenceEqual(_expectedSegmentsCheckSum))
+                            {
+                                OnDataAvailable(segment);
+                            }
+                            else
+                            {
+                                Logger.LogError("Message check sum failed. The message will be ignored.");
+                            }
                         }
                         else
                         {
-                            Logger.LogError("Message check sum failed. The message will be ignored.");
+                            _receivedSegments.Add(segment);
                         }
                     }
                     else
                     {
-                        _receivedSegments.Add(segment);
+                        _receivedSegments.Add(data);
+
+                        if (_receivedSegments.Count == _expectedSegments)
+                        {
+                            List<byte> allData = new List<byte>();
+
+                            foreach (var segment in _receivedSegments)
+                            {
+                                allData.AddRange(segment);
+                            }
+
+                            _expectedSegments = 0;
+                            _receivedSegments.Clear();
+
+                            byte[] allDataBytes = allData.ToArray();
+
+                            var checkSum = MD5.Create().ComputeHash(allDataBytes);
+
+                            if (checkSum.SequenceEqual(_expectedSegmentsCheckSum))
+                            {
+                                OnDataAvailable(allDataBytes);
+                            }
+                            else
+                            {
+                                Logger.LogError("Message check sum failed. The message will be ignored.");
+                            }
+                        }
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _receivedSegments.Add(data);
-
-                    if (_receivedSegments.Count == _expectedSegments)
-                    {
-                        List<byte> allData = new List<byte>();
-
-                        foreach (var segment in _receivedSegments)
-                        {
-                            allData.AddRange(segment);
-                        }
-
-                        _expectedSegments = 0;
-                        _receivedSegments.Clear();
-
-                        byte[] allDataBytes = allData.ToArray();
-
-                        var checkSum = MD5.Create().ComputeHash(allDataBytes);
-
-                        if (checkSum.SequenceEqual(_expectedSegmentsCheckSum))
-                        {
-                            OnDataAvailable(allDataBytes);
-                        }
-                        else
-                        {
-                            Logger.LogError("Message check sum failed. The message will be ignored.");
-                        }
-                    }
+                    Logger.LogError(ex, "Error occurred while processing incoming data.");
                 }
             }
         }
@@ -483,29 +712,37 @@ namespace Resonance.Adapters.WebRTC
 
         #region Private Methods
 
-        private async Task FlushIceCandidates()
+        private async void FlushIceCandidates()
         {
-            if (_canSendIceCandidates)
-            {
-                var pending = _pendingCandidates.ToList();
-                _pendingCandidates.Clear();
+            Logger.LogInformation("Flushing queued ice candidates...");
 
-                foreach (var iceCandidate in pending)
+            _canSendIceCandidates = true;
+            var pending = _pendingCandidates.ToList();
+            _pendingCandidates.Clear();
+
+            foreach (var iceCandidate in pending)
+            {
+                var candidate = new WebRTCIceCandidate()
                 {
-                    try
+                    Candidate = iceCandidate.candidate,
+                    SdpMid = iceCandidate.sdpMid,
+                    SdpMLineIndex = iceCandidate.sdpMLineIndex,
+                    UserNameFragment = iceCandidate.usernameFragment
+                };
+
+                try
+                {
+                    Logger.LogInformation("Sending ice {@candidate} to remote peer.", candidate);
+
+                    await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
                     {
-                        await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
-                        {
-                            Candidate = iceCandidate.candidate,
-                            SdpMid = iceCandidate.sdpMid,
-                            SdpMLineIndex = iceCandidate.sdpMLineIndex,
-                            UserNameFragment = iceCandidate.usernameFragment
-                        }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(5) });
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Error sending ice candidate.");
-                    }
+                        ChannelName = ChannelName,
+                        Candidate = candidate
+                    }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(10) });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error sending ice {@candidate} request.", candidate);
                 }
             }
         }

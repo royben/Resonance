@@ -128,28 +128,12 @@ namespace Resonance.USB.BuilderExtension
         }
 
         /// <summary>
-        /// Clears and fills the adapter IceServers list with the default free, built-in servers.
+        /// Clears and fills the adapter Ice Servers list with the default free, built-in servers.
+        /// Use only for development/testing purpose, not production.
         /// </summary>
-        /// <returns></returns>
         public WebRTCIceServersBuilder WithDefaultIceServers()
         {
-            var servers = new List<WebRTCIceServer>()
-            {
-                 new WebRTCIceServer() { Url = "stun:stun.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun1.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun2.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun3.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "stun:stun4.l.google.com:19302" },
-                 new WebRTCIceServer() { Url = "turn:numb.viagenie.ca:3478", UserName = "roy.mail.net@gmail.com", Credentials = "X7jPGh8Y@BjTi8G" },
-            };
-
-            Info.adapter.IceServers.Clear();
-
-            foreach (var server in servers)
-            {
-                Info.adapter.IceServers.Add(server);
-            }
-
+            Info.adapter.AddDefaultIceServers();
             return this;
         }
 
@@ -161,6 +145,25 @@ namespace Resonance.USB.BuilderExtension
         public WebRTCIceServersBuilder WithIceServer(String url)
         {
             Info.adapter.IceServers.Add(new WebRTCIceServer() { Url = url });
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the WebRTC data channel name.
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </summary>
+        /// <param name="channelName">
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </param>
+        public WebRTCIceServersBuilder WithChannelName(String channelName)
+        {
+            Info.adapter.ChannelName = channelName;
             return this;
         }
 

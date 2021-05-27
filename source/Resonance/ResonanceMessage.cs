@@ -28,14 +28,14 @@ namespace Resonance
         [JsonIgnore]
         internal String ObjectTypeName
         {
-            get 
+            get
             {
                 if (_objectTypeName == null)
                 {
                     _objectTypeName = Object?.GetType().Name;
                 }
 
-                return _objectTypeName; 
+                return _objectTypeName;
             }
         }
 
@@ -65,6 +65,25 @@ namespace Resonance
         public new T Object
         {
             get { return (T)base.Object; }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceMessage{T}"/> class.
+        /// </summary>
+        public ResonanceMessage()
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceMessage{T}"/> class.
+        /// </summary>
+        /// <param name="obj">The object.</param>
+        /// <param name="token">The token.</param>
+        public ResonanceMessage(T obj, String token)
+        {
+            base.Object = obj;
+            Token = token;
         }
     }
 }

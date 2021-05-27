@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -22,7 +22,11 @@ Resonance is a high-performance real-time C# communication library with built-in
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SIPSorcery" Version="5.1.6-pre" PrivateAssets="build" />
+    <Compile Remove="Adapters\WebRTC\WebRTCAdapterNative.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SIPSorcery" Version="5.2.0" PrivateAssets="build" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +42,7 @@ Resonance is a high-performance real-time C# communication library with built-in
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="Adapters\WebRTC\WebRTCAdapterNative.cs" />
   </ItemGroup>
 
 </Project>
