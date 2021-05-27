@@ -358,43 +358,6 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
-        public void Connection_Timeout_Throws_Exception()
-        {
-            if (IsRunningOnAzurePipelines) return;
-
-            IResonanceTransporter signal1 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TST")
-                .WithJsonTranscoding()
-                .Build();
-
-            IResonanceTransporter signal2 = ResonanceTransporter.Builder
-                .Create()
-                .WithInMemoryAdapter()
-                .WithAddress("TST")
-                .WithJsonTranscoding()
-                .Build();
-
-            signal1.Connect();
-            signal2.Connect();
-
-            Thread.Sleep(100);
-
-            WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
-            adapter2.ConnectionTimeout = TimeSpan.FromSeconds(2);
-
-            Assert.ThrowsException<ResonanceWebRTCConnectionFailedException>(() =>
-            {
-                adapter2.Connect();
-            });
-
-            adapter2.Dispose();
-            signal1.Dispose();
-            signal2.Dispose();
-        }
-
-        [TestMethod]
         public void Connection_No_Response_Throws_Exception()
         {
             if (IsRunningOnAzurePipelines) return;

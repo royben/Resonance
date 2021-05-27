@@ -133,7 +133,7 @@ namespace Resonance.USB.BuilderExtension
         /// </summary>
         public WebRTCIceServersBuilder WithDefaultIceServers()
         {
-            Info.adapter.InitDefaultIceServers();
+            Info.adapter.AddDefaultIceServers();
             return this;
         }
 
@@ -145,6 +145,25 @@ namespace Resonance.USB.BuilderExtension
         public WebRTCIceServersBuilder WithIceServer(String url)
         {
             Info.adapter.IceServers.Add(new WebRTCIceServer() { Url = url });
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the WebRTC data channel name.
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </summary>
+        /// <param name="channelName">
+        /// This value is used to identity the adapter when multiple adapters are using the same signaling transporter, 
+        /// and must match between the connecting and the accepting transporter.
+        /// When using one adapter per signaling transporter there is no need to change this value.
+        /// The default value is "resonance".
+        /// </param>
+        public WebRTCIceServersBuilder WithChannelName(String channelName)
+        {
+            Info.adapter.ChannelName = channelName;
             return this;
         }
 

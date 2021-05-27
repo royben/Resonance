@@ -5,13 +5,15 @@ using System.Text;
 
 namespace Resonance.WebRTC.Messages
 {
-    public class WebRTCOfferRequest
+    /// <summary>
+    /// Represents a WebRTC offer request.
+    /// </summary>
+    /// <seealso cref="Resonance.WebRTC.Messages.WebRTCMessage" />
+    public class WebRTCOfferRequest : WebRTCMessage
     {
+        /// <summary>
+        /// Gets or sets the offer session description.
+        /// </summary>
         public WebRTCSessionDescription Offer { get; set; }
-
-        public WebRTCOfferRequest()
-        {
-            Offer = new WebRTCSessionDescription();
-        }
     }
 }

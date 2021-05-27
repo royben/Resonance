@@ -33,7 +33,7 @@ namespace Resonance.Examples.WebRTC.Server
             });
 
             GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null; //Unlimited message size.
-            GlobalHost.Configuration.DisconnectTimeout = TimeSpan.FromSeconds(200); //Optional, configure the reconnection timeout (minimum 6 seconds).
+            GlobalHost.Configuration.DisconnectTimeout = TimeSpan.FromSeconds(10); //Optional, configure the reconnection timeout (minimum 6 seconds).
 
             LoggingConfiguration.ConfigureLogging();
 

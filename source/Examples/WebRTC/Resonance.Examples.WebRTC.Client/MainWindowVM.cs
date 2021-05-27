@@ -295,42 +295,28 @@ namespace Resonance.Examples.WebRTC.Client
 
                 _signalingTransporter.ConnectionLost += OnSignalingConnectionLost;
 
-                _signalingTransporter.OnWebRtcOffer(async (request) =>
-                {
-                    try
-                    {
-                        Logger.LogInformation("WebRTC offer received...");
-                        Logger.LogInformation("Connecting WebRTC transporter...");
-
-                        _webRtcTransporter = ResonanceTransporter.Builder
-                            .Create()
-                            .WithAdapter(new WebRTCAdapterNative(_signalingTransporter, request.Object, request.Token))
-                            .WithJsonTranscoding()
-                            .Build();
-
-                        _webRtcTransporter.ConnectionLost += OnWebRTCConnectionLost;
-
-                        _webRtcTransporter.RegisterRequestHandler<EchoTextRequest, EchoTextResponse>(OnEchoTextMessageReceived);
-
-                        await _webRtcTransporter.ConnectAsync();
-
-                        IsInSession = true;
-
-                        Logger.LogInformation("WebRTC transporter connected!");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, ex.Message);
-                    }
-                    finally
-                    {
-                        IsFree = true;
-                    }
-                });
-
                 await _signalingTransporter.ConnectAsync();
-
                 Logger.LogInformation("SignalR session started. Waiting for WebRTC offer...");
+
+                Logger.LogInformation("Connecting WebRTC transporter...");
+                _webRtcTransporter = ResonanceTransporter.Builder
+                    .Create()
+                    .WithWebRTCAdapter()
+                    .WithSignalingTransporter(_signalingTransporter)
+                    .WithRole(WebRTCAdapterRole.Accept)
+                    .WithDefaultIceServers()
+                    .WithJsonTranscoding()
+                    .Build();
+
+                _webRtcTransporter.ConnectionLost += OnWebRTCConnectionLost;
+                _webRtcTransporter.RegisterRequestHandler<EchoTextRequest, EchoTextResponse>(OnEchoTextMessageReceived);
+
+                await _webRtcTransporter.ConnectAsync();
+
+                IsInSession = true;
+                IsFree = true;
+
+                Logger.LogInformation("WebRTC transporter connected!");
             }
             catch (Exception ex)
             {
@@ -374,7 +360,10 @@ namespace Resonance.Examples.WebRTC.Client
 
                     _webRtcTransporter = ResonanceTransporter.Builder
                         .Create()
-                        .WithAdapter(new WebRTCAdapterNative(_signalingTransporter, WebRTCAdapterRole.Connect))
+                        .WithWebRTCAdapter()
+                        .WithSignalingTransporter(_signalingTransporter)
+                        .WithRole(WebRTCAdapterRole.Connect)
+                        .WithDefaultIceServers()
                         .WithJsonTranscoding()
                         .Build();
 

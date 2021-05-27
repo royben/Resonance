@@ -305,11 +305,10 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class
         {
-            Logger.LogDebug("Unregistering message handler for '{Message}' on '{Handler}'...", typeof(Message).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
-
             var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Message>) == callback);
             if (handler != null)
             {
+                Logger.LogDebug("Unregistering message handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
                 _messageHandlers.Remove(handler);
             }
         }
@@ -351,11 +350,10 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class
         {
-            Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
-
             var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Request>) == callback);
             if (handler != null)
             {
+                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
                 _messageHandlers.Remove(handler);
             }
         }
@@ -400,21 +398,20 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
-
             var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
             if (handler != null)
             {
+                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
                 _messageHandlers.Remove(handler);
             }
         }
 
         /// <summary>
-        /// Unregisters a custom request handler.
+        /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
-        /// <param name="callback">The callback method to detach.</param>
+        /// <param name="callback">The callback method to register.</param>
         public void RegisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
         {
             String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
@@ -449,21 +446,20 @@ namespace Resonance
         /// <param name="callback">The callback method to detach.</param>
         public void UnregisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, $"{callback.Method.DeclaringType}.{callback.Method.Name}");
-
             var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback);
             if (handler != null)
             {
+                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
                 _messageHandlers.Remove(handler);
             }
         }
 
         /// <summary>
-        /// Unregisters a custom request handler.
+        /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
-        /// <param name="callback">The callback method to detach.</param>
+        /// <param name="callback">The callback method to register.</param>
         public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
         {
             String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
@@ -496,10 +492,62 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
         public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            throw new NotImplementedException();
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback);
+            if (handler != null)
+            {
+                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
+                _messageHandlers.Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
+
+            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
+
+            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseDelegate<Request, Response>) == callback))
+            {
+                ResonanceMessageHandler handler = new ResonanceMessageHandler();
+                handler.HasResponse = true;
+                handler.MessageType = typeof(Request);
+                handler.RegisteredCallback = callback;
+                handler.RegisteredCallbackDescription = handlerDescription;
+                handler.ResponseCallback = (request) =>
+                {
+                    return callback.Invoke(request as Request).GetAwaiter().GetResult() as ResonanceActionResult<Response>;
+                };
+
+                _messageHandlers.Add(handler);
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <typeparam name="Response">The type of the response.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class
+        {
+            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseDelegate<Request, Response>) == callback);
+            if (handler != null)
+            {
+                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
+                _messageHandlers.Remove(handler);
+            }
         }
 
         /// <summary>
@@ -542,9 +590,9 @@ namespace Resonance
             foreach (var method in service.GetType().GetMethods())
             {
                 if ( //With Response
-                    (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) || 
-                    (typeof(Task).IsAssignableFrom(method.ReturnType) && 
-                    method.ReturnType.GenericTypeArguments.Length == 1 && 
+                    (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) ||
+                    (typeof(Task).IsAssignableFrom(method.ReturnType) &&
+                    method.ReturnType.GenericTypeArguments.Length == 1 &&
                     typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0]))) ||
 
                     //void Or Task
@@ -1732,7 +1780,7 @@ namespace Resonance
                 {
                     try
                     {
-                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage(), Token = info.Token },new ResonanceMessageConfig() { Priority = QueuePriority.High });
+                        Send(new ResonanceMessage() { Object = new ResonanceAcknowledgeMessage(), Token = info.Token }, new ResonanceMessageConfig() { Priority = QueuePriority.High });
                     }
                     catch { }
                 }
@@ -2216,12 +2264,12 @@ namespace Resonance
                 _sendingQueue.BlockEnqueue(null);
                 _arrivedMessages.BlockEnqueue(null);
 
-                if (_pushThread.ThreadState == ThreadState.Running)
+                if (_pushThread != null && _pushThread.ThreadState == ThreadState.Running)
                 {
                     _pushThread.Join();
                 }
 
-                if (_pullThread.ThreadState == ThreadState.Running)
+                if (_pullThread != null && _pullThread.ThreadState == ThreadState.Running)
                 {
                     _pullThread.Join();
                 }

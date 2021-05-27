@@ -4,7 +4,11 @@ using System.Text;
 
 namespace Resonance.WebRTC.Messages
 {
-    public class WebRTCIceCandidateResponse
+    /// <summary>
+    /// Represents a WebRTC ICE candidate response message.
+    /// </summary>
+    /// <seealso cref="Resonance.WebRTC.Messages.WebRTCMessage" />
+    public class WebRTCIceCandidateResponse : WebRTCMessage
     {
     }
 }

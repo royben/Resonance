@@ -33,6 +33,7 @@ namespace Resonance.Adapters.WebRTC
         private ProducerConsumerQueue<byte[]> _incomingQueue;
         private bool _connectionCompleted;
         private bool _closeConnection;
+        private bool _conductorInitialized;
 
         #region Properties
 
@@ -92,6 +93,11 @@ namespace Resonance.Adapters.WebRTC
         {
             Role = role;
             _signalingTransporter = signalingTransporter;
+
+            if (_offerRequest == null)
+            {
+                _signalingTransporter.RegisterRequestHandler<WebRTCOfferRequest, WebRTCOfferResponse>(OnWebRTCOfferRequest);
+            }
         }
 
         /// <summary>
@@ -116,6 +122,7 @@ namespace Resonance.Adapters.WebRTC
             _expectedSegments = 0;
             _expectedSegmentsCheckSum = null;
             _incomingQueue = new ProducerConsumerQueue<byte[]>();
+            _conductorInitialized = false;
 
             _connectionCompletionSource = new TaskCompletionSource<object>();
 
@@ -125,36 +132,38 @@ namespace Resonance.Adapters.WebRTC
 
             if (Role == WebRTCAdapterRole.Accept)
             {
-                if (_offerRequest == null)
+                ThreadFactory.StartNew(async () =>
                 {
-                    _signalingTransporter.RegisterRequestHandler<WebRTCOfferRequest, WebRTCOfferResponse>(OnWebRTCOfferRequest);
-                }
-                else
-                {
-                    Task.Factory.StartNew(() =>
+                    try
                     {
-                        try
-                        {
-                            Logger.LogDebug("Adapter initialized by an offer request.");
-                            var response = OnWebRTCOfferRequest(_offerRequest);
+                        await InitConnection();
 
+                        if (_offerRequest != null)
+                        {
+                            Logger.LogDebug("Adapter initialized by an offer request. sending answer...");
+                            var response = await OnWebRTCOfferRequest(_offerRequest);
+                            if (_closeConnection) return;
                             _signalingTransporter.SendResponse(response.Response, _offerRequestToken);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            if (!_connectionCompleted)
-                            {
-                                _connectionCompleted = true;
-                                _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
-                                _closeConnection = true;
-                            }
+                            Logger.LogDebug("Waiting for WebRTC offer...");
                         }
-                    });
-                }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!_connectionCompleted)
+                        {
+                            _connectionCompleted = true;
+                            _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
+                            _closeConnection = true;
+                        }
+                    }
+                });
             }
             else
             {
-                Task.Factory.StartNew(async () =>
+                ThreadFactory.StartNew(async () =>
                 {
                     try
                     {
@@ -172,8 +181,7 @@ namespace Resonance.Adapters.WebRTC
 
                         _conductor.OnOfferReply("answer", response.Answer.Sdp);
 
-                        _canSendIceCandidates = true;
-                        await FlushIceCandidates();
+                        FlushIceCandidates();
                     }
                     catch (Exception ex)
                     {
@@ -204,12 +212,10 @@ namespace Resonance.Adapters.WebRTC
 
         protected override Task OnDisconnect()
         {
-            return Task.Factory.StartNew(() =>
-            {
-                State = ResonanceComponentState.Disconnected;
-                _incomingQueue.BlockEnqueue(null);
-                _closeConnection = true;
-            });
+            State = ResonanceComponentState.Disconnected;
+            _incomingQueue.BlockEnqueue(null);
+            _closeConnection = true;
+            return Task.FromResult(true);
         }
 
         protected override void OnWrite(byte[] data)
@@ -276,8 +282,10 @@ namespace Resonance.Adapters.WebRTC
                 catch (Exception ex)
                 {
                     completion.SetException(ex);
+                    return;
                 }
 
+                _conductorInitialized = true;
                 completion.SetResult(true);
 
                 while (!_closeConnection)
@@ -370,14 +378,33 @@ namespace Resonance.Adapters.WebRTC
             }
         }
 
-        private void _conductor_OnIceCandidate(string sdp_mid, int sdp_mline_index, string sdp)
+        private async void _conductor_OnIceCandidate(string sdp_mid, int sdp_mline_index, string sdp)
         {
-            _pendingCandidates.Add(new WebRTCIceCandidate()
+            var candidate = new WebRTCIceCandidate()
             {
                 SdpMid = sdp_mid,
                 SdpMLineIndex = (ushort)sdp_mline_index,
                 Candidate = sdp,
-            });
+            };
+
+            if (!_canSendIceCandidates)
+            {
+                _pendingCandidates.Add(candidate);
+            }
+            else
+            {
+                try
+                {
+                    await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
+                    {
+                        Candidate = candidate,
+                    }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(10) });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error sending ice candidate.");
+                }
+            }
         }
 
         private void _conductor_OnDataBinaryMessage(byte[] data)
@@ -408,16 +435,24 @@ namespace Resonance.Adapters.WebRTC
 
         #region Request Handlers
 
-        private ResonanceActionResult<WebRTCOfferResponse> OnWebRTCOfferRequest(WebRTCOfferRequest request)
+        private async Task<ResonanceActionResult<WebRTCOfferResponse>> OnWebRTCOfferRequest(WebRTCOfferRequest request)
         {
             try
             {
-                InitConnection().GetAwaiter().GetResult();
-                var answer = CreateAnswer(new WebRTCSessionDescription()
+                while (!_conductorInitialized && !_closeConnection)
+                {
+                    Thread.Sleep(10);
+                }
+
+                if (_closeConnection) return null;
+
+                var answer = await CreateAnswer(new WebRTCSessionDescription()
                 {
                     Sdp = request.Offer.Sdp,
                     InternalType = RTCSdpType.offer
-                }).GetAwaiter().GetResult();
+                });
+
+                FlushIceCandidates();
 
                 return new ResonanceActionResult<WebRTCOfferResponse>(new WebRTCOfferResponse() { Answer = answer });
             }
@@ -437,14 +472,10 @@ namespace Resonance.Adapters.WebRTC
         {
             try
             {
-                _conductor.AddIceCandidate(request.Candidate.SdpMid, request.Candidate.SdpMLineIndex, request.Candidate.Candidate);
-
-                Task.Factory.StartNew(async () =>
+                ThreadFactory.StartNew(() =>
                 {
-                    _canSendIceCandidates = true;
-                    await FlushIceCandidates();
+                    _conductor.AddIceCandidate(request.Candidate.SdpMid, request.Candidate.SdpMLineIndex, request.Candidate.Candidate);
                 });
-
                 return new ResonanceActionResult<WebRTCIceCandidateResponse>(new WebRTCIceCandidateResponse());
             }
             catch (Exception ex)
@@ -529,32 +560,24 @@ namespace Resonance.Adapters.WebRTC
 
         #region Private Methods
 
-        private async Task FlushIceCandidates()
+        private async void FlushIceCandidates()
         {
-            if (_canSendIceCandidates)
-            {
-                var pending = _pendingCandidates.ToList();
-                _pendingCandidates.Clear();
+            _canSendIceCandidates = true;
+            var pending = _pendingCandidates.ToList();
+            _pendingCandidates.Clear();
 
-                foreach (var iceCandidate in pending)
+            foreach (var iceCandidate in pending)
+            {
+                try
                 {
-                    try
+                    await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
                     {
-                        await _signalingTransporter.SendRequestAsync<WebRTCIceCandidateRequest, WebRTCIceCandidateResponse>(new WebRTCIceCandidateRequest()
-                        {
-                            Candidate = new WebRTCIceCandidate()
-                            {
-                                Candidate = iceCandidate.Candidate,
-                                SdpMid = iceCandidate.SdpMid,
-                                SdpMLineIndex = iceCandidate.SdpMLineIndex,
-                                UserNameFragment = iceCandidate.UserNameFragment
-                            }
-                        }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(5) });
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Error sending ice candidate.");
-                    }
+                        Candidate = iceCandidate,
+                    }, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(30) });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error sending ice candidate.");
                 }
             }
         }

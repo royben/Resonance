@@ -5,8 +5,15 @@ using System.Text;
 
 namespace Resonance.WebRTC.Messages
 {
-    public class WebRTCIceCandidateRequest
+    /// <summary>
+    /// Represents a WebRTC ICE candidate request message.
+    /// </summary>
+    /// <seealso cref="Resonance.WebRTC.Messages.WebRTCMessage" />
+    public class WebRTCIceCandidateRequest : WebRTCMessage
     {
+        /// <summary>
+        /// Gets or sets the candidate.
+        /// </summary>
         public WebRTCIceCandidate Candidate { get; set; }
     }
 }
