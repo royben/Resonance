@@ -12,7 +12,7 @@ namespace Resonance.Examples.WebRTC.Server
     {
         static void Main(string[] args)
         {
-            string address = "http://localhost:8080/";
+            string address = "http://localhost:8081/";
 
             // Start OWIN host 
             using (WebApp.Start<Startup>(address))

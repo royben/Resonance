@@ -62,6 +62,7 @@ The following built-in adapters are currently supported by the library:
 *	In-Memory
 *	SignalR
 *	WebRTC
+*	Bluetooth
 *	Named Pipes
 *	Shared Memory
 
