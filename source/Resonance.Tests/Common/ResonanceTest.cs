@@ -36,7 +36,7 @@ namespace Resonance.Tests.Common
         public Microsoft.Extensions.Logging.ILogger Logger { get; set; }
 
         [TestInitialize]
-        public void Init()
+        public virtual void Init()
         {
             InMemoryAdapter.DisposeAll();
 

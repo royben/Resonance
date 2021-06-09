@@ -12,7 +12,7 @@ using Resonance.Adapters.Udp;
 using Resonance.Adapters.Usb;
 using Resonance.Tests.Common;
 using Resonance.Messages;
-using Resonance.Transporters;
+
 using Resonance.Servers.Tcp;
 using Resonance.Servers.NamedPipes;
 using Resonance.Adapters.NamedPipes;
@@ -41,8 +41,8 @@ namespace Resonance.Tests
         [TestMethod]
         public void Tcp_Adapter_Writing_Reading()
         {
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
+            ResonanceTransporter t1 = new ResonanceTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
+            ResonanceTransporter t2 = new ResonanceTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
             server.Start();
@@ -111,8 +111,8 @@ namespace Resonance.Tests
         {
             if (IsRunningOnAzurePipelines) return;
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new NamedPipesAdapter("Resonance"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
+            ResonanceTransporter t1 = new ResonanceTransporter(new NamedPipesAdapter("Resonance"));
+            ResonanceTransporter t2 = new ResonanceTransporter();
 
             ResonanceNamedPipesServer server = new ResonanceNamedPipesServer("Resonance");
             server.Start();

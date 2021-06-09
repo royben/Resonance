@@ -2,7 +2,6 @@
 using Resonance.Adapters.InMemory;
 using Resonance.Tests.Common;
 using Resonance.Messages;
-using Resonance.Transporters;
 using System;
 using Google.Protobuf;
 using Resonance.Protobuf.Transcoding.Protobuf;

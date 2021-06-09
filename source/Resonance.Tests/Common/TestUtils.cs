@@ -2,7 +2,7 @@
 using Resonance.Adapters.InMemory;
 using Resonance.Messages;
 using Resonance.Transcoding.Json;
-using Resonance.Transporters;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

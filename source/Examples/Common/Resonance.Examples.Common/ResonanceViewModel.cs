@@ -44,6 +44,19 @@ namespace Resonance.Examples.Common
             IsFree = true;
             Logger = ResonanceGlobalSettings.Default.LoggerFactory.CreateLogger(this.GetType().Name);
             Application.Current.MainWindow.ContentRendered += MainWindow_ContentRendered;
+            Application.Current.MainWindow.Closing += MainWindow_Closing;
+
+            var fakeToRef = MaterialDesignThemes.Wpf.PackIconKind.Abc; //Just to make VS copy the assembly... :/
+        }
+
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Task.Factory.StartNew(() =>
+            {
+                OnApplicationShutdown();
+                Environment.Exit(0);
+            });
         }
 
         private void MainWindow_ContentRendered(object sender, EventArgs e)
@@ -56,6 +69,14 @@ namespace Resonance.Examples.Common
         /// Called when the application window has finished first rendering.
         /// </summary>
         protected virtual void OnApplicationReady()
+        {
+
+        }
+
+        /// <summary>
+        /// Called when the application window is closing.
+        /// </summary>
+        protected virtual void OnApplicationShutdown()
         {
 
         }

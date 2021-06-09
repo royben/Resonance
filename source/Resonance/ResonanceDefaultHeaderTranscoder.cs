@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.RPC;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -29,6 +30,18 @@ namespace Resonance
             writer.Write(info.Token);
             writer.Write((byte)info.Type);
 
+            if (info.RPCSignature != null)
+            {
+                writer.Write(info.RPCSignature.ToString());
+            }
+            else
+            {
+                writer.Write(String.Empty);
+            }
+
+            writer.Write((byte)(info.Timeout ?? 0));
+
+
             if (info.Type == ResonanceTranscodingInformationType.Response || info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
             {
                 writer.Write(info.Completed);
@@ -52,6 +65,20 @@ namespace Resonance
             info.IsCompressed = reader.ReadBoolean();
             info.Token = reader.ReadString();
             info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
+
+            String rpcSignatureString = reader.ReadString();
+
+            if (!String.IsNullOrEmpty(rpcSignatureString))
+            {
+                info.RPCSignature = RPCSignature.FromString(rpcSignatureString);
+            }
+
+            byte timeout = reader.ReadByte();
+
+            if (timeout > 0)
+            {
+                info.Timeout = timeout;
+            }
 
             if (info.Type == ResonanceTranscodingInformationType.Response || info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
             {

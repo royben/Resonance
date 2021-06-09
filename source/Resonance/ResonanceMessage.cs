@@ -46,9 +46,16 @@ namespace Resonance
         /// <returns></returns>
         internal static ResonanceMessage CreateGenericMessage(Type messageType)
         {
-            Type[] typeArgs = { messageType };
-            var genericType = typeof(ResonanceMessage<>).MakeGenericType(typeArgs);
-            return Activator.CreateInstance(genericType) as ResonanceMessage;
+            if (messageType != null)
+            {
+                Type[] typeArgs = { messageType };
+                var genericType = typeof(ResonanceMessage<>).MakeGenericType(typeArgs);
+                return Activator.CreateInstance(genericType) as ResonanceMessage;
+            }
+            else
+            {
+                return new ResonanceMessage();
+            }
         }
     }
 

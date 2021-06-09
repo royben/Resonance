@@ -1,4 +1,5 @@
-﻿using Resonance.Threading;
+﻿using Resonance.RPC;
+using Resonance.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,5 +33,10 @@ namespace Resonance
         /// Gets or sets the request cancellation token.
         /// </summary>
         public CancellationToken? CancellationToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the RPC signature.
+        /// </summary>
+        internal RPCSignature RPCSignature { get; set; }
     }
 }

@@ -4,7 +4,7 @@ using Resonance.Discovery;
 using Resonance.Tests.Common;
 using Resonance.Messages;
 using Resonance.Transcoding.Json;
-using Resonance.Transporters;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -158,8 +158,8 @@ namespace Resonance.Tests
 
             var discoveredService = services.First();
 
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new TcpAdapter(discoveredService.Address, discoveredService.DiscoveryInfo.TcpServerPort));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter();
+            ResonanceTransporter t1 = new ResonanceTransporter(new TcpAdapter(discoveredService.Address, discoveredService.DiscoveryInfo.TcpServerPort));
+            ResonanceTransporter t2 = new ResonanceTransporter();
 
             ResonanceTcpServer server = new ResonanceTcpServer(9999);
             server.Start();
