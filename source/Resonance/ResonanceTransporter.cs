@@ -1994,6 +1994,10 @@ namespace Resonance
             });
         }
 
+        /// <summary>
+        /// Handles incoming messages that contains an RPC signature.
+        /// </summary>
+        /// <param name="info">The information.</param>
         protected virtual void OnIncomingRpcMessage(ResonanceDecodingInformation info)
         {
             bool rpcFound = false;
@@ -2174,6 +2178,10 @@ namespace Resonance
             });
         }
 
+        /// <summary>
+        /// Handles incoming request messages that contains an RPC signature.
+        /// </summary>
+        /// <param name="info">The information.</param>
         protected virtual void OnIncomingRpcRequest(ResonanceDecodingInformation info)
         {
             bool rpcFound = false;
