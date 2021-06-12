@@ -849,7 +849,34 @@ namespace Resonance
         /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
         /// </summary>
         /// <returns></returns>
-        public async Task DisconnectAsync()
+        public Task DisconnectAsync()
+        {
+            return DisconnectAsync(null);
+        }
+
+        /// <summary>
+        /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
+        /// </summary>
+        /// <returns></returns>
+        public void Disconnect()
+        {
+            DisconnectAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        public void Disconnect(string reason)
+        {
+            DisconnectAsync(reason).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        public async Task DisconnectAsync(string reason)
         {
             if (State == ResonanceComponentState.Connected)
             {
@@ -863,8 +890,8 @@ namespace Resonance
                         {
                             try
                             {
-                                Logger.LogInformation("Sending disconnection request.");
-                                await SendAsync(new ResonanceDisconnectNotification());
+                                Logger.LogInformation("Sending disconnection notification...");
+                                await SendAsync(new ResonanceDisconnectNotification() { Reason = reason });
                             }
                             catch { }
                         }
@@ -902,15 +929,6 @@ namespace Resonance
                     throw Logger.LogErrorThrow(ex, "Error occurred while trying to disconnect the transporter.");
                 }
             }
-        }
-
-        /// <summary>
-        /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
-        /// </summary>
-        /// <returns></returns>
-        public void Disconnect()
-        {
-            DisconnectAsync().GetAwaiter().GetResult();
         }
 
         #endregion
@@ -1369,6 +1387,29 @@ namespace Resonance
 
         #endregion
 
+        #region Submit Encoding Info
+
+        /// <summary>
+        /// Submits encoding information to be written to encoded and written to the adapter.
+        /// </summary>
+        /// <param name="info">The encoding information.</param>
+        public void SubmitEncodingInformation(ResonanceEncodingInformation info)
+        {
+            _sendingQueue.BlockEnqueue(new ResonancePendingEncodedInformation() { Info = info });
+        }
+
+        /// <summary>
+        /// Returns true if a pending message/request exists by the specified message token.
+        /// </summary>
+        /// <param name="token">The message/request token.</param>
+        /// <returns></returns>
+        public bool CheckPending(string token)
+        {
+            return _pendingMessages.Any(x => x.Message.Token == token);
+        }
+
+        #endregion
+
         #region Push
 
         private void PushThreadMethod()
@@ -1402,6 +1443,10 @@ namespace Resonance
                     {
                         OnOutgoingResponse(pendingResponse);
                     }
+                    else if (pending is ResonancePendingEncodedInformation pendingInfo)
+                    {
+                        OnEncodeAndWriteData(pendingInfo.Info);
+                    }
                 }
             }
             catch (ThreadAbortException)
@@ -1433,9 +1478,14 @@ namespace Resonance
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
                 }
-                else if (pendingMessage.Message.Object is ResonanceDisconnectNotification)
+                else if (pendingMessage.Message.Object is ResonanceDisconnectNotification msg)
                 {
                     info.Type = ResonanceTranscodingInformationType.Disconnect;
+
+                    if (msg.Reason != null)
+                    {
+                        info.ErrorMessage = msg.Reason;
+                    }
                 }
                 else if (pendingMessage.Message.Object is ResonanceAcknowledgeMessage ackMessage)
                 {
@@ -1829,6 +1879,7 @@ namespace Resonance
 
                         ResonancePreviewDecodingInfoEventArgs previewArgs = new ResonancePreviewDecodingInfoEventArgs();
                         previewArgs.DecodingInformation = info;
+                        previewArgs.RawData = data;
                         OnPreviewDecodingInformation(previewArgs);
 
                         if (previewArgs.Handled)
@@ -2517,7 +2568,15 @@ namespace Resonance
         protected virtual void OnDisconnectNotificationReceived(ResonanceDecodingInformation info)
         {
             Logger.LogDebug("Disconnection notification received. Failing transporter...");
-            OnFailed(new ResonanceConnectionClosedException());
+
+            if (String.IsNullOrEmpty(info.ErrorMessage))
+            {
+                OnFailed(new ResonanceConnectionClosedException());
+            }
+            else
+            {
+                OnFailed(new ResonanceConnectionClosedException(info.ErrorMessage));
+            }
         }
 
         #endregion

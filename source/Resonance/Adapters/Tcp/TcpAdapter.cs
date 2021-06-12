@@ -200,15 +200,6 @@ namespace Resonance.Adapters.Tcp
 
         #endregion
 
-        #region ToString
-
-        public override string ToString()
-        {
-            return $"{base.ToString()} ({Address}/{Port})";
-        }
-
-        #endregion
-
         #region Static Methods
 
         /// <summary>

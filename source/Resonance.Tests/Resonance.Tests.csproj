@@ -64,6 +64,7 @@
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoderException.cs" />
     <Compile Include="LZ4_TST.cs" />
+    <Compile Include="Routing_TST.cs" />
     <Compile Include="SignalR\ISignalRServer.cs" />
     <Compile Include="SignalR\SignalRCoreServer.cs" />
     <Compile Include="SignalR\SignalRServer.cs" />

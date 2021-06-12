@@ -48,6 +48,10 @@ namespace Resonance
                 writer.Write(info.HasError);
                 writer.Write(info.ErrorMessage ?? String.Empty);
             }
+            else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
+            {
+                writer.Write(info.ErrorMessage ?? String.Empty);
+            }
 
             writer.Write((uint)writer.BaseStream.Position + sizeof(uint)); //Increase size when adding fields.
             //Add new fields here...
@@ -84,6 +88,10 @@ namespace Resonance
             {
                 info.Completed = reader.ReadBoolean();
                 info.HasError = reader.ReadBoolean();
+                info.ErrorMessage = reader.ReadString();
+            }
+            else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
+            {
                 info.ErrorMessage = reader.ReadString();
             }
 

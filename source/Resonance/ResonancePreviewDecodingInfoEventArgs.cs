@@ -20,5 +20,10 @@ namespace Resonance
         /// When set to true, will prevent further processing of the data by the transporter.
         /// </summary>
         public bool Handled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the incoming raw data.
+        /// </summary>
+        public byte[] RawData { get; set; }
     }
 }

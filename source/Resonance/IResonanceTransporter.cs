@@ -553,9 +553,27 @@ namespace Resonance
         void SendErrorResponse(String message, string token);
 
         /// <summary>
+        /// Submits encoding information to be written to encoded and written to the adapter.
+        /// </summary>
+        /// <param name="info">The encoding information.</param>
+        void SubmitEncodingInformation(ResonanceEncodingInformation info);
+
+        /// <summary>
         /// Creates a new transporter builder based on this transporter.
         /// </summary>
         IAdapterBuilder CreateBuilder();
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        void Disconnect(String reason);
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        Task DisconnectAsync(String reason);
 
         /// <summary>
         /// Disconnects and disposes this transporter.
@@ -568,6 +586,12 @@ namespace Resonance
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
         Task DisposeAsync(bool withAdapter = false);
+
+        /// <summary>
+        /// Returns true if a pending message/request exists by the specified message token.
+        /// </summary>
+        /// <param name="token">The message/request token.</param>
+        bool CheckPending(String token);
 
         /// <summary>
         /// Creates a client proxy for the specified service interface.
