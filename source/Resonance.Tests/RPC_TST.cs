@@ -1048,8 +1048,8 @@ namespace Resonance.Tests
             };
 
             //Connect after event registration...
+            t2.Connect(); //Connect the event receiver first because event registration happens right after connection...
             t1.Connect();
-            t2.Connect();
 
             Thread.Sleep(1000);
 
