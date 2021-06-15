@@ -95,6 +95,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.WebRTC.Server.SelfHosted", "Examples\WebRTC\Resonance.Examples.WebRTC.Server.SelfHosted\Resonance.Examples.WebRTC.Server.SelfHosted.csproj", "{10A3125E-7772-41FD-BABD-C7440BF32F34}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RPC", "RPC", "{EF53A5C4-CC4C-4115-A12A-DDE40E89FE77}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\RPC\README.md = Examples\RPC\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.RPC.Server", "Examples\RPC\Resonance.Examples.RPC.Server\Resonance.Examples.RPC.Server.csproj", "{97A73C2F-0341-40D1-860A-5AF56FF19A66}"
 EndProject
@@ -103,6 +106,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.RPC.Client", "Examples\RPC\Resonance.Examples.RPC.Client\Resonance.Examples.RPC.Client.csproj", "{5F5A965A-B79F-4ED8-9249-D4F63F81D6A1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UDP_Broadcast", "UDP_Broadcast", "{13341AC3-57A1-4E57-9701-F4FE3AC08AAD}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\UDP_Broadcast\README.md = Examples\UDP_Broadcast\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resonance.Examples.UDP.BroadcastClient", "Examples\UDP_Broadcast\Resonance.Examples.UDP.BroadcastClient\Resonance.Examples.UDP.BroadcastClient.csproj", "{C8BD7CCF-502A-4790-8AC3-3E2C03749095}"
 EndProject

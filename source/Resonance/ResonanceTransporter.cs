@@ -15,7 +15,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using static Resonance.ResonanceTransporterBuilder;
 
 namespace Resonance
@@ -28,13 +27,14 @@ namespace Resonance
     {
         private readonly int _componentCounter;
         private DateTime _lastIncomingMessageTime;
-        private PriorityProducerConsumerQueue<Object> _outgoingQueue;
-        private ActionBlock<object> _outgoingQueueBlock;
-        private ActionBlock<byte[]> _incomingQueueBlock;
+        private PriorityProducerConsumerQueue<Object> _sendingQueue;
         private ConcurrentList<IResonancePendingMessage> _pendingMessages;
+        private ProducerConsumerQueue<byte[]> _arrivedMessages;
         private readonly List<ResonanceMessageHandler> _messageHandlers;
         private readonly List<ResonanceRegisteredService> _services;
-        private System.Timers.Timer _keepAliveTimer;
+        private Thread _pushThread;
+        private Thread _pullThread;
+        private Thread _keepAliveThread;
         private bool _clearedQueues;
         private bool _isDisposing;
         private bool _preventHandshake;
@@ -212,7 +212,7 @@ namespace Resonance
         {
             get
             {
-                return _outgoingQueue.Count;
+                return _sendingQueue.Count;
             }
         }
 
@@ -265,8 +265,9 @@ namespace Resonance
             KeepAliveConfiguration = ResonanceGlobalSettings.Default.DefaultKeepAliveConfiguration();
             CryptographyConfiguration = new ResonanceCryptographyConfiguration(); //Should be set by GlobalSettings.
             TokenGenerator = new ShortGuidGenerator();
-            _outgoingQueue = new PriorityProducerConsumerQueue<object>();
+            _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingMessages = new ConcurrentList<IResonancePendingMessage>();
+            _arrivedMessages = new ProducerConsumerQueue<byte[]>();
 
             DefaultRequestTimeout = ResonanceGlobalSettings.Default.DefaultRequestTimeout;
 
@@ -810,7 +811,7 @@ namespace Resonance
                 State = ResonanceComponentState.Connected;
                 Logger.LogInformation("Transporter Connected.");
 
-                Init();
+                StartThreads();
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
@@ -1004,7 +1005,7 @@ namespace Resonance
                 }
             }
 
-            SubmitToSendingQueue(pendingMessage, config.Priority);
+            _sendingQueue.BlockEnqueue(pendingMessage, config.Priority);
 
             return completionSource.Task;
         }
@@ -1124,7 +1125,7 @@ namespace Resonance
                 }
             }
 
-            SubmitToSendingQueue(pendingRequest, config.Priority);
+            _sendingQueue.BlockEnqueue(pendingRequest, config.Priority);
 
             return completionSource.Task;
         }
@@ -1197,7 +1198,7 @@ namespace Resonance
                 }
             }
 
-            SubmitToSendingQueue(pendingContinuousRequest, config.Priority);
+            _sendingQueue.BlockEnqueue(pendingContinuousRequest, config.Priority);
 
             return observable;
         }
@@ -1379,14 +1380,14 @@ namespace Resonance
                 }
             }
 
-            SubmitToSendingQueue(pendingResponse, config.Priority);
+            _sendingQueue.BlockEnqueue(pendingResponse, config.Priority);
 
             return completionSource.Task;
         }
 
         #endregion
 
-        #region Submit Outgoing
+        #region Submit Encoding Info
 
         /// <summary>
         /// Submits encoding information to be written to encoded and written to the adapter.
@@ -1394,7 +1395,7 @@ namespace Resonance
         /// <param name="info">The encoding information.</param>
         public void SubmitEncodingInformation(ResonanceEncodingInformation info)
         {
-            SubmitToSendingQueue(new ResonancePendingEncodedInformation() { Info = info });
+            _sendingQueue.BlockEnqueue(new ResonancePendingEncodedInformation() { Info = info });
         }
 
         /// <summary>
@@ -1407,45 +1408,50 @@ namespace Resonance
             return _pendingMessages.Any(x => x.Message.Token == token);
         }
 
-        private void SubmitToSendingQueue(object obj, QueuePriority priority = QueuePriority.Standard)
-        {
-            _outgoingQueue.BlockEnqueue(obj, priority);
-            _outgoingQueueBlock.Post(obj);
-        }
-
         #endregion
 
-        #region Process Outgoing
+        #region Push
 
-        private void ProcessOutgoing(Object obj)
+        private void PushThreadMethod()
         {
-            if (State != ResonanceComponentState.Connected) return;
-
             try
             {
-                Object pending = _outgoingQueue.BlockDequeue();
+                Logger.LogDebug("Push thread started...");
 
+                while (State == ResonanceComponentState.Connected)
+                {
+                    Object pending = _sendingQueue.BlockDequeue();
+                    if (pending == null || State != ResonanceComponentState.Connected)
+                    {
+                        Logger.LogDebug("Push thread terminated.");
+                        return;
+                    }
 
-                if (pending is ResonancePendingMessage pendingMessage)
-                {
-                    OnOutgoingMessage(pendingMessage);
+                    if (pending is ResonancePendingMessage pendingMessage)
+                    {
+                        OnOutgoingMessage(pendingMessage);
+                    }
+                    else if (pending is ResonancePendingRequest pendingRequest)
+                    {
+                        OnOutgoingRequest(pendingRequest);
+                    }
+                    else if (pending is ResonancePendingContinuousRequest pendingContinuousRequest)
+                    {
+                        OnOutgoingContinuousRequest(pendingContinuousRequest);
+                    }
+                    else if (pending is ResonancePendingResponse pendingResponse)
+                    {
+                        OnOutgoingResponse(pendingResponse);
+                    }
+                    else if (pending is ResonancePendingEncodedInformation pendingInfo)
+                    {
+                        OnEncodeAndWriteData(pendingInfo.Info);
+                    }
                 }
-                else if (pending is ResonancePendingRequest pendingRequest)
-                {
-                    OnOutgoingRequest(pendingRequest);
-                }
-                else if (pending is ResonancePendingContinuousRequest pendingContinuousRequest)
-                {
-                    OnOutgoingContinuousRequest(pendingContinuousRequest);
-                }
-                else if (pending is ResonancePendingResponse pendingResponse)
-                {
-                    OnOutgoingResponse(pendingResponse);
-                }
-                else if (pending is ResonancePendingEncodedInformation pendingInfo)
-                {
-                    OnEncodeAndWriteData(pendingInfo.Info);
-                }
+            }
+            catch (ThreadAbortException)
+            {
+                Logger.LogDebug("Push thread has been aborted.");
             }
             catch (Exception ex)
             {
@@ -1804,132 +1810,146 @@ namespace Resonance
 
         #endregion
 
-        #region Process Incoming
+        #region Pull
 
-        private void ProcessIncoming(byte[] data)
+        private void PullThreadMethod()
         {
-            if (State != ResonanceComponentState.Connected) return;
-
             try
             {
-                try
+                Logger.LogDebug("Pull thread started...");
+
+                while (State == ResonanceComponentState.Connected)
                 {
-                    if (data[0] == 0 && HandShakeNegotiator.State != ResonanceHandShakeState.Completed) //When first byte is zero, must be a Handshake message.
+                    byte[] data = _arrivedMessages.BlockDequeue();
+                    if (data == null || State != ResonanceComponentState.Connected)
                     {
-                        try
-                        {
-                            HandShakeNegotiator.HandShakeMessageDataReceived(data);
-                            return;
-                        }
-                        catch (Exception ex)
-                        {
-                            throw Logger.LogErrorThrow(new ResonanceHandshakeException("Could not initiate a proper handshake.", ex));
-                        }
+                        Logger.LogDebug("Pull thread terminated.");
+                        return;
                     }
-                    else if (TotalIncomingMessages == 0)
-                    {
-                        _preventHandshake = true;
-                    }
-
-                    TotalIncomingMessages++;
-
-                    ResonanceDecodingInformation info = new ResonanceDecodingInformation();
 
                     try
                     {
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Incoming message received № {TotalIncomingMessages} ({Length}). Decoding...", TotalIncomingMessages, data.ToFriendlyByteSize());
-
-                        if (Decoder != null)
+                        if (data[0] == 0 && HandShakeNegotiator.State != ResonanceHandShakeState.Completed) //When first byte is zero, must be a Handshake message.
                         {
-                            Decoder.Decode(data, info);
+                            try
+                            {
+                                HandShakeNegotiator.HandShakeMessageDataReceived(data);
+                                continue;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw Logger.LogErrorThrow(new ResonanceHandshakeException("Could not initiate a proper handshake.", ex));
+                            }
+                        }
+                        else if (TotalIncomingMessages == 0)
+                        {
+                            _preventHandshake = true;
+                        }
+
+                        TotalIncomingMessages++;
+
+                        ResonanceDecodingInformation info = new ResonanceDecodingInformation();
+
+                        try
+                        {
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Incoming message received № {TotalIncomingMessages} ({Length}). Decoding...", TotalIncomingMessages, data.ToFriendlyByteSize());
+
+                            if (Decoder != null)
+                            {
+                                Decoder.Decode(data, info);
+                            }
+                            else
+                            {
+                                Logger.LogWarning("Incoming message received but no Decoder specified!");
+                                continue;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            if (info.Token.IsNotNullOrEmpty())
+                            {
+                                Logger.LogWarningToken(info.Token, ex, "Error decoding incoming message but token was retrieved. continuing...");
+                            }
+                            else
+                            {
+                                Logger.LogCritical(ex, "Error decoding incoming message. Continuing.");
+                                continue;
+                            }
+                        }
+
+                        ResonancePreviewDecodingInfoEventArgs previewArgs = new ResonancePreviewDecodingInfoEventArgs();
+                        previewArgs.DecodingInformation = info;
+                        previewArgs.RawData = data;
+                        OnPreviewDecodingInformation(previewArgs);
+
+                        if (previewArgs.Handled)
+                        {
+                            continue;
+                        }
+
+                        if (info.Type == ResonanceTranscodingInformationType.Message || info.Type == ResonanceTranscodingInformationType.MessageSync)
+                        {
+                            if (!info.HasDecodingException)
+                            {
+                                OnIncomingMessage(info);
+                            }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
+                        {
+                            if (!info.HasDecodingException)
+                            {
+                                OnIncomingMessageACK(info);
+                            }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.Request || info.Type == ResonanceTranscodingInformationType.ContinuousRequest)
+                        {
+                            if (!info.HasDecodingException)
+                            {
+                                OnIncomingRequest(info);
+                            }
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.KeepAliveRequest)
+                        {
+                            OnKeepAliveRequestReceived(info);
+                        }
+                        else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
+                        {
+                            OnDisconnectNotificationReceived(info);
                         }
                         else
                         {
-                            Logger.LogWarning("Incoming message received but no Decoder specified!");
-                            return;
+                            IResonancePendingMessage pending = _pendingMessages.ToList().FirstOrDefault(x => x.Message.Token == info.Token);
+
+                            if (pending != null)
+                            {
+                                if (info.Type == ResonanceTranscodingInformationType.KeepAliveResponse)
+                                {
+                                    OnKeepAliveResponseReceived(pending as ResonancePendingRequest, info);
+                                }
+                                else if (pending is ResonancePendingRequest pendingRequest)
+                                {
+                                    OnIncomingResponse(pendingRequest, info);
+                                }
+                                else if (pending is ResonancePendingContinuousRequest pendingContinuousRequest)
+                                {
+                                    OnIncomingContinuousResponse(pendingContinuousRequest, info);
+                                }
+                            }
+                            else
+                            {
+                                Logger.LogWarningToken(info.Token, "A response message with no awaiting request was received. Token: {Token}. Ignoring...");
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        if (info.Token.IsNotNullOrEmpty())
-                        {
-                            Logger.LogWarningToken(info.Token, ex, "Error decoding incoming message but token was retrieved. continuing...");
-                        }
-                        else
-                        {
-                            Logger.LogCritical(ex, "Error decoding incoming message. Continuing.");
-                            return;
-                        }
-                    }
-
-                    ResonancePreviewDecodingInfoEventArgs previewArgs = new ResonancePreviewDecodingInfoEventArgs();
-                    previewArgs.DecodingInformation = info;
-                    previewArgs.RawData = data;
-                    OnPreviewDecodingInformation(previewArgs);
-
-                    if (previewArgs.Handled)
-                    {
-                        return;
-                    }
-
-                    if (info.Type == ResonanceTranscodingInformationType.Message || info.Type == ResonanceTranscodingInformationType.MessageSync)
-                    {
-                        if (!info.HasDecodingException)
-                        {
-                            OnIncomingMessage(info);
-                        }
-                    }
-                    else if (info.Type == ResonanceTranscodingInformationType.MessageSyncACK)
-                    {
-                        if (!info.HasDecodingException)
-                        {
-                            OnIncomingMessageACK(info);
-                        }
-                    }
-                    else if (info.Type == ResonanceTranscodingInformationType.Request || info.Type == ResonanceTranscodingInformationType.ContinuousRequest)
-                    {
-                        if (!info.HasDecodingException)
-                        {
-                            OnIncomingRequest(info);
-                        }
-                    }
-                    else if (info.Type == ResonanceTranscodingInformationType.KeepAliveRequest)
-                    {
-                        OnKeepAliveRequestReceived(info);
-                    }
-                    else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
-                    {
-                        OnDisconnectNotificationReceived(info);
-                    }
-                    else
-                    {
-                        IResonancePendingMessage pending = _pendingMessages.ToList().FirstOrDefault(x => x.Message.Token == info.Token);
-
-                        if (pending != null)
-                        {
-                            if (info.Type == ResonanceTranscodingInformationType.KeepAliveResponse)
-                            {
-                                OnKeepAliveResponseReceived(pending as ResonancePendingRequest, info);
-                            }
-                            else if (pending is ResonancePendingRequest pendingRequest)
-                            {
-                                OnIncomingResponse(pendingRequest, info);
-                            }
-                            else if (pending is ResonancePendingContinuousRequest pendingContinuousRequest)
-                            {
-                                OnIncomingContinuousResponse(pendingContinuousRequest, info);
-                            }
-                        }
-                        else
-                        {
-                            Logger.LogWarningToken(info.Token, "A response message with no awaiting request was received. Token: {Token}. Ignoring...");
-                        }
+                        Logger.LogError(ex, "Unexpected error has occurred while processing an incoming message.");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Unexpected error has occurred while processing an incoming message.");
-                }
+            }
+            catch (ThreadAbortException)
+            {
+                Logger.LogDebug("Pull thread has been aborted.");
             }
             catch (Exception ex)
             {
@@ -2563,68 +2583,75 @@ namespace Resonance
 
         #region KeepAlive
 
-        private void OnKeepAliveTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private void KeepAliveThreadMethod()
         {
-            if (!KeepAliveConfiguration.Enabled || State != ResonanceComponentState.Connected) return;
-
-            _keepAliveTimer.Stop();
+            Logger.LogDebug("KeepAlive thread started...");
 
             _lastIncomingMessageTime = DateTime.Now;
 
             int retryCounter = 0;
 
-            try
-            {
-                retryCounter++;
+            Thread.Sleep(KeepAliveConfiguration.Delay);
 
-                var response = SendRequest<ResonanceKeepAliveRequest, ResonanceKeepAliveResponse>(new ResonanceKeepAliveRequest(), new ResonanceRequestConfig()
-                {
-                    Priority = QueuePriority.Low
-                });
-
-                retryCounter = 0;
-            }
-            catch (TimeoutException)
+            while (State == ResonanceComponentState.Connected)
             {
                 if (KeepAliveConfiguration.Enabled)
                 {
-                    if (DateTime.Now - _lastIncomingMessageTime > DefaultRequestTimeout)
+                    try
                     {
-                        if (retryCounter >= KeepAliveConfiguration.Retries)
-                        {
-                            var keepAliveException = new ResonanceKeepAliveException("The transporter has not received a KeepAlive response within the given time.");
-                            Logger.LogError(keepAliveException, "The transporter has not received a KeepAlive response within the given time.");
-                            OnKeepAliveFailed();
+                        retryCounter++;
 
-                            if (KeepAliveConfiguration.FailTransporterOnTimeout)
+                        var response = SendRequest<ResonanceKeepAliveRequest, ResonanceKeepAliveResponse>(new ResonanceKeepAliveRequest(), new ResonanceRequestConfig()
+                        {
+                            Priority = QueuePriority.Low
+                        });
+
+                        retryCounter = 0;
+                    }
+                    catch (TimeoutException)
+                    {
+                        if (KeepAliveConfiguration.Enabled)
+                        {
+                            if (DateTime.Now - _lastIncomingMessageTime > DefaultRequestTimeout)
                             {
-                                OnFailed(keepAliveException);
-                                return;
+                                if (retryCounter >= KeepAliveConfiguration.Retries)
+                                {
+                                    var keepAliveException = new ResonanceKeepAliveException("The transporter has not received a KeepAlive response within the given time.");
+                                    Logger.LogError(keepAliveException, "The transporter has not received a KeepAlive response within the given time.");
+                                    OnKeepAliveFailed();
+
+                                    if (KeepAliveConfiguration.FailTransporterOnTimeout)
+                                    {
+                                        OnFailed(keepAliveException);
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        retryCounter = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    Logger.LogDebug($"The transporter has not received a KeepAlive response within the given time. Retrying ({retryCounter}/{KeepAliveConfiguration.Retries})...");
+                                }
                             }
                             else
                             {
                                 retryCounter = 0;
+                                Logger.LogWarning($"The transporter has not received a KeepAlive response within the given time, but was rescued due to other message received within the given time.");
                             }
                         }
-                        else
-                        {
-                            Logger.LogDebug($"The transporter has not received a KeepAlive response within the given time. Retrying ({retryCounter}/{KeepAliveConfiguration.Retries})...");
-                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        retryCounter = 0;
-                        Logger.LogWarning($"The transporter has not received a KeepAlive response within the given time, but was rescued due to other message received within the given time.");
+                        Logger.LogError(ex, "Error occurred on keep alive mechanism.");
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error occurred on keep alive mechanism.");
+
+                Thread.Sleep((int)Math.Max(KeepAliveConfiguration.Interval.TotalMilliseconds, 500));
             }
 
-            _keepAliveTimer.Interval = Math.Max(KeepAliveConfiguration.Interval.TotalMilliseconds, 500);
-            _keepAliveTimer.Start();
+            Logger.LogDebug("KeepAlive thread terminated.");
         }
 
         #endregion
@@ -2655,40 +2682,62 @@ namespace Resonance
 
         #endregion
 
-        #region Init
+        #region Start/Stop Threads
 
-        private void Init()
+        private void StartThreads()
         {
             if (!_clearedQueues)
             {
                 ClearQueues();
             }
 
-            Logger.LogDebug("Starting keep alive timer...");
+            Logger.LogDebug("Starting threads...");
 
+            _pullThread = new Thread(PullThreadMethod);
+            _pullThread.Name = $"{this} Pull Thread";
+            _pullThread.IsBackground = true;
+            _pullThread.Start();
 
-            if (_keepAliveTimer != null)
+            _pushThread = new Thread(PushThreadMethod);
+            _pushThread.Name = $"{this} Push Thread";
+            _pushThread.IsBackground = true;
+            _pushThread.Start();
+
+            _keepAliveThread = new Thread(KeepAliveThreadMethod);
+            _keepAliveThread.Name = $"{this} KeepAlive Thread";
+            _keepAliveThread.IsBackground = true;
+            _keepAliveThread.Start();
+        }
+
+        private Task StopThreads()
+        {
+            return Task.Factory.StartNew(() =>
             {
-                _keepAliveTimer.Stop();
-                _keepAliveTimer.Dispose();
-            }
+                Logger.LogDebug("Stopping threads...");
 
-            _keepAliveTimer = new System.Timers.Timer(Math.Max(KeepAliveConfiguration.Interval.TotalMilliseconds + KeepAliveConfiguration.Delay.TotalMilliseconds, 500));
-            _keepAliveTimer.Elapsed += OnKeepAliveTimerElapsed;
-            _keepAliveTimer.Start();
+                _sendingQueue.BlockEnqueue(null);
+                _arrivedMessages.BlockEnqueue(null);
+
+                if (_pushThread != null && _pushThread.ThreadState == ThreadState.Running)
+                {
+                    _pushThread.Join();
+                }
+
+                if (_pullThread != null && _pullThread.ThreadState == ThreadState.Running)
+                {
+                    _pullThread.Join();
+                }
+
+                Logger.LogDebug("Threads terminated...");
+            });
         }
 
         private void ClearQueues()
         {
             Logger.LogDebug("Clearing queues...");
-            _outgoingQueue = new PriorityProducerConsumerQueue<object>();
-
-            _outgoingQueueBlock?.Complete();
-            _outgoingQueueBlock = new ActionBlock<object>(ProcessOutgoing);
-
+            _sendingQueue = new PriorityProducerConsumerQueue<object>();
             _pendingMessages = new ConcurrentList<IResonancePendingMessage>();
-            _incomingQueueBlock?.Complete();
-            _incomingQueueBlock = new ActionBlock<byte[]>(ProcessIncoming);
+            _arrivedMessages = new ProducerConsumerQueue<byte[]>();
             _clearedQueues = true;
         }
 
@@ -2725,15 +2774,11 @@ namespace Resonance
         {
             Logger.LogDebug("Finalizing disconnection...");
 
+            await StopThreads();
+
             if (Adapter != null)
             {
                 await Adapter.DisconnectAsync();
-            }
-
-            if (_keepAliveTimer != null)
-            {
-                _keepAliveTimer.Stop();
-                _keepAliveTimer.Dispose();
             }
 
             NotifyActiveMessagesAboutDisconnection(exception);
@@ -2784,13 +2829,13 @@ namespace Resonance
                 }
             }
 
-            if (_outgoingQueue.Count > 0)
+            if (_sendingQueue.Count > 0)
             {
                 List<Object> sendingQueue = new List<object>();
 
-                while (_outgoingQueue.Count > 0)
+                while (_sendingQueue.Count > 0)
                 {
-                    sendingQueue.Add(_outgoingQueue.BlockDequeue());
+                    sendingQueue.Add(_sendingQueue.BlockDequeue());
                 }
 
                 Logger.LogDebug("Aborting all pending response messages...");
@@ -2982,7 +3027,7 @@ namespace Resonance
         protected virtual void OnAdapterDataAvailable(object sender, ResonanceAdapterDataAvailableEventArgs e)
         {
             _lastIncomingMessageTime = DateTime.Now;
-            _incomingQueueBlock.Post(e.Data);
+            _arrivedMessages.BlockEnqueue(e.Data);
         }
 
         /// <summary>
@@ -3022,14 +3067,14 @@ namespace Resonance
         /// </summary>
         public void Dispose()
         {
-            Dispose(false);
+            Dispose(true);
         }
 
         /// <summary>
         /// Disconnects and disposes this transporter.
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        public void Dispose(bool withAdapter = false)
+        public void Dispose(bool withAdapter)
         {
             DisposeAsync(withAdapter).GetAwaiter().GetResult();
         }
@@ -3039,7 +3084,7 @@ namespace Resonance
         /// </summary>
         public Task DisposeAsync()
         {
-            return DisposeAsync(false);
+            return DisposeAsync(true);
         }
 
         /// <summary>

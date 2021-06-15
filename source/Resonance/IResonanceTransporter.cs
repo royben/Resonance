@@ -579,13 +579,13 @@ namespace Resonance
         /// Disconnects and disposes this transporter.
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        void Dispose(bool withAdapter = false);
+        void Dispose(bool withAdapter);
 
         /// <summary>
         /// Disconnects and disposes this transporter.
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        Task DisposeAsync(bool withAdapter = false);
+        Task DisposeAsync(bool withAdapter);
 
         /// <summary>
         /// Returns true if a pending message/request exists by the specified message token.

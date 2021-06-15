@@ -12,6 +12,8 @@ using Resonance.Tests.Common.Transcoding;
 
 using Resonance.Threading;
 using Microsoft.Extensions.Logging;
+using Resonance.Servers.Tcp;
+using System.Linq;
 
 namespace Resonance.Tests
 {
@@ -229,7 +231,7 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 1000; i++)
             {
-                t1.Send(new CalculateRequest() { A = 10, B = 15 },new ResonanceMessageConfig() { RequireACK = true });
+                t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
             }
 
             while (count < 1000 && exception == null)
@@ -269,6 +271,66 @@ namespace Resonance.Tests
             t2.Dispose(true);
 
             Assert.AreEqual(response.Sum, request.A + request.B);
+        }
+
+        [TestMethod]
+        public void Tcp_Connect_Send_And_Receive_100_Concurrent_Transporters()
+        {
+            if (IsRunningOnAzurePipelines) return;
+
+            List<IResonanceTransporter> receivers = new List<IResonanceTransporter>();
+
+            ResonanceTcpServer server = new ResonanceTcpServer(4321);
+            server.ConnectionRequest += (x, e) =>
+            {
+                IResonanceTransporter t = ResonanceTransporter.Builder.Create()
+                .WithAdapter(e.Accept())
+                .WithJsonTranscoding()
+                .Build();
+
+                receivers.Add(t);
+
+                t.RegisterRequestHandler<CalculateRequest, CalculateResponse>((request) =>
+                {
+                    return new CalculateResponse() { Sum = request.A + request.B };
+                });
+
+                t.Connect();
+            };
+
+            server.Start();
+
+            List<Thread> threads = new List<Thread>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                var t = ThreadFactory.StartNew(() => 
+                {
+                    IResonanceTransporter client = ResonanceTransporter.Builder.Create()
+                        .WithTcpAdapter()
+                        .WithAddress("127.0.0.1")
+                        .WithPort(4321)
+                        .WithJsonTranscoding()
+                        .Build();
+
+                    client.Connect();
+
+                    var request = new CalculateRequest() { A = 10, B = 15 };
+                    var response = client.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(5) });
+
+                    Assert.AreEqual(response.Sum, request.A + request.B);
+
+                    client.Dispose();
+                });
+
+                threads.Add(t);
+            }
+
+            TestHelper.WaitWhile(() => threads.Count < 100 || receivers.Count < 100, TimeSpan.FromSeconds(30));
+
+            threads.ForEach(x => x.Join());
+            receivers.ForEach(x => x.Dispose());
+            server.Dispose();
         }
 
         [TestMethod]
