@@ -73,6 +73,8 @@ namespace Resonance.Tests
 
             double CalculateMultiParameter(double a, double b);
 
+            Task<double> CalculateMultiParameterAsync(double a, double b);
+
             void CalculateMultiParameterVoid(double a, double b);
 
             [ResonanceRpc(Timeout = 10)]
@@ -182,6 +184,11 @@ namespace Resonance.Tests
             public double CalculateMultiParameter(double a, double b)
             {
                 return a + b;
+            }
+
+            public Task<double> CalculateMultiParameterAsync(double a, double b)
+            {
+                return Task.FromResult(a + b);
             }
 
             public void CalculateMultiParameterVoid(double a, double b)
@@ -587,6 +594,34 @@ namespace Resonance.Tests
             var proxy = t1.CreateClientProxy<ITestService>();
 
             var result = proxy.CalculateMultiParameter(10, 5);
+
+            Assert.AreEqual(result, 15);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+        }
+
+        [TestMethod]
+        public void Service_Handles_Multi_Parameter_Async_Method()
+        {
+            Reset();
+
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+            t2.MessageAcknowledgmentBehavior = ResonanceMessageAckBehavior.ReportErrors;
+
+            t1.Connect();
+            t2.Connect();
+
+            var testService = new TestService();
+
+            t2.RegisterService<ITestService, TestService>(testService);
+
+            var proxy = t1.CreateClientProxy<ITestService>();
+
+            var result = proxy.CalculateMultiParameterAsync(10, 5).GetAwaiter().GetResult();
 
             Assert.AreEqual(result, 15);
 

@@ -1,4 +1,5 @@
-﻿using Resonance.RPC;
+﻿using Resonance.ExtensionMethods;
+using Resonance.RPC;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,18 +26,18 @@ namespace Resonance
         public virtual void Encode(BinaryWriter writer, ResonanceEncodingInformation info)
         {
             writer.Write(ProtocolVersion); //None zero byte must be written here to not confuse with Handshake messages !
-            writer.Write(info.Transcoding ?? String.Empty);
+            writer.WriteShortASCII(info.Transcoding);
             writer.Write(info.IsCompressed);
-            writer.Write(info.Token);
+            writer.WriteShortASCII(info.Token);
             writer.Write((byte)info.Type);
 
             if (info.RPCSignature != null)
             {
-                writer.Write(info.RPCSignature.ToString());
+                writer.WriteShortASCII(info.RPCSignature.ToString());
             }
             else
             {
-                writer.Write(String.Empty);
+                writer.WriteShortASCII(String.Empty);
             }
 
             writer.Write((byte)(info.Timeout ?? 0));
@@ -46,11 +47,11 @@ namespace Resonance
             {
                 writer.Write(info.Completed);
                 writer.Write(info.HasError);
-                writer.Write(info.ErrorMessage ?? String.Empty);
+                writer.WriteUTF8(info.ErrorMessage);
             }
             else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
             {
-                writer.Write(info.ErrorMessage ?? String.Empty);
+                writer.WriteUTF8(info.ErrorMessage);
             }
 
             writer.Write((uint)writer.BaseStream.Position + sizeof(uint)); //Increase size when adding fields.
@@ -65,12 +66,12 @@ namespace Resonance
         public virtual void Decode(BinaryReader reader, ResonanceDecodingInformation info)
         {
             info.ProtocolVersion = reader.ReadByte();
-            info.Transcoding = reader.ReadString();
+            info.Transcoding = reader.ReadShortASCII();
             info.IsCompressed = reader.ReadBoolean();
-            info.Token = reader.ReadString();
+            info.Token = reader.ReadShortASCII();
             info.Type = (ResonanceTranscodingInformationType)reader.ReadByte();
 
-            String rpcSignatureString = reader.ReadString();
+            String rpcSignatureString = reader.ReadShortASCII();
 
             if (!String.IsNullOrEmpty(rpcSignatureString))
             {
@@ -88,11 +89,11 @@ namespace Resonance
             {
                 info.Completed = reader.ReadBoolean();
                 info.HasError = reader.ReadBoolean();
-                info.ErrorMessage = reader.ReadString();
+                info.ErrorMessage = reader.ReadUTF8();
             }
             else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
             {
-                info.ErrorMessage = reader.ReadString();
+                info.ErrorMessage = reader.ReadUTF8();
             }
 
             info.ActualMessageStreamPosition = reader.ReadUInt32();
