@@ -42,7 +42,7 @@ Resonance is a high-performance real-time C# communication library with built-in
   </ItemGroup> 
 
   <ItemGroup>
-    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" PrivateAssets="build"   />
+    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.18" PrivateAssets="compile" />
   </ItemGroup>
 
   <PropertyGroup>
