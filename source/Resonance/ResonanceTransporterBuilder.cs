@@ -27,7 +27,7 @@ namespace Resonance
         IBuildTransporter,
         ITcpAdapertBuilder,
         IUdpAdapterBuilder,
-        IUdpRemoteEndPointBuilder,
+        IUdpPreventLoopbackBuilder,
         ITcpAdapterPortBuilder,
         IInMemoryAdapterBuilder,
         ISharedMemoryAdapterBuilder,
@@ -103,19 +103,32 @@ namespace Resonance
         public interface IUdpAdapterBuilder
         {
             /// <summary>
-            /// Sets the UDP adapter local end point.
+            /// Sets the remote UDP server address and port.
             /// </summary>
-            /// <param name="endpoint">The endpoint.</param>
-            IUdpRemoteEndPointBuilder WithLocalEndPoint(IPEndPoint endpoint);
+            /// <param name="address">The server address.</param>
+            /// <param name="port">The server port.</param>
+            ITranscodingBuilder WithServer(String address, int port);
+
+            /// <summary>
+            /// Sets the remote UDP endpoint.
+            /// </summary>
+            /// <param name="endPoint">The end point.</param>
+            IUdpPreventLoopbackBuilder WithRemoteEndPoint(IPEndPoint endPoint);
+
+            /// <summary>
+            /// Broadcasts and listens to data to and from all addresses.
+            /// </summary>
+            /// <param name="port">The UDP port.</param>
+            IUdpPreventLoopbackBuilder Broadcast(int port);
         }
 
-        public interface IUdpRemoteEndPointBuilder
+        public interface IUdpPreventLoopbackBuilder : ITranscodingBuilder
         {
             /// <summary>
-            /// Sets the UDP adapter remote end point.
+            /// Prevents outgoing data from looping back to the sender.
+            /// This uses some extra payload for adapter identification and must be configured by all parties to work.
             /// </summary>
-            /// <param name="endpoint">The endpoint.</param>
-            ITranscodingBuilder WithRemoteEndPoint(IPEndPoint endpoint);
+            ITranscodingBuilder PreventLoopback();
         }
 
         public interface IInMemoryAdapterBuilder
@@ -272,19 +285,6 @@ namespace Resonance
 
         public IUdpAdapterBuilder WithUdpAdapter()
         {
-            Transporter.Adapter = new UdpAdapter();
-            return this;
-        }
-
-        public IUdpRemoteEndPointBuilder WithLocalEndPoint(IPEndPoint endpoint)
-        {
-            (Transporter.Adapter as UdpAdapter).LocalEndPoint = endpoint;
-            return this;
-        }
-
-        public ITranscodingBuilder WithRemoteEndPoint(IPEndPoint endpoint)
-        {
-            (Transporter.Adapter as UdpAdapter).RemoteEndPoint = endpoint;
             return this;
         }
 
@@ -403,6 +403,30 @@ namespace Resonance
         public IResonanceTransporter Build()
         {
             return Transporter;
+        }
+
+        public ITranscodingBuilder WithServer(string address, int port)
+        {
+            Transporter.Adapter = new UdpAdapter(address, port);
+            return this;
+        }
+
+        public IUdpPreventLoopbackBuilder WithRemoteEndPoint(IPEndPoint endPoint)
+        {
+            Transporter.Adapter = new UdpAdapter(endPoint);
+            return this;
+        }
+
+        public IUdpPreventLoopbackBuilder Broadcast(int port)
+        {
+            Transporter.Adapter = new UdpAdapter(new IPEndPoint(IPAddress.Any, port), new IPEndPoint(IPAddress.Broadcast, port));
+            return this;
+        }
+
+        public ITranscodingBuilder PreventLoopback()
+        {
+            (Transporter.Adapter as UdpAdapter).PreventLoopback = true;
+            return this;
         }
     }
 }

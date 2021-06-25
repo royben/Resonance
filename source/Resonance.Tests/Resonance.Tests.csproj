@@ -64,6 +64,7 @@
     <Compile Include="Common\Transcoding\CorruptedDecoder.cs" />
     <Compile Include="Common\Transcoding\CorruptedDecoderException.cs" />
     <Compile Include="LZ4_TST.cs" />
+    <Compile Include="Routing_TST.cs" />
     <Compile Include="SignalR\ISignalRServer.cs" />
     <Compile Include="SignalR\SignalRCoreServer.cs" />
     <Compile Include="SignalR\SignalRServer.cs" />
@@ -81,10 +82,11 @@
     <Compile Include="Discovery_TST.cs" />
     <Compile Include="Builders.cs" />
     <Compile Include="Handlers_TST.cs" />
-    <Compile Include="Services_TST.cs" />
+    <Compile Include="RPC_TST.cs" />
     <Compile Include="Transcoding_TST.cs" />
     <Compile Include="HandShake_TST.cs" />
     <Compile Include="ComponentCounter_TST.cs" />
+    <Compile Include="UDP_TST.cs" />
     <Compile Include="WebRTC_TST.cs" />
   </ItemGroup>
   <ItemGroup>

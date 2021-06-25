@@ -17,6 +17,6 @@ namespace Resonance
         /// <summary>
         /// Gets the response configuration.
         /// </summary>
-        ResonanceResponseConfig Config { get; }
+        ResonanceResponseConfig Config { get; set; }
     }
 }

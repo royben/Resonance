@@ -25,24 +25,35 @@ This library provides an intuitive API for asynchronous communication between ma
 <br/>
 
 ## Overview
-Resonance is a request-response based communication framework.
-This means that for each request that is being sent, a matching response is expected.
-This is done by attaching a unique token to each request and expecting the same token from the response.
-Although the request-response pattern is the recommended approach, it is not enforced. Sending messages without expecting any response is possible.
+Resonance is a feature-rich communication framework, designed to bring complex, real-time communication methodologies, down to a solid, intuitive API that will provide you with all the tooling you need, out of the box.
+Get started implementing advanced communication applications with minimal effort.
 
 <br/>
 
-The following diagram provides a basic overview of a message being sent.
-
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Protocol.png?raw=true)
+Resonance provides support for the following key features.
+* ✅ **One-way messages** - send a message from one side to another with or without acknowledgement.
+* ✅ **Request-Response messages** - send a request while expecting a response.
+* ✅ **Continuous response streams** - send a single request and receive multiple response messages.
+* ✅ **Integrated encryption, compression and keep alive mechanism.**
+* ✅ **Built-in support for RPC** - use a common interface for communication by calling standard methods, properties and events!
+* ✅ **Built-in servers and services for handling incoming connections.**
+* ✅ **Built-in support for various communication methods** -whether you want to communicate between applications on the same device, on the local area network or across the internet.
+* ✅ **Built-in support for various encoding and decoding interfaces**.
+* ✅ **Standard and Fluent APIs for clear construction of objects**.
+* ✅ **Support for both synchronous and asynchronous operations.**
+* ✅ **Output communication logs to any logging library of your choice.**
+* ✅ **Work with standard C# objects and types without the need to handle all the bits and bytes.**
 
 <br/>
+
+🔗 [Check out the Wiki page for tutorials and fully working demos!](https://github.com/royben/Resonance/wiki)
+
 <br/>
 
 The resonance library might be described by these 3 basic layers:
 
 ### Transporting
-A transporter responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the required information to other components.
+A `Transporter` responsibility is to provide the API for sending and receiving messages, managing those messages, and propagating the required information to other components.
 
 ### Transcoding
 Encoders and Decoders are components that can be plugged to a transporter, they determine how outgoing/incoming messages should be encoded and whether the data should be encrypted and/or compressed.
@@ -62,6 +73,7 @@ The following built-in adapters are currently supported by the library:
 *	In-Memory
 *	SignalR
 *	WebRTC
+*	Bluetooth
 *	Named Pipes
 *	Shared Memory
 
@@ -177,9 +189,9 @@ Finally, we need to handle the incoming `CalculateRequest` on the second Transpo
 Handling incoming requests can be achieved using any of the following method:
 - Registering a `RequestReceived` event handler.
 - Registering a request handler using the `RegisterRequestHandler` method.
-- Registering an `IResonanceService` using the `RegisterService` method.
+- Using remote procedure calls. (see the **RPC** section on this document) 
 
-We are going to cover each of the above methods.
+We are going to cover the first two methods.
 
 <br/>
 
@@ -274,63 +286,6 @@ and, we are just returning a `CalculateResponse` as the result of the method.
 Also, we don't need to explicitly report any errors, we can just throw an exception.
 Actually, any exception that occurs while handling a request, will trigger an automatic error response.
 
-<br/>
-
-**Handling incoming requests using a Service:**
-<br/>
-
-The last approach for handling incoming requests is to register an instance of `IResonanceService` as a service.<br/>
-A Service is basically just a class that contains methods that can handle requests, just like the previous request handler example.
-<br/>
-
-Only methods that meets the below criteria will be registered as request handlers.
-- Accepts only one argument with the request type.
-- Returns:
-  - `void`.
-  - `Task`.
-  - `ResonanceActionResult<T>` where T is the type of the response.
-  - `Task<ResonanceActionResult<T>>` where T is the type of the response.
-  
-<br/>
-
-Let's create our Calculation Service class.
-
-```c#
-private class CalculationService : IResonanceService
-{
-    public ResonanceActionResult<CalculateResponse> Calculate(CalculateRequest request)
-    {
-        return new CalculateResponse() { Sum = request.A + request.B };
-    }
-
-    public void OnTransporterStateChanged(ResonanceComponentState state)
-    {
-        if (state == ResonanceComponentState.Failed)
-        {
-            //Connection lost
-        }
-    }
-}
-```
-<Br/>
-
-Let's go back again and see how we might register our service.
-
-```c#
-private async void Server_ConnectionRequest(object sender, ResonanceListeningServerConnectionRequestEventArgs<TcpAdapter> e)
-{
-    IResonanceTransporter transporter2 = ResonanceTransporter.Builder
-        .Create()
-        .WithAdapter(e.Accept())
-        .WithJsonTranscoding()
-        .Build();
-    
-    //Register a service...
-    transporter2.RegisterService(new CalculationService());
-
-    await transporter2.ConnectAsync();
-}
-```
 <Br/>
 
 **Congratulations!** we have successfully completed a fully working request-response pattern.
@@ -503,7 +458,7 @@ await t1.SendAsync(new SomeObject() { SomeValue = "some value"}, new ResonanceMe
 ```
 When setting `RequireACK = true`, the `SendAsync` will wait until an acknowledgment is received.<br/>
 
-One-way message acknowledgment can also carry an error that might occur at the receiving side and throw an exception .
+One-way message acknowledgment can also carry any error that might occur at the receiving side and throw an exception .
 To enable this functionality, you need to configure both transporters `MessageAcknowledgmentBehavior` property to `ResonanceMessageAckBehavior.ReportErrors`.<br/>
 
 Here is an example:
@@ -680,13 +635,6 @@ Once the password is acquired by both participants, they can start send and rece
 
 ![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png?raw=true)
 
-<br/>
-
-Due to Resonance being a client-client transporting library rather than a client-server communication protocol, there is no real "connection" point where one client tries to reach some server. That is why implementing the encryption handshake was a bit tricky.<br/>
-Actually, the handshake does not occur once a Transporter tries to "Connect", but only before the first message sending attempt.<br/>
-Since both transporters can start sending message at the exact same time, there is the issue of, who is the "manager" of the negotiation?, which side determines the Symmetric encryption password?<br/>
-In order to determine who is the "manager" of the negotiation, each `HandshakeNegotiator` object generates a unique random number (ClientID) that is shared to the other side at the first step of the negotiation.<br/>
-The one with the highest ClientID gets to decide about the Symmetric encryption password.
 
 <br/>
 
@@ -797,6 +745,123 @@ Here is a screenshot of a request being traced using its `Token` property throug
 
 <br/>
 
+## RPC (Remote Procedure Call)
+Remote procedure call is basically executing a method on another machine as if it was on your machine. The Resonance framework provides a very advanced built-in RPC mechanism with support for methods, properties and even events!
+This is done by defining a common interface between the caller and the callee (server-client), implementing the interface on the server side, registering it with a transporter then creating a client proxy on the client side.
+
+The following is a short example of an RPC implementation.<br/>
+First let's create the common interface.
+
+```c#
+public interface ICalcService
+{
+    event EventHandler<EventArgs> CalculationCompleted;
+    int TotalCalculations { get; }
+    double Add(double a, double b);
+    double Subtract(double a, double b);
+    Task<double> AddAsync(double a, double b);
+    Task<double> SubtractAsync(double a, double b);
+}
+```
+<br/>
+
+Now, let's create the server implementation.
+
+```c#
+public class CalcServiceImpl : ICalcService
+{
+    public int TotalCalculations { get; private set; }
+
+    public event EventHandler<EventArgs> CalculationCompleted;
+
+    public double Add(double a, double b)
+    {
+        OnCalculationCompleted();
+        return a + b;
+    }
+
+    public Task<double> AddAsync(double a, double b)
+    {
+        return Task.FromResult(Add(a, b));
+    }
+
+    public double Subtract(double a, double b)
+    {
+        OnCalculationCompleted();
+        return a - b;
+    }
+
+    public Task<double> SubtractAsync(double a, double b)
+    {
+        return Task.FromResult(Subtract(a, b));
+    }
+
+    protected virtual void OnCalculationCompleted()
+    {
+        TotalCalculations++;
+        CalculationCompleted?.Invoke(this, new EventArgs());
+    }
+}
+```
+<br/>
+
+All we need to do now is to register the implementation with the server Transporter and create a client proxy using the client Transporter.<br/>
+
+Here is an example.
+
+```c#
+public async void TestRPC()
+{
+    //Server transporter
+    IResonanceTransporter t1 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TST")
+        .WithJsonTranscoding()
+        .Build();
+
+    //Client transporter
+    IResonanceTransporter t2 = ResonanceTransporter.Builder
+        .Create()
+        .WithInMemoryAdapter()
+        .WithAddress("TST")
+        .WithJsonTranscoding()
+        .Build();
+
+    await t1.ConnectAsync();
+    await t2.ConnectAsync();
+
+    //Register the calc service with the server transporter.
+    t1.RegisterService<ICalcService, CalcServiceImpl>(RpcServiceCreationType.Singleton);
+
+    //Create the client proxy using the client transporter.
+    ICalcService client = t2.CreateClientProxy<ICalcService>();
+
+    client.CalculationCompleted += (sender, e) => 
+    {
+        //Event should be raised here!
+        Debug.WriteLine(client.TotalCalculations);
+    };
+
+    //Execute a remote method and get the result.
+    var result = await client.AddAsync(10, 15);
+}
+```
+<br/>
+
+That simple! no pre generated code is required, the client proxy code is generated at runtime.
+
+Now, as we have seen in previous examples, when sending a request, it is possible to customize some aspects like logging and timeouts.
+When using RPC, you can achieve that by attaching the `ResonanceRpc` attribute for a method or property.
+For example, if we would want to specify a custom timeout for the "Add" method on our interface we could do that.
+
+```c#
+[ResonanceRpc(Timeout = 5)]
+double Add(double a, double b);
+```
+
+<br/>
+
 ## Performance Benchmarks
 >1000 Roundtrips (request -> response), Intel Core i7-6700HQ CPU 2.60GHz (Skylake)
 
@@ -817,3 +882,5 @@ Here is a screenshot of a request being traced using its `Token` property throug
 | Compressed | 421.9 ms | 8.25 ms | 13.32 ms |
 | Encrypted | 260.9 ms | 5.18 ms | 12.41 ms |
 | Compressed / Encrypted | 517.2 ms | 9.12 ms |  8.08 ms |
+
+*more benchmarks will be added soon..*

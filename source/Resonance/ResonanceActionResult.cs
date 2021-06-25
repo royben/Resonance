@@ -7,23 +7,34 @@ namespace Resonance
     /// <summary>
     /// Represents a Resonance request handler response.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <seealso cref="Resonance.IResonanceActionResult" />
-    public class ResonanceActionResult<T> : IResonanceActionResult where T : class
+    public class ResonanceActionResult : IResonanceActionResult
     {
         /// <summary>
         /// Gets or sets the response message.
         /// </summary>
-        public T Response
-        {
-            get { return (this as IResonanceActionResult).Response as T; }
-            set { (this as IResonanceActionResult).Response = value; }
-        }
+        public object Response { get; set; }
 
         /// <summary>
         /// Gets the response configuration.
         /// </summary>
-        public ResonanceResponseConfig Config { get; }
+        public ResonanceResponseConfig Config { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a Resonance request handler response.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <seealso cref="Resonance.IResonanceActionResult" />
+    public class ResonanceActionResult<T> : ResonanceActionResult, IResonanceActionResult where T : class
+    {
+        /// <summary>
+        /// Gets or sets the response message.
+        /// </summary>
+        public new T Response
+        {
+            get { return (this as IResonanceActionResult).Response as T; }
+            set { (this as IResonanceActionResult).Response = value; }
+        }
 
         /// <summary>
         /// Gets or sets the response message.
@@ -34,9 +45,8 @@ namespace Resonance
         /// Initializes a new instance of the <see cref="ResonanceActionResult{T}"/> class.
         /// </summary>
         /// <param name="response">The response message.</param>
-        public ResonanceActionResult(T response)
+        public ResonanceActionResult(T response) : base()
         {
-            Config = new ResonanceResponseConfig();
             Response = response;
         }
 

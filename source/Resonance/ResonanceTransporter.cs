@@ -3,6 +3,7 @@ using Resonance.Exceptions;
 using Resonance.ExtensionMethods;
 using Resonance.HandShake;
 using Resonance.Reactive;
+using Resonance.RPC;
 using Resonance.Threading;
 using Resonance.Tokens;
 using Resonance.Transcoding.Json;
@@ -30,7 +31,7 @@ namespace Resonance
         private ConcurrentList<IResonancePendingMessage> _pendingMessages;
         private ProducerConsumerQueue<byte[]> _arrivedMessages;
         private readonly List<ResonanceMessageHandler> _messageHandlers;
-        private readonly List<IResonanceService> _services;
+        private readonly List<ResonanceRegisteredService> _services;
         private Thread _pushThread;
         private Thread _pullThread;
         private Thread _keepAliveThread;
@@ -100,6 +101,12 @@ namespace Resonance
         /// or the remote peer has disconnected and Disconnect request was received.
         /// </summary>
         public event EventHandler<ResonanceConnectionLostEventArgs> ConnectionLost;
+
+        /// <summary>
+        /// Occurs after incoming data has been decoded.
+        /// Can be used to route data to other components or prevent further processing of the data by the transporter.
+        /// </summary>
+        public event EventHandler<ResonancePreviewDecodingInfoEventArgs> PreviewDecodingInformation;
 
         #endregion
 
@@ -245,8 +252,11 @@ namespace Resonance
 
             HandShakeNegotiator = new ResonanceDefaultHandShakeNegotiator(this);
 
+            Encoder = new JsonEncoder();
+            Decoder = new JsonDecoder();
+
             _messageHandlers = new List<ResonanceMessageHandler>();
-            _services = new List<IResonanceService>();
+            _services = new List<ResonanceRegisteredService>();
 
             _lastIncomingMessageTime = DateTime.Now;
 
@@ -264,6 +274,15 @@ namespace Resonance
             FailsWithAdapter = true;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResonanceTransporter"/> class.
+        /// </summary>
+        /// <param name="adapter">The adapter.</param>
+        public ResonanceTransporter(IResonanceAdapter adapter) : this()
+        {
+            Adapter = adapter;
+        }
+
         #endregion
 
         #region Request Handlers
@@ -273,29 +292,9 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Message">The type of the message.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class
+        public IDisposable RegisterMessageHandler<Message>(MessageWithTransporterHandlerDelegate<Message> callback) where Message : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering message handler for '{Message}' on '{Handler}'...", typeof(Message).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Message>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.MessageType = typeof(Message);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.Callback = (transporter, resonanceRequest) =>
-                {
-                    callback?.Invoke(transporter, resonanceRequest as ResonanceMessage<Message>);
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Message handler for '{Message}' on '{Handler}' was already registered.", typeof(Message).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Message, Object>(callback);
         }
 
         /// <summary>
@@ -303,14 +302,9 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Message">The type of the message.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class
+        public void UnregisterMessageHandler<Message>(MessageWithTransporterHandlerDelegate<Message> callback) where Message : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Message>) == callback);
-            if (handler != null)
-            {
-                Logger.LogDebug("Unregistering message handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
-                _messageHandlers.Remove(handler);
-            }
+            UnregisterHandlerInternal(callback);
         }
 
         /// <summary>
@@ -318,29 +312,9 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class
+        public IDisposable RegisterRequestHandler<Request>(MessageWithTransporterHandlerDelegate<Request> callback) where Request : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Request>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.MessageType = typeof(Request);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.Callback = (transporter, resonanceRequest) =>
-                {
-                    callback?.Invoke(transporter, resonanceRequest as ResonanceMessage<Request>);
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Request, Object>(callback);
         }
 
         /// <summary>
@@ -348,14 +322,9 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class
+        public void UnregisterRequestHandler<Request>(MessageWithTransporterHandlerDelegate<Request> callback) where Request : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as MessageHandlerCallbackDelegate<Request>) == callback);
-            if (handler != null)
-            {
-                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
-                _messageHandlers.Remove(handler);
-            }
+            UnregisterHandlerInternal(callback);
         }
 
         /// <summary>
@@ -364,30 +333,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        public IDisposable RegisterRequestHandler<Request, Response>(RequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.HasResponse = true;
-                handler.MessageType = typeof(Request);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
-                {
-                    return (ResonanceActionResult<Response>)callback.Invoke(request as Request);
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Request, Response>(callback);
         }
 
         /// <summary>
@@ -396,14 +344,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        public void UnregisterRequestHandler<Request, Response>(RequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackDelegate<Request, Response>) == callback);
-            if (handler != null)
-            {
-                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
-                _messageHandlers.Remove(handler);
-            }
+            UnregisterHandlerInternal(callback);
         }
 
         /// <summary>
@@ -412,30 +355,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        public IDisposable RegisterRequestHandler<Request, Response>(RequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.HasResponse = true;
-                handler.MessageType = typeof(Request);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
-                {
-                    return (ResonanceActionResult<Response>)callback.Invoke(this, request as Request);
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Request, Response>(callback);
         }
 
         /// <summary>
@@ -444,14 +366,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class
+        public void UnregisterRequestHandler<Request, Response>(RequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>) == callback);
-            if (handler != null)
-            {
-                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
-                _messageHandlers.Remove(handler);
-            }
+            UnregisterHandlerInternal(callback);
         }
 
         /// <summary>
@@ -460,30 +377,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
+        public IDisposable RegisterRequestHandler<Request, Response>(AsyncRequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.HasResponse = true;
-                handler.MessageType = typeof(Request);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
-                {
-                    return callback.Invoke(this, request as Request).GetAwaiter().GetResult() as ResonanceActionResult<Response>;
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Request, Response>(callback);
         }
 
         /// <summary>
@@ -492,14 +388,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class
+        public void UnregisterRequestHandler<Request, Response>(AsyncRequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>) == callback);
-            if (handler != null)
-            {
-                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
-                _messageHandlers.Remove(handler);
-            }
+            UnregisterHandlerInternal(callback);
         }
 
         /// <summary>
@@ -508,30 +399,9 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        public void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class
+        public IDisposable RegisterRequestHandler<Request, Response>(AsyncRequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
-
-            Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", typeof(Request).Name, handlerDescription);
-
-            if (!_messageHandlers.Exists(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseDelegate<Request, Response>) == callback))
-            {
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.HasResponse = true;
-                handler.MessageType = typeof(Request);
-                handler.RegisteredCallback = callback;
-                handler.RegisteredCallbackDescription = handlerDescription;
-                handler.ResponseCallback = (request) =>
-                {
-                    return callback.Invoke(request as Request).GetAwaiter().GetResult() as ResonanceActionResult<Response>;
-                };
-
-                _messageHandlers.Add(handler);
-            }
-            else
-            {
-                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Request).Name, handlerDescription);
-            }
+            return RegisterHandlerInternal<Request, Response>(callback);
         }
 
         /// <summary>
@@ -540,21 +410,193 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        public void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class
+        public void UnregisterRequestHandler<Request, Response>(AsyncRequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class
         {
-            var handler = _messageHandlers.FirstOrDefault(x => (x.RegisteredCallback as RequestHandlerCallbackTaskResponseDelegate<Request, Response>) == callback);
+            UnregisterHandlerInternal(callback);
+        }
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        /// <returns></returns>
+        public IDisposable RegisterMessageHandler<Message>(MessageHandlerDelegate<Message> callback) where Message : class
+        {
+            return RegisterHandlerInternal<Message, Object>(callback);
+        }
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterMessageHandler<Message>(MessageHandlerDelegate<Message> callback) where Message : class
+        {
+            UnregisterHandlerInternal(callback);
+        }
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        /// <returns></returns>
+        public IDisposable RegisterMessageHandler<Message>(AsyncMessageHandlerDelegate<Message> callback) where Message : class
+        {
+            return RegisterHandlerInternal<Message, Object>(callback);
+        }
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterMessageHandler<Message>(AsyncMessageHandlerDelegate<Message> callback) where Message : class
+        {
+            UnregisterHandlerInternal(callback);
+        }
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        /// <returns></returns>
+        public IDisposable RegisterMessageHandler<Message>(AsyncMessageWithTransporterHandlerDelegate<Message> callback) where Message : class
+        {
+            return RegisterHandlerInternal<Message, Object>(callback);
+        }
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterMessageHandler<Message>(AsyncMessageWithTransporterHandlerDelegate<Message> callback) where Message : class
+        {
+            UnregisterHandlerInternal(callback);
+        }
+
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        /// <returns></returns>
+        public IDisposable RegisterRequestHandler<Request>(AsyncMessageWithTransporterHandlerDelegate<Request> callback) where Request : class
+        {
+            return RegisterHandlerInternal<Request, Object>(callback);
+        }
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        public void UnregisterRequestHandler<Request>(AsyncMessageWithTransporterHandlerDelegate<Request> callback) where Request : class
+        {
+            UnregisterHandlerInternal(callback);
+        }
+
+        private IDisposable RegisterHandlerInternal<Message, Response>(Delegate callback) where Response : class
+        {
+            String handlerDescription = $"{callback.Method.DeclaringType.Name}.{callback.Method.Name}";
+
+            Logger.LogDebug("Registering handler for '{Message}' on '{Handler}'...", typeof(Message).Name, handlerDescription);
+
+            if (!_messageHandlers.Exists(x => x.RegisteredDelegate == callback))
+            {
+                bool withTransporter = callback.Method.GetParameters().Length == 2;
+                bool withResponse = callback.Method.ReturnType != typeof(void) && callback.Method.ReturnType != typeof(Task);
+                bool isAsync = typeof(Task).IsAssignableFrom(callback.Method.ReturnType);
+
+                ResonanceMessageHandler handler = new ResonanceMessageHandler(() => UnregisterHandlerInternal(callback));
+                handler.MessageType = typeof(Message);
+                handler.RegisteredDelegate = callback;
+                handler.HasResponse = withResponse;
+                handler.RegisteredDelegateDescription = handlerDescription;
+                handler.FastDelegate = callback.Method.Bind();
+                handler.Callback = (transporter, message) =>
+                {
+                    object[] args = null;
+
+                    if (withTransporter)
+                    {
+                        args = new object[] { transporter, message };
+                    }
+                    else
+                    {
+                        args = new object[] { message };
+                    }
+
+                    if (!isAsync)
+                    {
+                        return handler.FastDelegate(callback.Target, args);
+                    }
+                    else
+                    {
+                        if (withResponse)
+                        {
+                            return (handler.FastDelegate(callback.Target, args) as Task<ResonanceActionResult<Response>>).GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            (handler.FastDelegate(callback.Target, args) as Task).GetAwaiter().GetResult();
+                            return null;
+                        }
+                    }
+                };
+
+                _messageHandlers.Add(handler);
+
+                return handler;
+            }
+            else
+            {
+                Logger.LogWarning("Request handler for '{Message}' on '{Handler}' was already registered.", typeof(Message).Name, handlerDescription);
+                return null;
+            }
+        }
+
+        private void UnregisterHandlerInternal(Delegate callback)
+        {
+            var handler = _messageHandlers.FirstOrDefault(x => x.RegisteredDelegate == callback);
             if (handler != null)
             {
-                Logger.LogDebug("Unregistering request handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredCallbackDescription);
+                Logger.LogDebug("Unregistering handler for '{Message}' on '{Handler}'...", handler.MessageType.Name, handler.RegisteredDelegateDescription);
                 _messageHandlers.Remove(handler);
             }
         }
 
         /// <summary>
-        /// Copies this instance request handlers and registered services to the specified instance.
+        /// Unregisters all request and message handlers.
         /// </summary>
-        /// <param name="transporter">The transporter to copy the handlers to.</param>
-        public void CopyRequestHandlersAndServices(IResonanceTransporter transporter)
+        public void ClearHandlers()
+        {
+            Logger.LogDebug($"Unregistering all message and request handlers...");
+
+            foreach (var handler in _messageHandlers.ToList())
+            {
+                _messageHandlers.Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new message/request handler builder.
+        /// This makes it easier to register a message or request handler.
+        /// </summary>
+        /// <returns></returns>
+        public IResonanceHandlerBuilder CreateHandlerBuilder()
+        {
+            return ResonanceHandlerBuilder.CreateNew(this);
+        }
+
+        /// <summary>
+        /// Transfers this instance message and request handlers and registered services to the specified instance.
+        /// </summary>
+        /// <param name="transporter">The transporter to copy the handlers and services to.</param>
+        public void TransferHandlersAndServices(IResonanceTransporter transporter)
         {
             foreach (var service in _services.ToList())
             {
@@ -571,111 +613,171 @@ namespace Resonance
 
         #endregion
 
-        #region Services
+        #region RPC
 
         /// <summary>
-        /// Registers an instance of <see cref="IResonanceService" /> as a request handler service.
-        /// Each method with return type of <see cref="ResonanceActionResult{T}" /> will be registered has a request handler.
-        /// Request handler methods should accept only the request as a single parameter.
+        /// Registers the specified instance as an RPC service.
         /// </summary>
-        /// <param name="service">The service.</param>
-        public void RegisterService(IResonanceService service)
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="service">The service instance.</param>
+        /// <exception cref="System.ArgumentNullException">service</exception>
+        public void RegisterService<TInterface, TImplementation>(TImplementation service) where TInterface : class where TImplementation : TInterface
         {
-            if (_services.Contains(service)) throw new InvalidOperationException("The specified service is already registered.");
-
-            Logger.LogDebug($"Registering a request handler service '{service.GetType().FullName}'...");
-
-            List<MethodInfo> methods = new List<MethodInfo>();
-
-            foreach (var method in service.GetType().GetMethods())
-            {
-                if ( //With Response
-                    (typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType) ||
-                    (typeof(Task).IsAssignableFrom(method.ReturnType) &&
-                    method.ReturnType.GenericTypeArguments.Length == 1 &&
-                    typeof(IResonanceActionResult).IsAssignableFrom(method.ReturnType.GenericTypeArguments[0]))) ||
-
-                    //void Or Task
-                    method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
-                {
-                    if (method.GetParameters().Length > 1)
-                    {
-                        throw new InvalidOperationException($"Request handler '{method.Name}' should accept only the request as a parameter.");
-                    }
-
-                    if (method.GetParameters().Length == 0)
-                    {
-                        throw new InvalidOperationException($"Request handler '{method.Name}' does not define any request as a parameter.");
-                    }
-
-                    methods.Add(method);
-                }
-            }
-
-            foreach (var method in methods)
-            {
-                var requestType = method.GetParameters()[0].ParameterType;
-
-                String handlerDescription = $"{method.DeclaringType.Name}.{method.Name}";
-
-                Logger.LogDebug("Registering request handler for '{Message}' on '{Handler}'...", requestType.Name, handlerDescription);
-
-                ResonanceMessageHandler handler = new ResonanceMessageHandler();
-                handler.MessageType = requestType;
-                handler.Service = service;
-                handler.RegisteredCallbackDescription = handlerDescription;
-
-                if (method.ReturnType == typeof(void) || method.ReturnType == typeof(Task))
-                {
-                    handler.Callback = (transporter, resonanceRequest) =>
-                    {
-                        if (method.ReturnType == typeof(Task))
-                        {
-                            var task = (Task)method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
-                            task.GetAwaiter().GetResult();
-                        }
-                        else
-                        {
-                            method.Invoke(service, new object[] { (resonanceRequest as ResonanceMessage).Object });
-                        }
-                    };
-                }
-                else
-                {
-                    handler.HasResponse = true;
-
-                    handler.ResponseCallback = (request) =>
-                    {
-                        if (typeof(Task).IsAssignableFrom(method.ReturnType))
-                        {
-                            var task = (Task)method.Invoke(service, new object[] { request });
-                            task.GetAwaiter().GetResult();
-                            var prop = typeof(Task<>).MakeGenericType(method.ReturnType.GenericTypeArguments[0]).GetProperty("Result");
-                            var value = prop.GetValue(task);
-                            return value as IResonanceActionResult;
-                        }
-                        else
-                        {
-                            return method.Invoke(service, new object[] { request });
-                        }
-                    };
-                }
-
-                _messageHandlers.Add(handler);
-            }
-
-            _services.Add(service);
+            if (service == null) throw new ArgumentNullException(nameof(service));
+            RegisterServiceInternal(typeof(TInterface), typeof(TImplementation), service, RpcServiceCreationType.Singleton, null);
         }
 
         /// <summary>
-        /// Detach the specified <see cref="IResonanceService" /> and all its request handlers.
+        /// Registers the service.
         /// </summary>
-        /// <param name="service">The service.</param>
-        public void UnregisterService(IResonanceService service)
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="creationType">Define how the service instance should be created.</param>
+        public void RegisterService<TInterface, TImplementation>(RpcServiceCreationType creationType) where TInterface : class where TImplementation : TInterface, new()
         {
-            Logger.LogDebug($"Unregistering a request handler service '{service.GetType().FullName}'...");
-            _messageHandlers.RemoveAll(x => x.Service == service);
-            _services.Remove(service);
+            RegisterServiceInternal(typeof(TInterface), typeof(TImplementation), null, creationType, null);
+        }
+
+        /// <summary>
+        /// Registers the specified instance as an RPC service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="creationType">Define how the service instance should be created.</param>
+        /// <param name="createFunc">Provide the service creation function.</param>
+        /// <exception cref="System.ArgumentNullException">createFunc</exception>
+        public void RegisterService<TInterface, TImplementation>(RpcServiceCreationType creationType, Func<TImplementation> createFunc) where TInterface : class where TImplementation : TInterface
+        {
+            if (createFunc == null) throw new ArgumentNullException(nameof(createFunc));
+
+            RegisterServiceInternal(typeof(TInterface), null, null, creationType, () =>
+            {
+                return createFunc();
+            });
+        }
+
+        private void RegisterServiceInternal(Type interfaceType, Type serviceType, Object service, RpcServiceCreationType creationType, Func<Object> creationFunc)
+        {
+            if (_services.Any(x => x.InterfaceType.Name == interfaceType.Name)) throw new InvalidOperationException("The specified service name is already registered.");
+
+            Logger.LogDebug($"Registering RPC service '{interfaceType.FullName}'...");
+
+            ResonanceRegisteredService registeredService = new ResonanceRegisteredService()
+            {
+                Transporter = this,
+                InterfaceType = interfaceType,
+                ServiceType = serviceType,
+                Service = service,
+                CreationFunc = creationFunc,
+                CreationType = creationType
+            };
+
+            _services.Add(registeredService);
+        }
+
+        private ResonanceRegisteredService GetRpcService(RPCSignature rpcSignature)
+        {
+            var rpcService = _services.ToList().FirstOrDefault(x => x.InterfaceType.Name == rpcSignature.Service);
+            if (rpcService == null) return null;
+
+            if (rpcService.CreationType == RpcServiceCreationType.Singleton)
+            {
+                if (rpcService.Service == null)
+                {
+                    if (rpcService.CreationFunc != null)
+                    {
+                        rpcService.Service = rpcService.CreationFunc();
+                    }
+                    else
+                    {
+                        rpcService.Service = Activator.CreateInstance(rpcService.ServiceType);
+                    }
+
+                    rpcService.ServiceType = rpcService.Service?.GetType();
+                }
+            }
+            else
+            {
+                if (rpcService.CreationFunc != null)
+                {
+                    rpcService.Service = rpcService.CreationFunc();
+                }
+                else
+                {
+                    rpcService.Service = Activator.CreateInstance(rpcService.ServiceType);
+                }
+
+                rpcService.ServiceType = rpcService.Service?.GetType();
+            }
+
+            return rpcService;
+        }
+
+        /// <summary>
+        /// Unregisters the specified RPC service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        public void UnregisterService<TInterface>() where TInterface : class
+        {
+            Logger.LogDebug($"Unregistering a request handler service '{typeof(TInterface).Name}'...");
+
+            foreach (var service in _services.Where(x => x.InterfaceType == typeof(TInterface)).ToList())
+            {
+                _services.Remove(service);
+
+                foreach (var eventHandlerDispose in service.EventHandlersDisposeActions)
+                {
+                    try
+                    {
+                        eventHandlerDispose.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, $"Error disposing event handler '{eventHandlerDispose.Method.Name}'.");
+                    }
+                }
+
+                service.EventHandlersDisposeActions.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Unregisters all RPC services.
+        /// </summary>
+        public void ClearServices()
+        {
+            Logger.LogDebug($"Unregistering all RPC services...");
+
+            foreach (var service in _services.ToList())
+            {
+                _services.Remove(service);
+
+                foreach (var eventHandlerDispose in service.EventHandlersDisposeActions)
+                {
+                    try
+                    {
+                        eventHandlerDispose.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, $"Error disposing event handler '{eventHandlerDispose.Method.Name}'.");
+                    }
+                }
+
+                service.EventHandlersDisposeActions.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Creates a client proxy for the specified service interface.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T CreateClientProxy<T>() where T : class
+        {
+            DynamicProxyFactory<TransporterDynamicProxy> factory = new DynamicProxyFactory<TransporterDynamicProxy>(new DynamicInterfaceImplementor());
+            return factory.CreateDynamicProxy<T>(this);
         }
 
         #endregion
@@ -747,7 +849,34 @@ namespace Resonance
         /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
         /// </summary>
         /// <returns></returns>
-        public async Task DisconnectAsync()
+        public Task DisconnectAsync()
+        {
+            return DisconnectAsync(null);
+        }
+
+        /// <summary>
+        /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
+        /// </summary>
+        /// <returns></returns>
+        public void Disconnect()
+        {
+            DisconnectAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        public void Disconnect(string reason)
+        {
+            DisconnectAsync(reason).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        public async Task DisconnectAsync(string reason)
         {
             if (State == ResonanceComponentState.Connected)
             {
@@ -761,8 +890,8 @@ namespace Resonance
                         {
                             try
                             {
-                                Logger.LogInformation("Sending disconnection request.");
-                                await SendAsync(new ResonanceDisconnectNotification());
+                                Logger.LogInformation("Sending disconnection notification...");
+                                await SendAsync(new ResonanceDisconnectNotification() { Reason = reason });
                             }
                             catch { }
                         }
@@ -800,15 +929,6 @@ namespace Resonance
                     throw Logger.LogErrorThrow(ex, "Error occurred while trying to disconnect the transporter.");
                 }
             }
-        }
-
-        /// <summary>
-        /// Disconnects this transporter along the underlying <see cref="Adapter"/>.
-        /// </summary>
-        /// <returns></returns>
-        public void Disconnect()
-        {
-            DisconnectAsync().GetAwaiter().GetResult();
         }
 
         #endregion
@@ -978,7 +1098,16 @@ namespace Resonance
             pendingRequest.Config = config;
             pendingRequest.CompletionSource = completionSource;
 
-            String logMessage = "Sending request message: '{Message}'...";
+            String logMessage = null;
+
+            if (config.RPCSignature == null)
+            {
+                logMessage = "Sending request message: '{Message}'...";
+            }
+            else
+            {
+                logMessage = $"Sending RPC request message ('{config.RPCSignature.ToString()}'): '{{Message}}'...";
+            }
 
             using (Logger.BeginScopeToken(request.Token))
             {
@@ -1012,6 +1141,10 @@ namespace Resonance
             return SendRequestAsync(request, config).GetAwaiter().GetResult();
         }
 
+        #endregion
+
+        #region Send Continuous Request
+
         /// <summary>
         /// Sends a request message while expecting multiple response messages with the same token.
         /// </summary>
@@ -1026,8 +1159,6 @@ namespace Resonance
             ValidateMessagingState(request);
 
             config = config ?? new ResonanceContinuousRequestConfig();
-            config.Timeout = config.Timeout ?? DefaultRequestTimeout;
-            config.ContinuousTimeout = config.ContinuousTimeout ?? DefaultRequestTimeout;
 
             ResonanceMessage resonanceRequest = new ResonanceMessage();
             resonanceRequest.Token = TokenGenerator.GenerateToken(request);
@@ -1040,7 +1171,16 @@ namespace Resonance
             pendingContinuousRequest.Config = config;
             pendingContinuousRequest.ContinuousObservable = observable;
 
-            String logMessage = "Sending continuous request message: '{Message}'...";
+            String logMessage = null;
+
+            if (config.RPCSignature == null)
+            {
+                logMessage = "Sending continuous request message: '{Message}'...";
+            }
+            else
+            {
+                logMessage = $"Sending RPC continuous request message ('{config.RPCSignature.ToString()}'): '{{Message}}'...";
+            }
 
             using (Logger.BeginScopeToken(resonanceRequest.Token))
             {
@@ -1247,6 +1387,29 @@ namespace Resonance
 
         #endregion
 
+        #region Submit Encoding Info
+
+        /// <summary>
+        /// Submits encoding information to be written to encoded and written to the adapter.
+        /// </summary>
+        /// <param name="info">The encoding information.</param>
+        public void SubmitEncodingInformation(ResonanceEncodingInformation info)
+        {
+            _sendingQueue.BlockEnqueue(new ResonancePendingEncodedInformation() { Info = info });
+        }
+
+        /// <summary>
+        /// Returns true if a pending message/request exists by the specified message token.
+        /// </summary>
+        /// <param name="token">The message/request token.</param>
+        /// <returns></returns>
+        public bool CheckPending(string token)
+        {
+            return _pendingMessages.Any(x => x.Message.Token == token);
+        }
+
+        #endregion
+
         #region Push
 
         private void PushThreadMethod()
@@ -1280,6 +1443,10 @@ namespace Resonance
                     {
                         OnOutgoingResponse(pendingResponse);
                     }
+                    else if (pending is ResonancePendingEncodedInformation pendingInfo)
+                    {
+                        OnEncodeAndWriteData(pendingInfo.Info);
+                    }
                 }
             }
             catch (ThreadAbortException)
@@ -1304,14 +1471,21 @@ namespace Resonance
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingMessage.Message.Token;
                 info.Message = pendingMessage.Message.Object;
+                info.RPCSignature = pendingMessage.Config.RPCSignature;
+                info.Timeout = (int?)pendingMessage.Config.Timeout?.TotalSeconds;
 
                 if (pendingMessage.Message.Object is ResonanceKeepAliveRequest)
                 {
                     info.Type = ResonanceTranscodingInformationType.KeepAliveRequest;
                 }
-                else if (pendingMessage.Message.Object is ResonanceDisconnectNotification)
+                else if (pendingMessage.Message.Object is ResonanceDisconnectNotification msg)
                 {
                     info.Type = ResonanceTranscodingInformationType.Disconnect;
+
+                    if (msg.Reason != null)
+                    {
+                        info.ErrorMessage = msg.Reason;
+                    }
                 }
                 else if (pendingMessage.Message.Object is ResonanceAcknowledgeMessage ackMessage)
                 {
@@ -1407,6 +1581,8 @@ namespace Resonance
                 ResonanceEncodingInformation info = new ResonanceEncodingInformation();
                 info.Token = pendingRequest.Message.Token;
                 info.Message = pendingRequest.Message.Object;
+                info.RPCSignature = pendingRequest.Config.RPCSignature;
+                info.Timeout = (int?)pendingRequest.Config.Timeout?.TotalSeconds;
 
                 if (pendingRequest.Message.Object is ResonanceKeepAliveRequest)
                 {
@@ -1477,6 +1653,8 @@ namespace Resonance
                 info.Token = pendingContinuousRequest.Message.Token;
                 info.Message = pendingContinuousRequest.Message.Object;
                 info.Type = ResonanceTranscodingInformationType.ContinuousRequest;
+                info.RPCSignature = pendingContinuousRequest.Config.RPCSignature;
+                info.Timeout = (int?)pendingContinuousRequest.Config.Timeout?.TotalSeconds;
 
                 if (pendingContinuousRequest.Config.CancellationToken != null)
                 {
@@ -1498,46 +1676,49 @@ namespace Resonance
 
                 OnEncodeAndWriteData(info);
 
-                Task.Delay(pendingContinuousRequest.Config.Timeout.Value).ContinueWith((x) =>
+                if (pendingContinuousRequest.Config.Timeout != null)
                 {
-                    if (!pendingContinuousRequest.ContinuousObservable.FirstMessageArrived)
+                    Task.Delay(pendingContinuousRequest.Config.Timeout.Value).ContinueWith((x) =>
                     {
-                        if (pendingContinuousRequest.Config.CancellationToken == null || !pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
+                        if (!pendingContinuousRequest.ContinuousObservable.FirstMessageArrived)
                         {
-                            Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.Timeout.Value.Seconds);
-                            _pendingMessages.Remove(pendingContinuousRequest);
-                            var timeoutException = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.ObjectTypeName}' was not provided with a response within the given period of {pendingContinuousRequest.Config.Timeout.Value.Seconds} seconds and has timed out.");
-                            OnRequestFailed(pendingContinuousRequest.Message, timeoutException);
-                            pendingContinuousRequest.OnError(timeoutException);
-                        }
-                    }
-                    else
-                    {
-                        if (pendingContinuousRequest.Config.ContinuousTimeout != null)
-                        {
-                            Task.Factory.StartNew(async () =>
+                            if (pendingContinuousRequest.Config.CancellationToken == null || !pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
                             {
-                                while (!pendingContinuousRequest.IsCompleted)
-                                {
-                                    await Task.Delay(pendingContinuousRequest.Config.ContinuousTimeout.Value).ContinueWith((y) =>
-                                    {
-                                        if (!pendingContinuousRequest.IsCompleted)
-                                        {
-                                            if (DateTime.Now - pendingContinuousRequest.ContinuousObservable.LastResponseTime > pendingContinuousRequest.Config.ContinuousTimeout.Value)
-                                            {
-                                                Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' had failed to provide a response for a period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds);
-                                                TimeoutException ex = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.Object.GetType().Name}' had failed to provide a response for a period of {pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds} seconds and has timed out.");
-                                                OnRequestFailed(pendingContinuousRequest.Message, ex);
-                                                pendingContinuousRequest.OnError(ex);
-                                                return;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
+                                Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' was not provided with a response within the given period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.Timeout.Value.Seconds);
+                                _pendingMessages.Remove(pendingContinuousRequest);
+                                var timeoutException = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.ObjectTypeName}' was not provided with a response within the given period of {pendingContinuousRequest.Config.Timeout.Value.Seconds} seconds and has timed out.");
+                                OnRequestFailed(pendingContinuousRequest.Message, timeoutException);
+                                pendingContinuousRequest.OnError(timeoutException);
+                            }
                         }
-                    }
-                });
+                        else
+                        {
+                            if (pendingContinuousRequest.Config.ContinuousTimeout != null)
+                            {
+                                Task.Factory.StartNew(async () =>
+                                {
+                                    while (!pendingContinuousRequest.IsCompleted)
+                                    {
+                                        await Task.Delay(pendingContinuousRequest.Config.ContinuousTimeout.Value).ContinueWith((y) =>
+                                        {
+                                            if (!pendingContinuousRequest.IsCompleted)
+                                            {
+                                                if (DateTime.Now - pendingContinuousRequest.ContinuousObservable.LastResponseTime > pendingContinuousRequest.Config.ContinuousTimeout.Value)
+                                                {
+                                                    Logger.LogWarningToken(pendingContinuousRequest.Message.Token, "Continuous request '{Message}' had failed to provide a response for a period of {Timeout} seconds and has timed out.", pendingContinuousRequest.Message.ObjectTypeName, pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds);
+                                                    TimeoutException ex = new TimeoutException($"Continuous request '{pendingContinuousRequest.Message.Object.GetTypeName()}' had failed to provide a response for a period of {pendingContinuousRequest.Config.ContinuousTimeout.Value.TotalSeconds} seconds and has timed out.");
+                                                    OnRequestFailed(pendingContinuousRequest.Message, ex);
+                                                    pendingContinuousRequest.OnError(ex);
+                                                    return;
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
 
                 Task.Factory.StartNew(() =>
                 {
@@ -1613,7 +1794,7 @@ namespace Resonance
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    typeName = info.Message.GetType().Name;
+                    typeName = info.Message.GetTypeName();
                     Logger.LogDebugToken(info.Token, "Encoding message '{Message}'...", typeName);
                 }
 
@@ -1696,6 +1877,16 @@ namespace Resonance
                             }
                         }
 
+                        ResonancePreviewDecodingInfoEventArgs previewArgs = new ResonancePreviewDecodingInfoEventArgs();
+                        previewArgs.DecodingInformation = info;
+                        previewArgs.RawData = data;
+                        OnPreviewDecodingInformation(previewArgs);
+
+                        if (previewArgs.Handled)
+                        {
+                            continue;
+                        }
+
                         if (info.Type == ResonanceTranscodingInformationType.Message || info.Type == ResonanceTranscodingInformationType.MessageSync)
                         {
                             if (!info.HasDecodingException)
@@ -1774,7 +1965,7 @@ namespace Resonance
         {
             if (info.Type == ResonanceTranscodingInformationType.MessageSync)
             {
-                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}', ACK required...", info.Message.GetType().Name);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}', ACK required...", info.Message.GetTypeName());
 
                 if (MessageAcknowledgmentBehavior == ResonanceMessageAckBehavior.Default)
                 {
@@ -1787,32 +1978,49 @@ namespace Resonance
             }
             else
             {
-                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}'...", info.Message.GetType().Name);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message received '{Message}'...", info.Message.GetTypeName());
             }
 
             Exception exception = null;
 
-            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message.GetType());
+            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message?.GetType());
             request.Token = info.Token;
             request.Object = info.Message;
 
             Task.Factory.StartNew(() =>
             {
-                var handlers = _messageHandlers.ToList().Where(x => !x.HasResponse && x.MessageType == request.Object.GetType()).ToList();
-
-                foreach (var handler in handlers)
+                if (info.RPCSignature == null)
                 {
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking message handler '{Handler}'...", handler.RegisteredCallbackDescription);
+                    if (request.Object != null)
+                    {
+                        var handlers = _messageHandlers.ToList().Where(x => !x.HasResponse && x.MessageType == request.Object.GetType()).ToList();
 
+                        foreach (var handler in handlers)
+                        {
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking message handler '{Handler}'...", handler.RegisteredDelegateDescription);
+
+                            try
+                            {
+                                handler.Callback.Invoke(this, request);
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Message handler '{Handler}' completed.", handler.RegisteredDelegateDescription);
+                            }
+                            catch (Exception ex)
+                            {
+                                exception = ex;
+                                Logger.LogErrorToken(info.Token, ex, "Message handler '{Handler}' threw an exception.", handler.RegisteredDelegateDescription);
+                            }
+                        }
+                    }
+                }
+                else
+                {
                     try
                     {
-                        handler.Callback.Invoke(this, request);
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Message handler '{Handler}' completed.", handler.RegisteredCallbackDescription);
+                        OnIncomingRpcMessage(info);
                     }
                     catch (Exception ex)
                     {
                         exception = ex;
-                        Logger.LogErrorToken(info.Token, ex, "Message handler '{Handler}' threw an exception.", handler.RegisteredCallbackDescription);
                     }
                 }
 
@@ -1823,7 +2031,7 @@ namespace Resonance
                 catch (Exception ex)
                 {
                     exception = ex;
-                    Logger.LogErrorToken(info.Token, ex, "Error occurred on message received event for message {Message}", info.Message.GetType().Name);
+                    Logger.LogErrorToken(info.Token, ex, "Error occurred on message received event for message {Message}", info.Message.GetTypeName());
                 }
 
                 if (info.Type == ResonanceTranscodingInformationType.MessageSync && MessageAcknowledgmentBehavior == ResonanceMessageAckBehavior.ReportErrors)
@@ -1835,6 +2043,76 @@ namespace Resonance
                     catch { }
                 }
             });
+        }
+
+        /// <summary>
+        /// Handles incoming messages that contains an RPC signature.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        protected virtual void OnIncomingRpcMessage(ResonanceDecodingInformation info)
+        {
+            bool rpcFound = false;
+
+            if (_services.Count > 0)
+            {
+                var rpcService = GetRpcService(info.RPCSignature);
+
+                if (rpcService != null)
+                {
+                    if (info.RPCSignature.Type == RPCSignatureType.Method)
+                    {
+                        var method = rpcService.InterfaceType.GetMethod(info.RPCSignature.Member);
+
+                        if (method != null)
+                        {
+                            rpcFound = true;
+
+                            try
+                            {
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking RPC service method '{Method}'...", method.ToRpcDescription());
+
+                                method.InvokeRPC(rpcService.Service, info.Message);
+
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "RPC Service method '{Method}' completed.", method.ToRpcDescription());
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "RPC Service method '{Method}' threw an exception.", method.ToRpcDescription());
+                                throw ex;
+                            }
+                        }
+                    }
+                    else if (info.RPCSignature.Type == RPCSignatureType.Property)
+                    {
+                        var prop = rpcService.InterfaceType.GetProperty(info.RPCSignature.Member);
+
+                        if (prop != null)
+                        {
+                            rpcFound = true;
+
+                            try
+                            {
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking service property setter '{Property}'...", info.RPCSignature.ToDescription());
+
+                                prop.SetValue(rpcService.Service, info.Message);
+
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Service property setter '{Property}' completed.", info.RPCSignature.ToDescription());
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "Service property handler '{Property}' threw an exception.", info.RPCSignature.ToDescription());
+                                throw ex;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!rpcFound)
+            {
+                Logger.LogErrorTokenNoMessage(info.Token, new Exception($"{info.RPCSignature} RPC call received but no service handler was registered."));
+                throw new Exception($"Could not locate any service handler for RPC '{info.RPCSignature}'.");
+            }
         }
 
         /// <summary>
@@ -1872,54 +2150,71 @@ namespace Resonance
         /// <param name="info">The information.</param>
         protected virtual void OnIncomingRequest(ResonanceDecodingInformation info)
         {
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming request received '{Message}'...", info.Message.GetType().Name);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming request received '{Message}'...", info.Message.GetTypeName());
 
-            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message.GetType());
+            ResonanceMessage request = ResonanceMessage.CreateGenericMessage(info.Message?.GetType());
             request.Token = info.Token;
             request.Object = info.Message;
 
             Task.Factory.StartNew(() =>
             {
-                var handlers = _messageHandlers.ToList().Where(x => x.MessageType == request.Object.GetType()).ToList();
-
-                foreach (var handler in handlers)
+                if (info.RPCSignature == null)
                 {
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking request handler '{Handler}'...", handler.RegisteredCallbackDescription);
+                    if (request.Object != null)
+                    {
+                        var handlers = _messageHandlers.ToList().Where(x => x.MessageType == request.Object.GetType()).ToList();
 
+                        foreach (var handler in handlers)
+                        {
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking request handler '{Handler}'...", handler.RegisteredDelegateDescription);
+
+                            try
+                            {
+                                if (handler.HasResponse)
+                                {
+                                    IResonanceActionResult result = handler.Callback.Invoke(this, request.Object) as IResonanceActionResult;
+
+                                    if (result != null && result.Response != null)
+                                    {
+                                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Request handler '{Handler}' completed. Sending response...", handler.RegisteredDelegateDescription);
+                                        SendResponse(result.Response, request.Token, result.Config);
+                                    }
+                                    else
+                                    {
+                                        Logger.LogWarningToken(info.Token, "Request handler '{Handler}' returned with null result.", handler.RegisteredDelegateDescription);
+                                    }
+                                }
+                                else
+                                {
+                                    handler.Callback.Invoke(this, request);
+                                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Request handler '{Handler}' completed.", handler.RegisteredDelegateDescription);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "Request handler '{Handler}' threw an exception. Sending automatic error response...", handler.RegisteredDelegateDescription);
+                                try
+                                {
+                                    if (ex.InnerException != null) ex = ex.InnerException;
+                                    SendErrorResponse(ex, request.Token);
+                                }
+                                catch (Exception exx)
+                                {
+                                    Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
                     try
                     {
-                        if (handler.HasResponse)
-                        {
-                            IResonanceActionResult result = handler.ResponseCallback.Invoke(request.Object) as IResonanceActionResult;
-
-                            if (result != null && result.Response != null)
-                            {
-                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Request handler '{Handler}' completed. Sending response...", handler.RegisteredCallbackDescription);
-                                SendResponse(result.Response, request.Token, result.Config);
-                            }
-                            else
-                            {
-                                Logger.LogWarningToken(info.Token, "Request handler '{Handler}' returned with null result.", handler.RegisteredCallbackDescription);
-                            }
-                        }
-                        else
-                        {
-                            handler.Callback.Invoke(this, request);
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Request handler '{Handler}' completed.", handler.RegisteredCallbackDescription);
-                        }
+                        OnIncomingRpcRequest(info);
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogErrorToken(info.Token, ex, "Request handler '{Handler}' threw an exception. Sending automatic error response...", handler.RegisteredCallbackDescription);
-                        try
-                        {
-                            if (ex.InnerException != null) ex = ex.InnerException;
-                            SendErrorResponse(ex, request.Token);
-                        }
-                        catch (Exception exx)
-                        {
-                            Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
-                        }
+                        Logger.LogErrorToken(info.Token, ex, "Error processing incoming RPC request.");
                     }
                 }
 
@@ -1929,9 +2224,160 @@ namespace Resonance
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogErrorToken(info.Token, ex, "Error occurred on request received event for message {Message}", info.Message.GetType().Name);
+                    Logger.LogErrorToken(info.Token, ex, "Error occurred on request received event for message {Message}", info.Message.GetTypeName());
                 }
             });
+        }
+
+        /// <summary>
+        /// Handles incoming request messages that contains an RPC signature.
+        /// </summary>
+        /// <param name="info">The information.</param>
+        protected virtual void OnIncomingRpcRequest(ResonanceDecodingInformation info)
+        {
+            bool rpcFound = false;
+
+            if (_services.Count > 0)
+            {
+                var rpcService = GetRpcService(info.RPCSignature);
+
+                if (rpcService != null)
+                {
+                    if (info.RPCSignature.Type == RPCSignatureType.Method)
+                    {
+                        var method = rpcService.InterfaceType.GetMethod(info.RPCSignature.Member);
+
+                        if (method != null)
+                        {
+                            rpcFound = true;
+
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking RPC service method '{Method}'...", method.ToRpcDescription());
+
+                            try
+                            {
+                                object result = method.InvokeRPC(rpcService.Service, info.Message);
+
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "RPC service method '{Method}' completed. Sending response...", method.ToRpcDescription());
+
+                                SendResponse(result, info.Token, method.GetRpcAttribute()?.ToResponseConfig());
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "RPC Service method '{Method}' threw an exception. Sending automatic error response...", method.ToRpcDescription());
+                                try
+                                {
+                                    if (ex.InnerException != null) ex = ex.InnerException;
+                                    SendErrorResponse(ex, info.Token);
+                                }
+                                catch (Exception exx)
+                                {
+                                    Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
+                                }
+                            }
+                        }
+                    }
+                    else if (info.RPCSignature.Type == RPCSignatureType.Property)
+                    {
+                        var prop = rpcService.InterfaceType.GetProperty(info.RPCSignature.Member);
+
+                        if (prop != null)
+                        {
+                            rpcFound = true;
+
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Invoking service property getter '{Property}'...", info.RPCSignature.ToDescription());
+
+                            try
+                            {
+                                var result = prop.GetValue(rpcService.Service);
+
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Service property getter '{Property}' completed. Sending response...", info.RPCSignature.ToDescription());
+
+                                SendResponse(result, info.Token);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "Service property getter '{Property}' threw an exception. Sending automatic error response...", info.RPCSignature.ToDescription());
+                                try
+                                {
+                                    if (ex.InnerException != null) ex = ex.InnerException;
+                                    SendErrorResponse(ex, info.Token);
+                                }
+                                catch (Exception exx)
+                                {
+                                    Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
+                                }
+                            }
+                        }
+                    }
+                    else if (info.RPCSignature.Type == RPCSignatureType.Event)
+                    {
+                        var ev = rpcService.InterfaceType.GetEvent(info.RPCSignature.Member);
+
+                        if (ev != null)
+                        {
+                            rpcFound = true;
+
+                            try
+                            {
+                                var eventHandler = CreateEventDelegate(ev.EventHandlerType, async (obj, res) =>
+                                {
+                                    if (rpcService.Transporter.State == ResonanceComponentState.Connected)
+                                    {
+                                        try
+                                        {
+                                            await rpcService.Transporter.SendResponseAsync(new RpcEventResponse() { Response = res }, info.Token);
+                                        }
+                                        catch (Exception exx)
+                                        {
+                                            Logger.LogErrorToken(info.Token, exx, "Error occurred while trying send an {RPC} event response.", info.RPCSignature.ToDescription());
+                                        }
+                                    }
+                                });
+
+                                ev.AddEventHandler(rpcService.Service, eventHandler);
+
+                                rpcService.EventHandlersDisposeActions.Add(() =>
+                                {
+                                    ev.RemoveEventHandler(rpcService.Service, eventHandler);
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogErrorToken(info.Token, ex, "Error registering event RPC handler '{Handler}'. Sending automatic error response...", info.RPCSignature.ToDescription());
+                                try
+                                {
+                                    if (ex.InnerException != null) ex = ex.InnerException;
+                                    SendErrorResponse(ex, info.Token);
+                                }
+                                catch (Exception exx)
+                                {
+                                    Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!rpcFound)
+            {
+                Logger.LogErrorTokenNoMessage(info.Token, new Exception($"{info.RPCSignature} RPC call received but no service handler was registered."));
+
+                try
+                {
+                    SendErrorResponse($"Could not locate any service handler for RPC '{info.RPCSignature}'.", info.Token);
+                }
+                catch (Exception exx)
+                {
+                    Logger.LogErrorToken(info.Token, exx, "Error occurred while trying to send an automatic error response.");
+                }
+            }
+        }
+
+        private static Delegate CreateEventDelegate(Type type, EventHandler handler)
+        {
+            return (Delegate)type.GetConstructor(new[] { typeof(object), typeof(IntPtr) })
+                .Invoke(new[] { handler.Target, handler.Method.MethodHandle.GetFunctionPointer() });
         }
 
         /// <summary>
@@ -1952,13 +2398,13 @@ namespace Resonance
                     switch (pendingRequest.Config.LoggingMode)
                     {
                         case ResonanceMessageLoggingMode.Content:
-                            Logger.LogInformationToken(info.Token, $"{responseMessage}{{@Content}}", info.Message.GetType().Name, info.Message);
+                            Logger.LogInformationToken(info.Token, $"{responseMessage}{{@Content}}", info.Message.GetTypeName(), info.Message);
                             break;
                         case ResonanceMessageLoggingMode.Title:
-                            Logger.LogInformationToken(info.Token, responseMessage, info.Message.GetType().Name);
+                            Logger.LogInformationToken(info.Token, responseMessage, info.Message.GetTypeName());
                             break;
                         case ResonanceMessageLoggingMode.None:
-                            Logger.LogDebugToken(info.Token, responseMessage, info.Message.GetType().Name);
+                            Logger.LogDebugToken(info.Token, responseMessage, info.Message.GetTypeName());
                             break;
                     }
                 }
@@ -2017,13 +2463,13 @@ namespace Resonance
                     switch (pendingContinuousRequest.Config.LoggingMode)
                     {
                         case ResonanceMessageLoggingMode.Content:
-                            Logger.LogInformationToken(info.Token, $"{responseMessage}{{@Content}}", info.Message.GetType().Name, info.Message);
+                            Logger.LogInformationToken(info.Token, $"{responseMessage}{{@Content}}", info.Message.GetTypeName(), info.Message);
                             break;
                         case ResonanceMessageLoggingMode.Title:
-                            Logger.LogInformationToken(info.Token, responseMessage, info.Message.GetType().Name);
+                            Logger.LogInformationToken(info.Token, responseMessage, info.Message.GetTypeName());
                             break;
                         case ResonanceMessageLoggingMode.None:
-                            Logger.LogDebugToken(info.Token, responseMessage, info.Message.GetType().Name);
+                            Logger.LogDebugToken(info.Token, responseMessage, info.Message.GetTypeName());
                             break;
                     }
                 }
@@ -2122,7 +2568,15 @@ namespace Resonance
         protected virtual void OnDisconnectNotificationReceived(ResonanceDecodingInformation info)
         {
             Logger.LogDebug("Disconnection notification received. Failing transporter...");
-            OnFailed(new ResonanceConnectionClosedException());
+
+            if (String.IsNullOrEmpty(info.ErrorMessage))
+            {
+                OnFailed(new ResonanceConnectionClosedException());
+            }
+            else
+            {
+                OnFailed(new ResonanceConnectionClosedException(info.ErrorMessage));
+            }
         }
 
         #endregion
@@ -2509,6 +2963,15 @@ namespace Resonance
             return args;
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:PreviewDecodingInformation" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="ResonancePreviewDecodingInfoEventArgs"/> instance containing the event data.</param>
+        protected virtual void OnPreviewDecodingInformation(ResonancePreviewDecodingInfoEventArgs e)
+        {
+            PreviewDecodingInformation?.Invoke(this, e);
+        }
+
         #endregion
 
         #region Property Changes
@@ -2523,16 +2986,6 @@ namespace Resonance
             Logger.LogDebug($"State changed '{previousState}' => '{newState}'.");
 
             StateChanged?.Invoke(this, new ResonanceComponentStateChangedEventArgs(previousState, newState));
-
-            foreach (var service in _services.ToList())
-            {
-                try
-                {
-                    Logger.LogDebug($"Invoking service '{service.GetType().Name}' transporter state changed method.");
-                    service.OnTransporterStateChanged(newState);
-                }
-                catch { }
-            }
         }
 
         /// <summary>
@@ -2614,14 +3067,14 @@ namespace Resonance
         /// </summary>
         public void Dispose()
         {
-            Dispose(false);
+            Dispose(true);
         }
 
         /// <summary>
         /// Disconnects and disposes this transporter.
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        public void Dispose(bool withAdapter = false)
+        public void Dispose(bool withAdapter)
         {
             DisposeAsync(withAdapter).GetAwaiter().GetResult();
         }
@@ -2631,7 +3084,7 @@ namespace Resonance
         /// </summary>
         public Task DisposeAsync()
         {
-            return DisposeAsync(false);
+            return DisposeAsync(true);
         }
 
         /// <summary>
@@ -2681,8 +3134,8 @@ namespace Resonance
         /// </exception>
         private void ValidateMessagingState(Object message)
         {
-            if (message == null)
-                throw Logger.LogErrorThrow(new NullReferenceException("Error processing null message."));
+            //if (message == null)
+            //    throw Logger.LogErrorThrow(new NullReferenceException("Error processing null message."));
 
             if (State != ResonanceComponentState.Connected)
                 throw Logger.LogErrorThrow(new InvalidOperationException($"Could not send a message while the transporter state is '{State}'."));

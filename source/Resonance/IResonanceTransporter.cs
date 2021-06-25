@@ -7,18 +7,25 @@ using System.Collections.ObjectModel;
 using Resonance.Reactive;
 using static Resonance.ResonanceTransporterBuilder;
 using Resonance.HandShake;
+using Resonance.RPC;
 
 namespace Resonance
 {
-    public delegate void MessageHandlerCallbackDelegate<Message>(IResonanceTransporter transporter, ResonanceMessage<Message> message) where Message : class;
+    public delegate void MessageHandlerDelegate<Message>(ResonanceMessage<Message> message) where Message : class;
 
-    public delegate ResonanceActionResult<Response> RequestHandlerCallbackDelegate<Request, Response>(Request request) where Request : class where Response : class;
+    public delegate Task AsyncMessageHandlerDelegate<Message>(ResonanceMessage<Message> message) where Message : class;
 
-    public delegate ResonanceActionResult<Response> RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
+    public delegate void MessageWithTransporterHandlerDelegate<Message>(IResonanceTransporter transporter, ResonanceMessage<Message> message) where Message : class;
 
-    public delegate Task<ResonanceActionResult<Response>> RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
+    public delegate Task AsyncMessageWithTransporterHandlerDelegate<Message>(IResonanceTransporter transporter, ResonanceMessage<Message> message) where Message : class;
 
-    public delegate Task<ResonanceActionResult<Response>> RequestHandlerCallbackTaskResponseDelegate<Request, Response>(Request request) where Request : class where Response : class;
+    public delegate ResonanceActionResult<Response> RequestHandlerDelegate<Request, Response>(Request request) where Request : class where Response : class;
+
+    public delegate Task<ResonanceActionResult<Response>> AsyncRequestHandlerDelegate<Request, Response>(Request request) where Request : class where Response : class;
+
+    public delegate ResonanceActionResult<Response> RequestWithTransporterHandlerDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
+
+    public delegate Task<ResonanceActionResult<Response>> AsyncRequestWithTransporterHandlerDelegate<Request, Response>(IResonanceTransporter transporter, Request request) where Request : class where Response : class;
 
     /// <summary>
     /// Represents a Resonance Transporter capable of sending and receiving request/response messages.
@@ -83,6 +90,12 @@ namespace Resonance
         /// or the remote peer has disconnected and Disconnect request was received.
         /// </summary>
         event EventHandler<ResonanceConnectionLostEventArgs> ConnectionLost;
+
+        /// <summary>
+        /// Occurs after incoming data has been decoded.
+        /// Can be used to route data to other components or prevent further processing of the data by the transporter.
+        /// </summary>
+        event EventHandler<ResonancePreviewDecodingInfoEventArgs> PreviewDecodingInformation;
 
         /// <summary>
         /// Gets or sets the Resonance adapter used to send and receive actual encoded data.
@@ -169,28 +182,84 @@ namespace Resonance
         /// </summary>
         /// <typeparam name="Message">The type of the message.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+        IDisposable RegisterMessageHandler<Message>(MessageHandlerDelegate<Message> callback) where Message : class;
 
         /// <summary>
         /// Unregisters a custom message handler.
         /// </summary>
         /// <typeparam name="Message">The type of the message.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterMessageHandler<Message>(MessageHandlerCallbackDelegate<Message> callback) where Message : class;
+        void UnregisterMessageHandler<Message>(MessageHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        IDisposable RegisterMessageHandler<Message>(AsyncMessageHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterMessageHandler<Message>(AsyncMessageHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        IDisposable RegisterMessageHandler<Message>(MessageWithTransporterHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterMessageHandler<Message>(MessageWithTransporterHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Registers a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        IDisposable RegisterMessageHandler<Message>(AsyncMessageWithTransporterHandlerDelegate<Message> callback) where Message : class;
+
+        /// <summary>
+        /// Unregisters a custom message handler.
+        /// </summary>
+        /// <typeparam name="Message">The type of the message.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterMessageHandler<Message>(AsyncMessageWithTransporterHandlerDelegate<Message> callback) where Message : class;
 
         /// <summary>
         /// Registers a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
+        IDisposable RegisterRequestHandler<Request>(MessageWithTransporterHandlerDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
         /// </summary>
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request>(MessageHandlerCallbackDelegate<Request> callback) where Request : class;
+        void UnregisterRequestHandler<Request>(MessageWithTransporterHandlerDelegate<Request> callback) where Request : class;
+
+        /// <summary>
+        /// Registers a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to register.</param>
+        IDisposable RegisterRequestHandler<Request>(AsyncMessageWithTransporterHandlerDelegate<Request> callback) where Request : class;
+
+        /// <summary>
+        /// Unregisters a custom request handler.
+        /// </summary>
+        /// <typeparam name="Request">The type of the request.</typeparam>
+        /// <param name="callback">The callback method to detach.</param>
+        void UnregisterRequestHandler<Request>(AsyncMessageWithTransporterHandlerDelegate<Request> callback) where Request : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -198,7 +267,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+        IDisposable RegisterRequestHandler<Request, Response>(RequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -206,7 +275,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+        void UnregisterRequestHandler<Request, Response>(RequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -214,7 +283,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+        IDisposable RegisterRequestHandler<Request, Response>(AsyncRequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -222,7 +291,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request, Response>(RequestHandlerResponseWithTransporterCallbackDelegate<Request, Response> callback) where Request : class where Response : class;
+        void UnregisterRequestHandler<Request, Response>(AsyncRequestHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -230,7 +299,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class;
+        IDisposable RegisterRequestHandler<Request, Response>(RequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -238,7 +307,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseWithTransporterDelegate<Request, Response> callback) where Request : class where Response : class;
+        void UnregisterRequestHandler<Request, Response>(RequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Registers a custom request handler.
@@ -246,7 +315,7 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to register.</param>
-        void RegisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class;
+        IDisposable RegisterRequestHandler<Request, Response>(AsyncRequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
         /// Unregisters a custom request handler.
@@ -254,27 +323,60 @@ namespace Resonance
         /// <typeparam name="Request">The type of the request.</typeparam>
         /// <typeparam name="Response">The type of the response.</typeparam>
         /// <param name="callback">The callback method to detach.</param>
-        void UnregisterRequestHandler<Request, Response>(RequestHandlerCallbackTaskResponseDelegate<Request, Response> callback) where Request : class where Response : class;
+        void UnregisterRequestHandler<Request, Response>(AsyncRequestWithTransporterHandlerDelegate<Request, Response> callback) where Request : class where Response : class;
 
         /// <summary>
-        /// Registers an instance of <see cref="IResonanceService"/> as a request handler service.
-        /// Each method with return type of <see cref="ResonanceActionResult{T}"/> will be registered has a request handler.
-        /// Request handler methods should accept only the request as a single parameter.
+        /// Unregisters all request and message handlers.
         /// </summary>
-        /// <param name="service">The service.</param>
-        void RegisterService(IResonanceService service);
+        void ClearHandlers();
 
         /// <summary>
-        /// Detach the specified <see cref="IResonanceService"/> and all its request handlers.
+        /// Unregisters all RPC services.
         /// </summary>
-        /// <param name="service">The service.</param>
-        void UnregisterService(IResonanceService service);
+        void ClearServices();
 
         /// <summary>
-        /// Copies this instance request handlers and registered services to the specified instance.
+        /// Creates a new message/request handler builder.
+        /// This makes it easier to register a message or request handler.
         /// </summary>
-        /// <param name="transporter">The transporter to copy the handlers to.</param>
-        void CopyRequestHandlersAndServices(IResonanceTransporter transporter);
+        IResonanceHandlerBuilder CreateHandlerBuilder();
+
+        /// <summary>
+        /// Registers the specified instance as an RPC service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="service">The service instance.</param>
+        void RegisterService<TInterface, TImplementation>(TImplementation service) where TInterface : class where TImplementation : TInterface;
+
+        /// <summary>
+        /// Registers the service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="creationType">Define how the service instance should be created.</param>
+        void RegisterService<TInterface, TImplementation>(RpcServiceCreationType creationType) where TInterface : class where TImplementation : TInterface, new();
+
+        /// <summary>
+        /// Registers the specified instance as an RPC service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>\
+        /// <typeparam name="TImplementation">The type of the implementation.</typeparam>
+        /// <param name="creationType">Define how the service instance should be created.</param>
+        /// <param name="createFunc">Provide the service creation function.</param>
+        void RegisterService<TInterface, TImplementation>(RpcServiceCreationType creationType, Func<TImplementation> createFunc) where TInterface : class where TImplementation : TInterface;
+
+        /// <summary>
+        /// Unregisters the specified RPC service.
+        /// </summary>
+        /// <typeparam name="TInterface">The type of the interface.</typeparam>
+        void UnregisterService<TInterface>() where TInterface : class;
+
+        /// <summary>
+        /// Transfers this instance message and request handlers and registered services to the specified instance.
+        /// </summary>
+        /// <param name="transporter">The transporter to copy the handlers and services to.</param>
+        void TransferHandlersAndServices(IResonanceTransporter transporter);
 
         /// <summary>
         /// Sends the specified request message and returns a response.
@@ -451,20 +553,51 @@ namespace Resonance
         void SendErrorResponse(String message, string token);
 
         /// <summary>
+        /// Submits encoding information to be written to encoded and written to the adapter.
+        /// </summary>
+        /// <param name="info">The encoding information.</param>
+        void SubmitEncodingInformation(ResonanceEncodingInformation info);
+
+        /// <summary>
         /// Creates a new transporter builder based on this transporter.
         /// </summary>
         IAdapterBuilder CreateBuilder();
 
         /// <summary>
-        /// Disconnects and disposes this transporter.
+        /// Disconnects the transporter.
         /// </summary>
-        /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        void Dispose(bool withAdapter = false);
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        void Disconnect(String reason);
+
+        /// <summary>
+        /// Disconnects the transporter.
+        /// </summary>
+        /// <param name="reason">The error message to be presented to the other side.</param>
+        Task DisconnectAsync(String reason);
 
         /// <summary>
         /// Disconnects and disposes this transporter.
         /// </summary>
         /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
-        Task DisposeAsync(bool withAdapter = false);
+        void Dispose(bool withAdapter);
+
+        /// <summary>
+        /// Disconnects and disposes this transporter.
+        /// </summary>
+        /// <param name="withAdapter"><c>true</c> to release the underlying <see cref="Adapter"/> along with this transporter.</param>
+        Task DisposeAsync(bool withAdapter);
+
+        /// <summary>
+        /// Returns true if a pending message/request exists by the specified message token.
+        /// </summary>
+        /// <param name="token">The message/request token.</param>
+        bool CheckPending(String token);
+
+        /// <summary>
+        /// Creates a client proxy for the specified service interface.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        T CreateClientProxy<T>() where T : class;
     }
 }

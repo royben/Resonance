@@ -4,14 +4,30 @@ using System.Text;
 
 namespace Resonance
 {
-    internal class ResonanceMessageHandler
+    internal class ResonanceMessageHandler : IDisposable
     {
+        private Action _unregisterAction;
+        private bool _disposed;
+
         public bool HasResponse { get; set; }
         public Type MessageType { get; set; }
-        public Action<IResonanceTransporter, Object> Callback { get; set; }
-        public Func<Object, Object> ResponseCallback { get; set; }
-        public object RegisteredCallback { get; set; }
-        public IResonanceService Service { get; set; }
-        public String RegisteredCallbackDescription { get; set; }
+        public Func<IResonanceTransporter, Object, Object> Callback { get; set; }
+        public Func<Object,Object[],Object> FastDelegate { get; set; }
+        public Delegate RegisteredDelegate { get; set; }
+        public String RegisteredDelegateDescription { get; set; }
+
+        public ResonanceMessageHandler(Action unregisterAction)
+        {
+            _unregisterAction = unregisterAction;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _unregisterAction.Invoke();
+                _disposed = true;
+            }
+        }
     }
 }

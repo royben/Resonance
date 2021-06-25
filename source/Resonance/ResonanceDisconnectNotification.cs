@@ -6,6 +6,6 @@ namespace Resonance
 {
     public class ResonanceDisconnectNotification
     {
-
+        public String Reason { get; set; }
     }
 }

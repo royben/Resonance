@@ -24,7 +24,7 @@ namespace Resonance.Transcoding.Json
         public JsonDecoder()
         {
             Settings = new JsonSerializerSettings();
-            Settings.TypeNameHandling = TypeNameHandling.Objects;
+            Settings.TypeNameHandling = TypeNameHandling.All;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Resonance.RPC;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -23,6 +24,16 @@ namespace Resonance
         /// Gets or sets the type of the message.
         /// </summary>
         public ResonanceTranscodingInformationType Type { get; set; }
+
+        /// <summary>
+        /// Gets or sets the RPC call signature if any.
+        /// </summary>
+        public RPCSignature RPCSignature { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request timeout in seconds.
+        /// </summary>
+        public int? Timeout { get; set; }
 
         /// <summary>
         /// Gets or sets the message token.

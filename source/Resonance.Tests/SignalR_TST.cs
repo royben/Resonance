@@ -6,7 +6,7 @@ using Resonance.SignalR.Discovery;
 using Resonance.SignalR.Services;
 using Resonance.Tests.Common;
 using Resonance.Tests.SignalR;
-using Resonance.Transporters;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -66,7 +66,7 @@ namespace Resonance.Tests
 
             bool connected = false;
 
-            ResonanceJsonTransporter serviceTransporter = new ResonanceJsonTransporter();
+            ResonanceTransporter serviceTransporter = new ResonanceTransporter();
 
             registeredService.ConnectionRequest += (_, e) =>
             {
@@ -84,7 +84,7 @@ namespace Resonance.Tests
 
             Assert.AreEqual(remoteService.ServiceId, registeredService.ServiceInformation.ServiceId);
 
-            ResonanceJsonTransporter clientTransporter = new ResonanceJsonTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
+            ResonanceTransporter clientTransporter = new ResonanceTransporter(new SignalRAdapter<TestCredentials>(credentials, url, remoteService.ServiceId, mode));
 
             clientTransporter.Connect();
 

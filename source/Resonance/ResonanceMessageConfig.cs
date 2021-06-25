@@ -1,4 +1,5 @@
-﻿using Resonance.Threading;
+﻿using Resonance.RPC;
+using Resonance.Threading;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,5 +37,10 @@ namespace Resonance
         /// Gets or sets a value indicating whether to require reception confirmation from the remote peer.
         /// </summary>
         public bool RequireACK { get; set; }
+
+        /// <summary>
+        /// Gets or sets the RPC signature.
+        /// </summary>
+        internal RPCSignature RPCSignature { get; set; }
     }
 }

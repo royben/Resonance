@@ -26,7 +26,7 @@ Resonance is a high-performance real-time C# communication library with built-in
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SIPSorcery" Version="5.2.0" PrivateAssets="build" />
+    <PackageReference Include="SIPSorcery" Version="5.2.0" PrivateAssets="compile" />
   </ItemGroup>
 
   <ItemGroup>

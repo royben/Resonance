@@ -37,5 +37,15 @@ namespace Resonance.ExtensionMethods
         {
             return obj != null ? obj.ToString() : String.Empty;
         }
+
+        /// <summary>
+        /// Gets the name of this object type. If the object is null, will return "null";
+        /// </summary>
+        /// <param name="obj">The object.</param>
+        public static String GetTypeName(this Object obj)
+        {
+            if (obj == null) return "null";
+            return obj.GetType().Name;
+        }
     }
 }

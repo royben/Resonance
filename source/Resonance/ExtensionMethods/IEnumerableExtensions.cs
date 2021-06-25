@@ -8,7 +8,7 @@ namespace Resonance.ExtensionMethods
     /// <summary>
     /// Contains <see cref="IEnumerable{T}"/> extension methods.
     /// </summary>
-    public static class IEnumerableExtensionMethods
+    public static class IEnumerableExtensions
     {
         /// <summary>
         /// Returns a distinct collection by the specified property.

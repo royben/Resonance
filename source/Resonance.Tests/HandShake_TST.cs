@@ -2,7 +2,7 @@
 using Resonance.Adapters.InMemory;
 using Resonance.Messages;
 using Resonance.Tests.Common;
-using Resonance.Transporters;
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -317,8 +317,8 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 10; i++)
             {
-                ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-                ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+                ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+                ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
 
                 t1.CryptographyConfiguration.Enabled = i % 2 == 0;
                 t2.CryptographyConfiguration.Enabled = i % 3 == 0;

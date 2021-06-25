@@ -2,7 +2,6 @@
 using Resonance.Adapters.InMemory;
 using Resonance.Tests.Common;
 using Resonance.Messages;
-using Resonance.Transporters;
 using System;
 using Google.Protobuf;
 using Resonance.Protobuf.Transcoding.Protobuf;
@@ -13,6 +12,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Resonance.Transcoding.Xml;
 using Resonance.MessagePack.Transcoding.MessagePack;
+using Resonance.RPC;
 
 namespace Resonance.Tests
 {
@@ -50,6 +50,7 @@ namespace Resonance.Tests
             encodeInfo.IsCompressed = true;
             encodeInfo.Token = Guid.NewGuid().ToString();
             encodeInfo.Transcoding = "test";
+            encodeInfo.RPCSignature = RPCSignature.FromString("Method:Service.MyMethod");
             encodeInfo.Type = ResonanceTranscodingInformationType.Response;
 
             ResonanceDefaultHeaderTranscoder transcoder = new ResonanceDefaultHeaderTranscoder();
@@ -78,6 +79,7 @@ namespace Resonance.Tests
                 Assert.AreEqual(encodeInfo.Token, decodeInfo.Token);
                 Assert.AreEqual(encodeInfo.Transcoding, decodeInfo.Transcoding);
                 Assert.AreEqual(encodeInfo.Type, decodeInfo.Type);
+                Assert.AreEqual(encodeInfo.RPCSignature.ToString(), "Method:Service.MyMethod");
             }
         }
 

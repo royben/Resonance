@@ -77,6 +77,14 @@ namespace Resonance.ExtensionMethods
             }
         }
 
+        public static void LogErrorTokenNoMessage(this ILogger logger, String token, Exception ex, params object[] args)
+        {
+            using (logger.BeginScopeToken(token))
+            {
+                logger.LogError(ex, ex.Message, args);
+            }
+        }
+
         public static Exception LogErrorThrowToken(this ILogger logger, String token, Exception ex, String message)
         {
             using (logger.BeginScopeToken(token))
