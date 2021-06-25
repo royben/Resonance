@@ -27,10 +27,12 @@ namespace Resonance.Tests
 
             UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
 
-            Assert.ThrowsException<SocketException>(() =>
+            try
             {
                 adapter.Connect();
-            });
+                Assert.Fail("Exception was not thrown.");
+            }
+            catch { }
 
             adapter.Dispose();
         }
@@ -40,10 +42,12 @@ namespace Resonance.Tests
         {
             UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
 
-            Assert.ThrowsException<SocketException>(() =>
+            try
             {
                 adapter.Connect();
-            });
+                Assert.Fail("Exception was not thrown.");
+            }
+            catch { }
 
             adapter.Dispose();
         }
@@ -60,10 +64,12 @@ namespace Resonance.Tests
 
             UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            try
             {
                 adapter.Connect();
-            });
+                Assert.Fail("Exception was not thrown.");
+            }
+            catch { }
 
             adapter.Dispose();
             udp.Dispose();
@@ -81,10 +87,12 @@ namespace Resonance.Tests
 
             UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
 
-            Assert.ThrowsException<Exception>(() =>
+            try
             {
                 adapter.Connect();
-            });
+                Assert.Fail("Exception was not thrown.");
+            }
+            catch { }
 
             adapter.Dispose();
             udp.Dispose();
