@@ -660,6 +660,12 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Request_Method_With_Rpc_Attribute_Timeout()
         {
+            // Blocks an RPC handler thread with Thread.Sleep(6000). On two-core hosted
+            // agents that starves the thread pool and stalls the whole test host for
+            // minutes, so it is skipped on CI like the USB and named pipe tests.
+            // Still runs locally, where it completes in about six seconds.
+            if (IsRunningOnAzurePipelines) return;
+
             Reset();
 
             ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));

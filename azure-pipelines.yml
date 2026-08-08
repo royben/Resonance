@@ -5,15 +5,23 @@
 #     VSBuild / VSTest on the retired windows-2019 image)
 #   - the classic "Publish Resonance Release" release pipeline (a single NuGet push task)
 #
-# The Publish stage is off by default and gated on an environment approval, so it
-# reproduces the deliberate "create a release" step the old release pipeline required.
+# Publishing is deliberate rather than automatic on every commit: it happens when a
+# version tag is pushed, which replaces the old "create a release" step.
 
 name: $(Date:yyyyMMdd)$(Rev:.r)
 
+# Releases are tag driven. Pushing a v-prefixed tag builds and publishes that
+# version; pushes to main only build, test and pack.
+#
+#     git tag v2.0.1 && git push origin v2.0.1
+#
 trigger:
   branches:
     include:
       - main
+  tags:
+    include:
+      - 'v*'
 
 pr:
   branches:
@@ -21,16 +29,21 @@ pr:
       - main
 
 parameters:
+  # Used only when the build is NOT from a tag. Tag builds take their version from
+  # the tag name, so a released version always matches a commit you tagged.
+  #
   # The old "Set Assembly Manifest Data" task stamped the version into each .csproj.
   # Version now lives in Directory.Build.props, so the pipeline passes it explicitly
-  # via -p:Version instead. Override this when queueing to cut a different version.
+  # via -p:Version instead.
   - name: packageVersion
-    displayName: 'Package version (e.g. 2.0.0 or 2.0.0-pre)'
+    displayName: 'Package version (ignored on tag builds)'
     type: string
     default: '2.0.0'
 
+  # Escape hatch for publishing from main without cutting a tag. Tag builds publish
+  # automatically and do not need this.
   - name: publishToNuGet
-    displayName: 'Push packages to NuGet.org'
+    displayName: 'Push to NuGet.org (manual runs from main only)'
     type: boolean
     default: false
 
@@ -61,6 +74,28 @@ stages:
           - script: dotnet --info
             displayName: 'Show SDK info'
 
+          # Resolved in a script rather than an expression so the log states plainly
+          # which version is being built and where it came from.
+          - powershell: |
+              $ref = "$(Build.SourceBranch)"
+              if ($ref -like 'refs/tags/v*') {
+                  $version = $ref -replace '^refs/tags/v', ''
+                  Write-Host "Tag build - version from tag '$ref': $version"
+              }
+              else {
+                  $version = '${{ parameters.packageVersion }}'
+                  Write-Host "Not a tag build - version from parameter: $version"
+              }
+
+              if ([string]::IsNullOrWhiteSpace($version)) {
+                  Write-Host "##vso[task.logissue type=error]Could not resolve a package version."
+                  exit 1
+              }
+
+              Write-Host "##vso[task.setvariable variable=packageVersion]$version"
+              Write-Host "##vso[build.updatebuildnumber]$version"
+            displayName: 'Resolve package version'
+
           - script: dotnet restore $(solution)
             displayName: 'Restore'
 
@@ -68,7 +103,7 @@ stages:
               dotnet build $(solution)
               --configuration $(buildConfiguration)
               --no-restore
-              -p:Version=${{ parameters.packageVersion }}
+              -p:Version=$(packageVersion)
             displayName: 'Build'
 
           # Bluetooth, USB and WebRTC need real hardware or a peer; the SignalR tests
@@ -108,7 +143,7 @@ stages:
               --configuration $(buildConfiguration)
               --no-build
               --output $(Build.ArtifactStagingDirectory)/nuget
-              -p:Version=${{ parameters.packageVersion }}
+              -p:Version=$(packageVersion)
             displayName: 'Pack'
 
           - publish: '$(Build.ArtifactStagingDirectory)/nuget'
@@ -118,11 +153,20 @@ stages:
   - stage: Publish
     displayName: 'Publish to NuGet.org'
     dependsOn: Build
+    # Publishes when either:
+    #   - the build came from a v* tag (the normal release path), or
+    #   - someone manually queued from main with the publish box ticked.
+    # A plain push to main satisfies neither, so it can never publish by accident.
     condition: >
       and(
         succeeded(),
-        eq('${{ parameters.publishToNuGet }}', 'true'),
-        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+        or(
+          startsWith(variables['Build.SourceBranch'], 'refs/tags/v'),
+          and(
+            eq('${{ parameters.publishToNuGet }}', 'true'),
+            eq(variables['Build.SourceBranch'], 'refs/heads/main')
+          )
+        )
       )
     jobs:
       - deployment: PushNuGet
