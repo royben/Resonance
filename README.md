@@ -2,7 +2,7 @@
   <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png?raw=true" />    
 </p>
 
-# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png?raw=true" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=3&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/3) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
+# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png?raw=true" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release%202.0?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=6&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/6) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
 
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
@@ -12,7 +12,7 @@ This library provides an intuitive API for asynchronous communication between ma
 
 | Module | Nuget | Description | Frameworks
 |:---------------------------------------------|:----------|:--------|:--------|
-x
+| Resonance | [![Nuget](https://img.shields.io/nuget/v/Resonance)](https://www.nuget.org/packages/Resonance/) <img width=30/> | Core components | .NET 9 |
 | Resonance.Protobuf | [![Nuget](https://img.shields.io/nuget/v/Resonance.Protobuf)](https://www.nuget.org/packages/Resonance.Protobuf/) | Protobuf Encoder & Decoder | .NET 9 |
 | Resonance.MessagePack | [![Nuget](https://img.shields.io/nuget/v/Resonance.MessagePack)](https://www.nuget.org/packages/Resonance.MessagePack/) | MessagePack Encoder & Decoder | .NET 9 |
 | Resonance.USB | [![Nuget](https://img.shields.io/nuget/v/Resonance.USB)](https://www.nuget.org/packages/Resonance.USB/) | USB Adapter support.  | .NET 9 |
