@@ -106,12 +106,13 @@ stages:
               -p:Version=$(packageVersion)
             displayName: 'Build'
 
-          # Bluetooth, USB and WebRTC need real hardware or a peer; the SignalR tests
-          # spin up a local web host. Those categories are excluded on hosted agents.
+          # The whole suite runs - no category filtering. Tests that need real hardware
+          # or a peer return early via IsRunningOnAzurePipelines and report as passed,
+          # which is how this suite has always handled the CI environment.
           #
-          # Tests that need local hardware self-skip via IsRunningOnAzurePipelines, which
-          # reads the TF_BUILD variable the agent sets automatically. Passing that as a
+          # That flag reads TF_BUILD, which the agent sets automatically. Passing it as a
           # TestRunParameters argument instead would not survive cmd.exe quote stripping.
+          #
           # console;verbosity=detailed prints each test name as it starts, so a hang is
           # visible in the live log. --blame-hang aborts and names the offending test
           # instead of running until the job timeout.
@@ -119,7 +120,6 @@ stages:
               dotnet test source/Resonance.Tests/Resonance.Tests.csproj
               --configuration $(buildConfiguration)
               --no-build
-              --filter "TestCategory!=SignalR&TestCategory!=WebRTC&TestCategory!=Discovery&TestCategory!=UDP"
               --logger trx
               --logger "console;verbosity=detailed"
               --blame-hang
