@@ -360,6 +360,150 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
+        public void Send_And_Receive_Standard_Request_With_Error_Code()
+        {
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                t2.SendErrorResponse("Error Message", 4001, e.Message.Token);
+            };
+
+            var exception = Assert.Throws<ResonanceResponseException>(() =>
+            {
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            });
+
+            Assert.AreEqual("Error Message", exception.Message);
+            Assert.AreEqual(4001, exception.ErrorCode);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Dispose();
+        }
+
+        [TestMethod]
+        public void Request_Handler_Throwing_Coded_Exception_Propagates_Error_Code()
+        {
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            //A handler that throws a coded exception should have the code reach the caller,
+            //without the handler needing to build an error response by hand.
+            //Cast to the synchronous delegate: a lambda whose body only throws matches both
+            //the sync and async handler overloads.
+            t2.RegisterRequestHandler((RequestHandlerDelegate<CalculateRequest, CalculateResponse>)((request) =>
+            {
+                throw new ResonanceResponseException("Insufficient funds", 4002);
+            }));
+
+            var exception = Assert.Throws<ResonanceResponseException>(() =>
+            {
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            });
+
+            Assert.AreEqual("Insufficient funds", exception.Message);
+            Assert.AreEqual(4002, exception.ErrorCode);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Dispose();
+        }
+
+        [TestMethod]
+        public void Send_Error_Response_With_Exception_And_Error_Code()
+        {
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                //An arbitrary exception plus an explicit code.
+                t2.SendErrorResponse(new InvalidOperationException("Account is locked"), 4003, e.Message.Token);
+            };
+
+            var exception = Assert.Throws<ResonanceResponseException>(() =>
+            {
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            });
+
+            Assert.AreEqual("Account is locked", exception.Message);
+            Assert.AreEqual(4003, exception.ErrorCode);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Dispose();
+        }
+
+        [TestMethod]
+        public void Explicit_Error_Code_Overrides_The_One_Carried_By_The_Exception()
+        {
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                //The exception carries 1111, but 2222 is passed explicitly - explicit wins.
+                t2.SendErrorResponse(new ResonanceResponseException("Conflict", 1111), 2222, e.Message.Token);
+            };
+
+            var exception = Assert.Throws<ResonanceResponseException>(() =>
+            {
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            });
+
+            Assert.AreEqual(2222, exception.ErrorCode);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Dispose();
+        }
+
+        [TestMethod]
+        public void Error_Response_Without_Code_Reports_Zero()
+        {
+            ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+            ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            t1.Connect();
+            t2.Connect();
+
+            t2.RequestReceived += (s, e) =>
+            {
+                t2.SendErrorResponse("No code here", e.Message.Token);
+            };
+
+            var exception = Assert.Throws<ResonanceResponseException>(() =>
+            {
+                var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
+            });
+
+            Assert.AreEqual(0, exception.ErrorCode);
+
+            t1.Dispose(true);
+            t2.Dispose(true);
+
+            Dispose();
+        }
+
+        [TestMethod]
         public void Send_And_Receive_Continuous_Request()
         {
             ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));

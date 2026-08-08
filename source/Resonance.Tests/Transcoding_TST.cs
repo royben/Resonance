@@ -45,6 +45,7 @@ namespace Resonance.Tests
         {
             ResonanceEncodingInformation encodeInfo = new ResonanceEncodingInformation();
             encodeInfo.Completed = true;
+            encodeInfo.ErrorCode = 4001;
             encodeInfo.ErrorMessage = "Test";
             encodeInfo.HasError = true;
             encodeInfo.IsCompressed = true;
@@ -75,6 +76,7 @@ namespace Resonance.Tests
                 Assert.AreEqual(encodeInfo.Completed, decodeInfo.Completed);
                 Assert.AreEqual(encodeInfo.ErrorMessage, decodeInfo.ErrorMessage);
                 Assert.AreEqual(encodeInfo.HasError, decodeInfo.HasError);
+                Assert.AreEqual(encodeInfo.ErrorCode, decodeInfo.ErrorCode);
                 Assert.AreEqual(encodeInfo.IsCompressed, decodeInfo.IsCompressed);
                 Assert.AreEqual(encodeInfo.Token, decodeInfo.Token);
                 Assert.AreEqual(encodeInfo.Transcoding, decodeInfo.Transcoding);

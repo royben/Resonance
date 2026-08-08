@@ -47,6 +47,7 @@ namespace Resonance
             {
                 writer.Write(info.Completed);
                 writer.Write(info.HasError);
+                writer.Write(info.ErrorCode);
                 writer.WriteUTF8(info.ErrorMessage);
             }
             else if (info.Type == ResonanceTranscodingInformationType.Disconnect)
@@ -89,6 +90,7 @@ namespace Resonance
             {
                 info.Completed = reader.ReadBoolean();
                 info.HasError = reader.ReadBoolean();
+                info.ErrorCode = reader.ReadInt32();
                 info.ErrorMessage = reader.ReadUTF8();
             }
             else if (info.Type == ResonanceTranscodingInformationType.Disconnect)

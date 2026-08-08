@@ -23,6 +23,12 @@ namespace Resonance
         public bool HasError { get; set; }
 
         /// <summary>
+        /// Gets or sets an application defined error code describing the response error.
+        /// Zero means no code was specified.
+        /// </summary>
+        public int ErrorCode { get; set; }
+
+        /// <summary>
         /// Gets or sets the response error message.
         /// </summary>
         public String ErrorMessage { get; set; }

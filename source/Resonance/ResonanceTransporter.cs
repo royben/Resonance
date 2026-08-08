@@ -1290,6 +1290,13 @@ namespace Resonance
         /// <returns></returns>
         public Task SendErrorResponseAsync(Exception exception, string token)
         {
+            //A handler that throws ResonanceResponseException(message, errorCode) has its
+            //code carried to the other side rather than silently dropped.
+            if (exception is ResonanceResponseException codedException)
+            {
+                return SendErrorResponseAsync(codedException.Message, codedException.ErrorCode, token);
+            }
+
             return SendErrorResponseAsync(exception.Message, token);
         }
 
@@ -1307,16 +1314,41 @@ namespace Resonance
         /// <summary>
         /// Sends a general error response agnostic to the type of request.
         /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="errorCode">
+        /// An application defined error code. Zero means no code. This takes precedence over any
+        /// code carried by the exception itself.
+        /// </param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        public Task SendErrorResponseAsync(Exception exception, int errorCode, string token)
+        {
+            return SendErrorResponseAsync(exception.Message, errorCode, token);
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="errorCode">
+        /// An application defined error code. Zero means no code. This takes precedence over any
+        /// code carried by the exception itself.
+        /// </param>
+        /// <param name="token">The request token.</param>
+        public void SendErrorResponse(Exception exception, int errorCode, String token)
+        {
+            SendErrorResponseAsync(exception, errorCode, token).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
         public Task SendErrorResponseAsync(String message, string token)
         {
-            ResonanceResponseConfig config = new ResonanceResponseConfig();
-            config.HasError = true;
-            config.ErrorMessage = message;
-
-            return SendResponse(new ResonanceMessage() { Object = message, Token = token }, true, config);
+            return SendErrorResponseAsync(message, 0, token);
         }
 
         /// <summary>
@@ -1328,6 +1360,34 @@ namespace Resonance
         public void SendErrorResponse(String message, string token)
         {
             SendErrorResponseAsync(message, token).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
+        /// <param name="errorCode">An application defined error code. Zero means no code.</param>
+        /// <param name="token">The request token.</param>
+        /// <returns></returns>
+        public Task SendErrorResponseAsync(String message, int errorCode, string token)
+        {
+            ResonanceResponseConfig config = new ResonanceResponseConfig();
+            config.HasError = true;
+            config.ErrorCode = errorCode;
+            config.ErrorMessage = message;
+
+            return SendResponse(new ResonanceMessage() { Object = message, Token = token }, true, config);
+        }
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
+        /// <param name="errorCode">An application defined error code. Zero means no code.</param>
+        /// <param name="token">The request token.</param>
+        public void SendErrorResponse(String message, int errorCode, string token)
+        {
+            SendErrorResponseAsync(message, errorCode, token).GetAwaiter().GetResult();
         }
 
         private Task SendResponse(ResonanceMessage response, bool isError, ResonanceResponseConfig config = null)
@@ -1495,6 +1555,12 @@ namespace Resonance
                     {
                         info.HasError = true;
                         info.ErrorMessage = ackMessage.Exception.Message;
+
+                        //Carry the code across when the handler threw a coded exception.
+                        if (ackMessage.Exception is ResonanceResponseException codedAckException)
+                        {
+                            info.ErrorCode = codedAckException.ErrorCode;
+                        }
                     }
 
                     try
@@ -1738,6 +1804,7 @@ namespace Resonance
                 info.Token = pendingResponse.Response.Token;
                 info.Message = pendingResponse.Response.Object;
                 info.Completed = pendingResponse.Config.Completed;
+                info.ErrorCode = pendingResponse.Config.ErrorCode;
                 info.ErrorMessage = pendingResponse.Config.ErrorMessage;
                 info.HasError = pendingResponse.Config.HasError;
 
@@ -2128,7 +2195,7 @@ namespace Resonance
                 else
                 {
                     if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Incoming message ACK received with error '{Error}' for message '{Message}'...", info.ErrorMessage, pending.Message.ObjectTypeName);
-                    pending.SetException(new ResonanceResponseException(info.ErrorMessage));
+                    pending.SetException(new ResonanceResponseException(info.ErrorMessage, info.ErrorCode));
                 }
             }
             else
@@ -2436,7 +2503,7 @@ namespace Resonance
             }
             else
             {
-                pendingRequest.SetException(new ResonanceResponseException(info.ErrorMessage));
+                pendingRequest.SetException(new ResonanceResponseException(info.ErrorMessage, info.ErrorCode));
             }
         }
 
@@ -2513,7 +2580,7 @@ namespace Resonance
                 _pendingMessages.Remove(pendingContinuousRequest);
 
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebugToken(info.Token, "Continuous request '{Message}' failed.", pendingContinuousRequest.Message.ObjectTypeName);
-                pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage));
+                pendingContinuousRequest.OnError(new ResonanceResponseException(info.ErrorMessage, info.ErrorCode));
             }
         }
 

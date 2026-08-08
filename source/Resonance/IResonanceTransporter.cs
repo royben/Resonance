@@ -548,6 +548,44 @@ namespace Resonance
         /// Sends a general error response agnostic to the type of request.
         /// </summary>
         /// <param name="message">The error message.</param>
+        /// <param name="errorCode">An application defined error code. Zero means no code.</param>
+        /// <param name="token">The request token.</param>
+        Task SendErrorResponseAsync(String message, int errorCode, string token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
+        /// <param name="errorCode">An application defined error code. Zero means no code.</param>
+        /// <param name="token">The request token.</param>
+        void SendErrorResponse(String message, int errorCode, string token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="errorCode">
+        /// An application defined error code. Zero means no code. This takes precedence over any
+        /// code carried by the exception itself.
+        /// </param>
+        /// <param name="token">The request token.</param>
+        Task SendErrorResponseAsync(Exception exception, int errorCode, string token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="errorCode">
+        /// An application defined error code. Zero means no code. This takes precedence over any
+        /// code carried by the exception itself.
+        /// </param>
+        /// <param name="token">The request token.</param>
+        void SendErrorResponse(Exception exception, int errorCode, string token);
+
+        /// <summary>
+        /// Sends a general error response agnostic to the type of request.
+        /// </summary>
+        /// <param name="message">The error message.</param>
         /// <param name="token">The request token.</param>
         /// <returns></returns>
         void SendErrorResponse(String message, string token);
