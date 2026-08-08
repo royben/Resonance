@@ -274,24 +274,39 @@ namespace Resonance.Tests
 
             client2.Connect();
 
-            Thread.Sleep(1000);
+            try
+            {
+                // Both connections must be accepted and the router bound before the state
+                // assertions mean anything. A fixed sleep is enough on a developer machine
+                // but not on a slower build agent, where receiver2 could still be null.
+                TestHelper.WaitWhile(
+                    () => receiver1 == null || receiver2 == null || router == null,
+                    TimeSpan.FromSeconds(30));
 
-            client1.Disconnect();
+                client1.Disconnect();
 
-            Thread.Sleep(500);
+                // Disconnection propagates through the router asynchronously.
+                TestHelper.WaitWhile(() => client1.State != ResonanceComponentState.Disconnected, TimeSpan.FromSeconds(30));
+                TestHelper.WaitWhile(() => receiver1.State != ResonanceComponentState.Failed, TimeSpan.FromSeconds(30));
+                TestHelper.WaitWhile(() => receiver2.State != ResonanceComponentState.Disconnected, TimeSpan.FromSeconds(30));
+                TestHelper.WaitWhile(() => client2.State != ResonanceComponentState.Failed, TimeSpan.FromSeconds(30));
 
-            Assert.IsTrue(client1.State == ResonanceComponentState.Disconnected);
-            Assert.IsTrue(receiver1.State == ResonanceComponentState.Failed);
-            Assert.IsTrue(receiver2.State == ResonanceComponentState.Disconnected);
-            Assert.IsTrue(client2.State == ResonanceComponentState.Failed);
-
-
-            client1.Dispose();
-            client2.Dispose();
-            receiver1.Dispose();
-            receiver2.Dispose();
-            server.Dispose();
-            router.Dispose();
+                Assert.IsTrue(client1.State == ResonanceComponentState.Disconnected);
+                Assert.IsTrue(receiver1.State == ResonanceComponentState.Failed);
+                Assert.IsTrue(receiver2.State == ResonanceComponentState.Disconnected);
+                Assert.IsTrue(client2.State == ResonanceComponentState.Failed);
+            }
+            finally
+            {
+                // Must run even when an assertion fails, otherwise the server keeps port
+                // 1333 bound and the next routing test cannot accept its connections.
+                client1?.Dispose();
+                client2?.Dispose();
+                receiver1?.Dispose();
+                receiver2?.Dispose();
+                server?.Dispose();
+                router?.Dispose();
+            }
         }
 
         [TestMethod]
@@ -355,22 +370,39 @@ namespace Resonance.Tests
 
             client2.Connect();
 
-            Thread.Sleep(15000);
+            try
+            {
+                // Wait for both connections to be accepted and the router bound before
+                // touching receiver1/receiver2 - dereferencing them while still null was
+                // what produced a NullReferenceException here on the build agent.
+                TestHelper.WaitWhile(
+                    () => receiver1 == null || receiver2 == null || router == null,
+                    TimeSpan.FromSeconds(30));
 
-            client1.Disconnect();
+                // receiver1 has auto keep alive response disabled on the client side, so
+                // its keep alive must time out and fail the transporter.
+                TestHelper.WaitWhile(() => receiver1.State != ResonanceComponentState.Failed, TimeSpan.FromSeconds(60));
 
-            Assert.IsTrue(client1.State == ResonanceComponentState.Disconnected);
-            Assert.IsTrue(receiver1.State == ResonanceComponentState.Failed);
-            Assert.IsTrue(receiver2.State == ResonanceComponentState.Disconnected);
-            Assert.IsTrue(client2.State == ResonanceComponentState.Failed);
+                client1.Disconnect();
 
+                TestHelper.WaitWhile(() => client1.State != ResonanceComponentState.Disconnected, TimeSpan.FromSeconds(30));
+                TestHelper.WaitWhile(() => receiver2.State != ResonanceComponentState.Disconnected, TimeSpan.FromSeconds(30));
+                TestHelper.WaitWhile(() => client2.State != ResonanceComponentState.Failed, TimeSpan.FromSeconds(30));
 
-            client1.Dispose();
-            client2.Dispose();
-            receiver1.Dispose();
-            receiver2.Dispose();
-            server.Dispose();
-            router.Dispose();
+                Assert.IsTrue(client1.State == ResonanceComponentState.Disconnected);
+                Assert.IsTrue(receiver1.State == ResonanceComponentState.Failed);
+                Assert.IsTrue(receiver2.State == ResonanceComponentState.Disconnected);
+                Assert.IsTrue(client2.State == ResonanceComponentState.Failed);
+            }
+            finally
+            {
+                client1?.Dispose();
+                client2?.Dispose();
+                receiver1?.Dispose();
+                receiver2?.Dispose();
+                server?.Dispose();
+                router?.Dispose();
+            }
         }
     }
 }
