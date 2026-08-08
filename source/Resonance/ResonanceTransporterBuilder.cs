@@ -147,6 +147,17 @@ namespace Resonance
             /// </summary>
             /// <param name="address">A unique address name (must match with the other-side adapter).</param>
             ITranscodingBuilder WithAddress(String address);
+
+            /// <summary>
+            /// Sets the Shared Memory adapter address and buffer size.
+            /// </summary>
+            /// <param name="address">A unique address name (must match with the other-side adapter).</param>
+            /// <param name="bufferSize">
+            /// The shared memory buffer size in bytes. The largest message that can be sent is
+            /// four bytes smaller than this. Both adapters sharing an address should specify the
+            /// same size.
+            /// </param>
+            ITranscodingBuilder WithAddress(String address, int bufferSize);
         }
 
         public interface ITranscodingBuilder
@@ -308,6 +319,13 @@ namespace Resonance
         ITranscodingBuilder ISharedMemoryAdapterBuilder.WithAddress(string address)
         {
             Transporter.Adapter = new SharedMemoryAdapter(address);
+            return this;
+        }
+
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        ITranscodingBuilder ISharedMemoryAdapterBuilder.WithAddress(string address, int bufferSize)
+        {
+            Transporter.Adapter = new SharedMemoryAdapter(address, bufferSize);
             return this;
         }
 

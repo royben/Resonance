@@ -145,5 +145,73 @@ namespace Resonance.Tests
                 1000,
                 2);
         }
+
+        public class LargePayloadRequest
+        {
+            public String Payload { get; set; }
+        }
+
+        public class LargePayloadResponse
+        {
+            public String Payload { get; set; }
+        }
+
+        [TestMethod]
+        public void Shared_Memory_Adapter_Sends_Message_Larger_Than_The_Old_Fixed_Buffer()
+        {
+            // The buffer used to be hardcoded at 1000 bytes, so anything over roughly 996
+            // bytes failed with "Not enough space available in the buffer". The size is now
+            // configurable and defaults to 1 MB.
+            String address = "TST-LARGE";
+
+            IResonanceTransporter t1 = ResonanceTransporter.Builder.Create()
+                .WithAdapter(new SharedMemoryAdapter(address))
+                .WithJsonTranscoding()
+                .NoKeepAlive()
+                .Build();
+
+            IResonanceTransporter t2 = ResonanceTransporter.Builder.Create()
+                .WithAdapter(new SharedMemoryAdapter(address))
+                .WithJsonTranscoding()
+                .NoKeepAlive()
+                .Build();
+
+            try
+            {
+                t1.Connect();
+                t2.Connect();
+
+                t2.RequestReceived += (s, e) =>
+                {
+                    LargePayloadRequest received = e.Message.Object as LargePayloadRequest;
+                    t2.SendResponse(new LargePayloadResponse() { Payload = received.Payload }, e.Message.Token);
+                };
+
+                //Comfortably beyond the old ~996 byte ceiling.
+                String payload = new String('x', 64 * 1024);
+
+                var response = t1.SendRequest<LargePayloadRequest, LargePayloadResponse>(
+                    new LargePayloadRequest() { Payload = payload });
+
+                Assert.AreEqual(payload, response.Payload);
+            }
+            finally
+            {
+                t1.Dispose(true);
+                t2.Dispose(true);
+            }
+        }
+
+        [TestMethod]
+        public void Shared_Memory_Adapter_Reports_Message_Too_Large()
+        {
+            SharedMemoryAdapter adapter = new SharedMemoryAdapter("TST-SMALL", 2048);
+
+            Assert.AreEqual(2048, adapter.BufferSize);
+            Assert.AreEqual(2044, adapter.MaxMessageSize);
+
+            //A buffer too small to carry the connection handshake is rejected up front.
+            Assert.Throws<ArgumentOutOfRangeException>(() => new SharedMemoryAdapter("TST-TINY", 8));
+        }
     }
 }
