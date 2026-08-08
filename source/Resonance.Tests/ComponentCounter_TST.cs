@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Tests.Common;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,13 +20,16 @@ namespace Resonance.Tests
 
             ResonanceComponentCounterManager.Default.Reset();
 
-            List<int> counters = new List<int>();
+            // The subject under test is the counter manager, so the collection that
+            // gathers the results must itself be thread-safe: List<T>.Add from two
+            // threads can drop entries and would fail this test for the wrong reason.
+            ConcurrentQueue<int> results = new ConcurrentQueue<int>();
 
             var t1 = Task.Factory.StartNew(() =>
             {
                 for (int i = 0; i < 100; i++)
                 {
-                    counters.Add(ResonanceComponentCounterManager.Default.GetIncrement(this));
+                    results.Enqueue(ResonanceComponentCounterManager.Default.GetIncrement(this));
                     Thread.Sleep(1);
                 }
             });
@@ -34,14 +38,14 @@ namespace Resonance.Tests
             {
                 for (int i = 0; i < 100; i++)
                 {
-                    counters.Add(ResonanceComponentCounterManager.Default.GetIncrement(this));
+                    results.Enqueue(ResonanceComponentCounterManager.Default.GetIncrement(this));
                     Thread.Sleep(1);
                 }
             });
 
             Task.WaitAll(t1, t2);
 
-            counters = counters.OrderBy(x => x).ToList();
+            List<int> counters = results.OrderBy(x => x).ToList();
 
             Assert.IsTrue(counters.Count == 200);
 

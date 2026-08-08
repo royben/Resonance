@@ -2078,7 +2078,7 @@ namespace Resonance
                             catch (Exception ex)
                             {
                                 Logger.LogErrorToken(info.Token, ex, "RPC Service method '{Method}' threw an exception.", method.ToRpcDescription());
-                                throw ex;
+                                throw;
                             }
                         }
                     }
@@ -2101,7 +2101,7 @@ namespace Resonance
                             catch (Exception ex)
                             {
                                 Logger.LogErrorToken(info.Token, ex, "Service property handler '{Property}' threw an exception.", info.RPCSignature.ToDescription());
-                                throw ex;
+                                throw;
                             }
                         }
                     }

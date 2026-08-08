@@ -25,7 +25,9 @@ namespace Resonance
         /// </summary>
         public ResonanceEncryptionConfiguration()
         {
-            SymmetricAlgorithm = Rijndael.Create();
+            // Rijndael.Create() returned a 128-bit block cipher, which is exactly AES.
+            // Aes.Create() is wire-compatible with peers running the previous version.
+            SymmetricAlgorithm = Aes.Create();
         }
 
         /// <summary>

@@ -89,10 +89,16 @@ namespace Resonance.Adapters.Bluetooth
 
                 if (_deviceInfo != null)
                 {
+                    // InTheHand marks InstalledServices obsolete in favour of GetRfcommServicesAsync.
+                    // This is a synchronous property consumed from UI code, so calling the async
+                    // replacement here would mean sync-over-async and risk deadlocks. Migrating this
+                    // to an async API is a public surface change left for a future major version.
+#pragma warning disable CS0618
                     foreach (var item in _deviceInfo.InstalledServices)
                     {
                         list.Add(item.ToString());
                     }
+#pragma warning restore CS0618
                 }
 
                 return new ReadOnlyCollection<String>(list);

@@ -464,7 +464,7 @@ namespace Resonance.Adapters.WebRTC
                     _connectionCompletionSource.SetException(new ResonanceWebRTCConnectionFailedException(ex));
                 }
 
-                throw ex;
+                throw;
             }
         }
 

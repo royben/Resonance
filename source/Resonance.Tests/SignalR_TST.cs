@@ -24,22 +24,8 @@ namespace Resonance.Tests
     [TestCategory("SignalR")]
     public class SignalR_TST : ResonanceTest
     {
-        private String legacyHostUrl = "http://localhost:8080";
-        private String legacyHubUrl = "http://localhost:8080/TestHub";
-
         private String coreHostUrl = "http://localhost:27210";
         private String coreHubUrl = "http://localhost:27210/hubs/TestHub";
-
-        [TestMethod]
-        public void SignalR_Legacy_Reading_Writing()
-        {
-            if (IsRunningOnAzurePipelines) return;
-
-            SignalRServer server = new SignalRServer(legacyHostUrl);
-            server.Start();
-
-            SignalR_Reading_Writing(legacyHubUrl, SignalRMode.Legacy);
-        }
 
         [TestMethod]
         public void SignalR_Core_Reading_Writing()
@@ -93,14 +79,6 @@ namespace Resonance.Tests
             TestUtils.Read_Write_Test(this, serviceTransporter, clientTransporter, false, 1000, 20);
         }
 
-
-        [TestMethod]
-        public void SignalR_Legacy_Adapter_Fails_On_Client_Error()
-        {
-            if (IsRunningOnAzurePipelines) return;
-
-            SignalR_Adapter_Fails_On_Client_Error(new SignalRServer(legacyHostUrl), legacyHostUrl, legacyHubUrl, SignalRMode.Legacy);
-        }
 
         [TestMethod]
         public void SignalR_Core_Adapter_Fails_On_Client_Error()
@@ -163,7 +141,7 @@ namespace Resonance.Tests
         {
             if (IsRunningOnAzurePipelines) return;
 
-            SignalRServer server = new SignalRServer(legacyHostUrl);
+            SignalRCoreServer server = new SignalRCoreServer(coreHostUrl);
             server.Start();
 
             var registeredService = ResonanceServiceFactory.Default.RegisterService<
@@ -172,13 +150,13 @@ namespace Resonance.Tests
                 TestAdapterInformation>(
                 new TestCredentials() { Name = "Service User" },
                 new TestServiceInformation() { ServiceId = "Service 1" },
-                legacyHubUrl,
-                SignalRMode.Legacy);
+                coreHubUrl,
+                SignalRMode.Core);
 
-            ResonanceSignalRDiscoveryClient<TestServiceInformation, TestCredentials> discoveryClient = 
+            ResonanceSignalRDiscoveryClient<TestServiceInformation, TestCredentials> discoveryClient =
                 new ResonanceSignalRDiscoveryClient<TestServiceInformation, TestCredentials>(
-                    legacyHubUrl, 
-                    SignalRMode.Legacy, 
+                    coreHubUrl,
+                    SignalRMode.Core,
                     new TestCredentials() { Name = "Test User" });
 
 

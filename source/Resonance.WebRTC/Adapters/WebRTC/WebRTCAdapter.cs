@@ -436,7 +436,7 @@ namespace Resonance.Adapters.WebRTC
             catch (Exception ex)
             {
                 FailConnection(ex);
-                throw ex;
+                throw;
             }
         }
 

@@ -270,7 +270,7 @@ namespace Resonance.Adapters.Udp
                     {
                         if (ex.Message != "A blocking operation was interrupted by a call to WSACancelBlockingCall")
                         {
-                            throw ex;
+                            throw;
                         }
                     }
                 }

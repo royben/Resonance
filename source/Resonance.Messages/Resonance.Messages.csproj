@@ -1,11 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>$(ResonanceTfm)</TargetFramework>
+    <!--
+      Proto\*.cs are emitted by protoc ("DO NOT EDIT") and declare the conventional
+      lower-case aliases pb/pbc/pbr/scg, which trip CS8981. Suppressed here rather
+      than edited, since the files are regenerated from the .proto sources.
+    -->
+    <NoWarn>$(NoWarn);CS8981</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.15.6" />
+    <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
 
 </Project>

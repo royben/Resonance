@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    Imported after the project body, so $(IsPackable) reflects each project's own choice.
+    Everything a published package needs lives here instead of being repeated per csproj.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)..\visuals\icon.png" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)..\NUGET.md" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
+
+</Project>

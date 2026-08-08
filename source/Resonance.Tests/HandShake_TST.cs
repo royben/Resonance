@@ -231,8 +231,8 @@ namespace Resonance.Tests
 
                 Assert.IsTrue(negotiator1.State == ResonanceHandShakeState.Completed);
                 Assert.IsTrue(negotiator2.State == ResonanceHandShakeState.Completed);
-                Assert.AreEqual(symmetricPassword1, "1");
-                Assert.AreEqual(symmetricPassword2, "2");
+                Assert.AreEqual("1", symmetricPassword1);
+                Assert.AreEqual("2", symmetricPassword2);
 
                 adapter1.Dispose();
                 adapter2.Dispose(); 
@@ -300,8 +300,8 @@ namespace Resonance.Tests
 
                 Assert.IsTrue(negotiator1.State == ResonanceHandShakeState.Completed);
                 Assert.IsTrue(negotiator2.State == ResonanceHandShakeState.Completed);
-                Assert.AreEqual(symmetricPassword1, "1");
-                Assert.AreEqual(symmetricPassword2, "2");
+                Assert.AreEqual("1", symmetricPassword1);
+                Assert.AreEqual("2", symmetricPassword2);
 
                 adapter1.Dispose();
                 adapter2.Dispose();

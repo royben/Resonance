@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application android:allowBackup="true" android:label="Resonance BT Client" android:supportsRtl="true"></application>
+
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <!-- Android 11 and below: install-time Bluetooth permissions. -->
+  <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+
+  <!--
+    Android 12 (API 31) and above: runtime Bluetooth permissions.
+    neverForLocation lets us skip ACCESS_FINE_LOCATION on API 31+.
+  -->
+  <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+  <!-- Still required for discovery on Android 11 and below. -->
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+
+  <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+</manifest>

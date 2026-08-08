@@ -14,7 +14,7 @@ namespace Resonance.Bluetooth
     /// Represents a Bluetooth Listening server capable of handling incoming Bluetooth connections.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceObject" />
-    /// <seealso cref="Resonance.IResonanceListeningServer{Resonance.Adapters.Bluetooth.BluetoothAdapter}" />
+    /// <seealso cref="Resonance.IResonanceListeningServer{BluetoothAdapter}" />
     public class BluetoothServer : ResonanceObject, IResonanceListeningServer<BluetoothAdapter>
     {
         private BluetoothListener _listener;
@@ -87,15 +87,18 @@ namespace Resonance.Bluetooth
             {
                 IsStarted = false;
 
+                // Stopping the listener unblocks AcceptBluetoothClient, letting the
+                // connection thread observe IsStarted == false and exit on its own.
+                // (Thread.Abort throws PlatformNotSupportedException on .NET Core and later.)
                 try
                 {
-                    _connectionThread.Abort();
+                    _listener.Stop();
                 }
                 catch { }
 
                 try
                 {
-                    _listener.Stop();
+                    _connectionThread?.Join(TimeSpan.FromSeconds(5));
                 }
                 catch { }
             }

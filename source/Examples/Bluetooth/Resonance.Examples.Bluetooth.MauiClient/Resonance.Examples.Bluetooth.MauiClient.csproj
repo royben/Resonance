@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(ResonanceAndroidTfm)</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <RootNamespace>Resonance.Examples.Bluetooth.MauiClient</RootNamespace>
+
+    <!-- MAUI templates rely on implicit usings; the repo default is off. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!--
+      Microsoft.Maui.Sdk supplies its own package references and pins their versions
+      from the installed workload. Central Package Management rejects that (NU1008),
+      which stops the MAUI SDK resolving at all, so this project opts out of the
+      repo-wide Directory.Packages.props.
+    -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+    <ApplicationTitle>Resonance BT Client</ApplicationTitle>
+    <ApplicationId>com.resonance.bluetoothclient</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- BLUETOOTH_CONNECT / BLUETOOTH_SCAN runtime permissions require API 31+. -->
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <!--
+    Microsoft.Maui.Sdk registers its implicit usings while its .props are evaluated,
+    at which point the repo-wide ImplicitUsings=disable from Directory.Build.props is
+    still in effect. Declaring them here restores them.
+  -->
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading.Tasks" />
+    <Using Include="Microsoft.Maui" />
+    <Using Include="Microsoft.Maui.Accessibility" />
+    <Using Include="Microsoft.Maui.ApplicationModel" />
+    <Using Include="Microsoft.Maui.ApplicationModel.Communication" />
+    <Using Include="Microsoft.Maui.Controls" />
+    <Using Include="Microsoft.Maui.Controls.Hosting" />
+    <Using Include="Microsoft.Maui.Controls.Xaml" />
+    <Using Include="Microsoft.Maui.Devices" />
+    <Using Include="Microsoft.Maui.Graphics" />
+    <Using Include="Microsoft.Maui.Hosting" />
+    <Using Include="Microsoft.Maui.Storage" />
+  </ItemGroup>
+
+  <!--
+    Versions are inline because this project opts out of central package management.
+    Since .NET 8, UseMaui=true no longer implies the Controls package reference;
+    $(MauiVersion) comes from the installed workload so this tracks it automatically.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.18" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#3F51B5" BaseSize="128,128" />
+    <MauiFont Include="Resources\Fonts\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Resonance.Bluetooth\Resonance.Bluetooth.csproj" />
+    <ProjectReference Include="..\..\..\Resonance\Resonance.csproj" />
+    <ProjectReference Include="..\..\Common\Resonance.Examples.Logging\Resonance.Examples.Logging.csproj" />
+    <ProjectReference Include="..\Resonance.Example.Bluetooth.Common\Resonance.Example.Bluetooth.Common.csproj" />
+  </ItemGroup>
+
+</Project>

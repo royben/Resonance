@@ -283,24 +283,12 @@ namespace Resonance.Tokens
         /// <summary>
         /// Determines if both ShortGuid instances have the same underlying <see cref="System.Guid"/> value.
         /// </summary>
-        public static bool operator ==(ShortGuid x, ShortGuid y)
-        {
-            if (ReferenceEquals(x, null))
-                return ReferenceEquals(y, null);
-
-            return x.underlyingGuid == y.underlyingGuid;
-        }
+        public static bool operator ==(ShortGuid x, ShortGuid y) => x.underlyingGuid == y.underlyingGuid;
 
         /// <summary>
         /// Determines if both instances have the same underlying <see cref="System.Guid"/> value.
         /// </summary>
-        public static bool operator ==(ShortGuid x, Guid y)
-        {
-            if (ReferenceEquals(x, null))
-                return ReferenceEquals(y, null);
-
-            return x.underlyingGuid == y;
-        }
+        public static bool operator ==(ShortGuid x, Guid y) => x.underlyingGuid == y;
 
         /// <summary>
         /// Determines if both instances have the same underlying <see cref="System.Guid"/> value.

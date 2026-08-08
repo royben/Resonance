@@ -1,9 +1,9 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Resonance.Adapters.InMemory;
+using Resonance.Transcoding.Json;
 using Resonance.Adapters.Tcp;
 using Resonance.Adapters.Udp;
 using Resonance.Messages;
-using Resonance.Transporters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +26,14 @@ namespace Resonance.Benchmarks
         [Benchmark(Description = "1000 Request/Response Json Encoding")]
         public void Json_Encoding()
         {
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            IResonanceTransporter t1 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
+            IResonanceTransporter t2 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
 
             t1.ConnectAsync().Wait();
             t2.ConnectAsync().Wait();
@@ -44,15 +50,21 @@ namespace Resonance.Benchmarks
                 var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            t1.Dispose();
+            t2.Dispose();
         }
 
         [Benchmark(Description = "1000 Request/Response Json Encoding With Compression")]
         public void Json_Encoding_Compressed()
         {
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            IResonanceTransporter t1 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
+            IResonanceTransporter t2 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
 
             t1.Encoder.CompressionConfiguration.Enabled = true;
             t2.Encoder.CompressionConfiguration.Enabled = true;
@@ -72,15 +84,21 @@ namespace Resonance.Benchmarks
                 var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            t1.Dispose();
+            t2.Dispose();
         }
 
         [Benchmark(Description = "1000 Request/Response Json Encoding With Encryption")]
         public void Json_Encoding_Encrypted()
         {
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            IResonanceTransporter t1 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
+            IResonanceTransporter t2 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
 
             t1.CryptographyConfiguration.Enabled = true;
             t2.CryptographyConfiguration.Enabled = true;
@@ -100,15 +118,21 @@ namespace Resonance.Benchmarks
                 var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            t1.Dispose();
+            t2.Dispose();
         }
 
         [Benchmark(Description = "1000 Request/Response Json Encoding With Compression & Encryption")]
         public void Json_Encoding_Compressed_Encrypted()
         {
-            ResonanceJsonTransporter t1 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
-            ResonanceJsonTransporter t2 = new ResonanceJsonTransporter(new InMemoryAdapter("TST"));
+            IResonanceTransporter t1 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
+            IResonanceTransporter t2 = ResonanceTransporter.Builder.Create()
+                .WithInMemoryAdapter().WithAddress("TST")
+                .WithJsonTranscoding()
+                .Build();
 
             t1.CryptographyConfiguration.Enabled = true;
             t2.CryptographyConfiguration.Enabled = true;
@@ -130,8 +154,8 @@ namespace Resonance.Benchmarks
                 var response = t1.SendRequestAsync<CalculateRequest, CalculateResponse>(request).GetAwaiter().GetResult();
             }
 
-            t1.Dispose(true);
-            t2.Dispose(true);
+            t1.Dispose();
+            t2.Dispose();
         }
     }
 }

@@ -45,8 +45,6 @@ namespace Resonance.Examples.Common
             Logger = ResonanceGlobalSettings.Default.LoggerFactory.CreateLogger(this.GetType().Name);
             Application.Current.MainWindow.ContentRendered += MainWindow_ContentRendered;
             Application.Current.MainWindow.Closing += MainWindow_Closing;
-
-            var fakeToRef = MaterialDesignThemes.Wpf.PackIconKind.Abc; //Just to make VS copy the assembly... :/
         }
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)

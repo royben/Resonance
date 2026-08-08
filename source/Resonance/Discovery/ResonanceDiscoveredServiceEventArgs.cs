@@ -5,7 +5,7 @@ using System.Text;
 namespace Resonance.Discovery
 {
     /// <summary>
-    /// Represents an <see cref="IResonanceDiscoveryClient{TDiscoveryInfo, TDecoder, TDiscoveredService}.ServiceDiscovered"/> event arguments.
+    /// Represents an <see cref="IResonanceDiscoveryClient{TDiscoveryInfo, TDiscoveredService}.ServiceDiscovered"/> event arguments.
     /// </summary>
     /// <typeparam name="TDiscoveredService">The type of the discovered service.</typeparam>
     /// <typeparam name="TDiscoveryInfo">The type of the discovery information.</typeparam>

@@ -234,7 +234,7 @@ namespace Resonance.Tests
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.Calculate(request);
             });
@@ -439,7 +439,7 @@ namespace Resonance.Tests
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.CalculateAsync(request).GetAwaiter().GetResult();
             });
@@ -476,7 +476,7 @@ namespace Resonance.Tests
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.CalculateVoid(request);
             });
@@ -509,7 +509,7 @@ namespace Resonance.Tests
 
             String s = proxy.GetStringNoInput();
 
-            Assert.AreEqual(s, "Test");
+            Assert.AreEqual("Test", s);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -539,7 +539,7 @@ namespace Resonance.Tests
 
             String s = proxy.GetStringNoInputAsync().GetAwaiter().GetResult();
 
-            Assert.AreEqual(s, "Test");
+            Assert.AreEqual("Test", s);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -567,7 +567,7 @@ namespace Resonance.Tests
 
             proxy.VoidNoInput();
 
-            Assert.AreEqual(receivedRequest.A, 100);
+            Assert.AreEqual(100, receivedRequest.A);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -595,7 +595,7 @@ namespace Resonance.Tests
 
             var result = proxy.CalculateMultiParameter(10, 5);
 
-            Assert.AreEqual(result, 15);
+            Assert.AreEqual(15, result);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -623,7 +623,7 @@ namespace Resonance.Tests
 
             var result = proxy.CalculateMultiParameterAsync(10, 5).GetAwaiter().GetResult();
 
-            Assert.AreEqual(result, 15);
+            Assert.AreEqual(15, result);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -651,7 +651,7 @@ namespace Resonance.Tests
 
             proxy.CalculateMultiParameterVoid(10, 5);
 
-            Assert.AreEqual(receivedRequest.A, 10);
+            Assert.AreEqual(10, receivedRequest.A);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -701,7 +701,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 5 };
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 var response = proxy.CalculateWithAttributeShortTimeout(request);
             });
@@ -738,7 +738,7 @@ namespace Resonance.Tests
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.CalculateVoidAsync(request).GetAwaiter().GetResult();
             });
@@ -769,7 +769,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 5 };
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.CalculateVoidThrows(request);
             }, "Test Error");
@@ -799,7 +799,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 5 };
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.CalculateThrows(request);
             }, "Test Error");
@@ -832,11 +832,11 @@ namespace Resonance.Tests
 
             String s = proxy.GetStringValue("Test");
 
-            Assert.AreEqual(s, "Test");
+            Assert.AreEqual("Test", s);
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.GetStringValue("Test");
             });
@@ -867,11 +867,11 @@ namespace Resonance.Tests
 
             int s = proxy.GetInt32Value(10);
 
-            Assert.AreEqual(s, 10);
+            Assert.AreEqual(10, s);
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.GetStringValue("Test");
             });
@@ -904,11 +904,11 @@ namespace Resonance.Tests
 
             String value = proxy.StringProperty;
 
-            Assert.AreEqual(value, "Test");
+            Assert.AreEqual("Test", value);
 
             t2.UnregisterService<ITestService>();
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 proxy.StringProperty = "Test";
             });
@@ -941,7 +941,7 @@ namespace Resonance.Tests
 
             int value = proxy.Int32Property;
 
-            Assert.AreEqual(value, 100);
+            Assert.AreEqual(100, value);
 
             t1.Dispose(true);
             t2.Dispose(true);
@@ -1048,9 +1048,9 @@ namespace Resonance.Tests
 
             TestHelper.WaitWhile(() => sums.Count < 3, TimeSpan.FromSeconds(5));
 
-            Assert.AreEqual(sums[0], 1);
-            Assert.AreEqual(sums[1], 2);
-            Assert.AreEqual(sums[2], 3);
+            Assert.AreEqual(1, sums[0]);
+            Assert.AreEqual(2, sums[1]);
+            Assert.AreEqual(3, sums[2]);
 
             t2.UnregisterService<ITestService>();
 
@@ -1094,9 +1094,9 @@ namespace Resonance.Tests
 
             TestHelper.WaitWhile(() => sums.Count < 3, TimeSpan.FromSeconds(5));
 
-            Assert.AreEqual(sums[0], 1);
-            Assert.AreEqual(sums[1], 2);
-            Assert.AreEqual(sums[2], 3);
+            Assert.AreEqual(1, sums[0]);
+            Assert.AreEqual(2, sums[1]);
+            Assert.AreEqual(3, sums[2]);
 
             t2.UnregisterService<ITestService>();
 
@@ -1139,9 +1139,9 @@ namespace Resonance.Tests
 
             TestHelper.WaitWhile(() => sums.Count < 3, TimeSpan.FromSeconds(5));
 
-            Assert.AreEqual(sums[0], 1);
-            Assert.AreEqual(sums[1], 2);
-            Assert.AreEqual(sums[2], 3);
+            Assert.AreEqual(1, sums[0]);
+            Assert.AreEqual(2, sums[1]);
+            Assert.AreEqual(3, sums[2]);
 
             t2.UnregisterService<ITestService>();
 

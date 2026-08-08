@@ -1,0 +1,37 @@
+{
+  "solution": {
+    "path": "Resonance.sln",
+    "projects": [
+      "Examples\\Bluetooth\\Resonance.Example.Bluetooth.Common\\Resonance.Example.Bluetooth.Common.csproj",
+      "Examples\\Bluetooth\\Resonance.Examples.Bluetooth.Server\\Resonance.Examples.Bluetooth.Server.csproj",
+      "Examples\\Common\\Resonance.Examples.Common\\Resonance.Examples.Common.csproj",
+      "Examples\\Common\\Resonance.Examples.Logging\\Resonance.Examples.Logging.csproj",
+      "Examples\\RPC\\Resonance.Examples.RPC.Client\\Resonance.Examples.RPC.Client.csproj",
+      "Examples\\RPC\\Resonance.Examples.RPC.Common\\Resonance.Examples.RPC.Common.csproj",
+      "Examples\\RPC\\Resonance.Examples.RPC.Server\\Resonance.Examples.RPC.Server.csproj",
+      "Examples\\SharedMemory\\Resonance.Example.SharedMemory.Client\\Resonance.Example.SharedMemory.Client.csproj",
+      "Examples\\SignalR\\Resonance.Examples.SignalR.Client\\Resonance.Examples.SignalR.Client.csproj",
+      "Examples\\SignalR\\Resonance.Examples.SignalR.Common\\Resonance.Examples.SignalR.Common.csproj",
+      "Examples\\SignalR\\Resonance.Examples.SignalR.Server\\Resonance.Examples.SignalR.Server.csproj",
+      "Examples\\SignalR\\Resonance.Examples.SignalR.Service\\Resonance.Examples.SignalR.Service.csproj",
+      "Examples\\TCP\\Resonance.Examples.TCP.Client\\Resonance.Examples.TCP.Client.csproj",
+      "Examples\\TCP\\Resonance.Examples.TCP.Server\\Resonance.Examples.TCP.Server.csproj",
+      "Examples\\UDP_Broadcast\\Resonance.Examples.UDP.BroadcastClient\\Resonance.Examples.UDP.BroadcastClient.csproj",
+      "Examples\\WebRTC\\Resonance.Examples.WebRTC.Client\\Resonance.Examples.WebRTC.Client.csproj",
+      "Examples\\WebRTC\\Resonance.Examples.WebRTC.Common\\Resonance.Examples.WebRTC.Common.csproj",
+      "Examples\\WebRTC\\Resonance.Examples.WebRTC.Server\\Resonance.Examples.WebRTC.Server.csproj",
+      "Resonance.Benchmarks\\Resonance.Benchmarks.csproj",
+      "Resonance.Bluetooth\\Resonance.Bluetooth.csproj",
+      "Resonance.LZ4\\Resonance.LZ4.csproj",
+      "Resonance.MessagePack\\Resonance.MessagePack.csproj",
+      "Resonance.Messages\\Resonance.Messages.csproj",
+      "Resonance.Protobuf\\Resonance.Protobuf.csproj",
+      "Resonance.SignalR\\Resonance.SignalR.csproj",
+      "Resonance.Tests.SignalRCore.WebAPI\\Resonance.Tests.SignalRCore.WebAPI.csproj",
+      "Resonance.Tests\\Resonance.Tests.csproj",
+      "Resonance.USB\\Resonance.USB.csproj",
+      "Resonance.WebRTC\\Resonance.WebRTC.csproj",
+      "Resonance\\Resonance.csproj"
+    ]
+  }
+}

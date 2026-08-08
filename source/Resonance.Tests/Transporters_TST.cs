@@ -106,7 +106,7 @@ namespace Resonance.Tests
                 throw new Exception("Test Error");
             };
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
             }, "Test Error");
@@ -348,7 +348,7 @@ namespace Resonance.Tests
                 t2.SendErrorResponse("Error Message", e.Message.Token);
             };
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest());
             }, "Error Message");
@@ -545,14 +545,14 @@ namespace Resonance.Tests
                 //Error
                 hasError = true;
 
-                Assert.AreEqual(ex.Message, "Test Exception");
+                Assert.AreEqual("Test Exception", ex.Message);
             }, () =>
             {
                 //Completed
                 isCompleted = true;
             });
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 subscription.Wait();
             }, "Test Exception");
@@ -583,7 +583,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig()
                 {
@@ -628,7 +628,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 15 };
 
-            Assert.ThrowsException<KeyNotFoundException>(() =>
+            Assert.Throws<KeyNotFoundException>(() =>
             {
                 var response = t1.SendRequest(request);
             });
@@ -664,7 +664,7 @@ namespace Resonance.Tests
 
             cts.CancelAfter(200);
 
-            Assert.ThrowsException<OperationCanceledException>(() =>
+            Assert.Throws<OperationCanceledException>(() =>
             {
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest(), new ResonanceRequestConfig()
                 {
@@ -693,7 +693,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest();
 
-            Assert.ThrowsException<InvalidCastException>(() =>
+            Assert.Throws<InvalidCastException>(() =>
             {
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             });
@@ -721,7 +721,7 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest();
 
-            Assert.ThrowsException<CorruptedDecoderException>(() =>
+            Assert.Throws<CorruptedDecoderException>(() =>
             {
                 var response = t1.SendRequest<CalculateRequest, CalculateResponse>(request);
             });

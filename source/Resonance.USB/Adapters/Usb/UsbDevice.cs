@@ -46,28 +46,29 @@ namespace Resonance.Adapters.Usb
                 var portnames = SerialPort.GetPortNames();
                 List<String> portsInfo = new List<String>();
 
-#if NET461
-                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
+                if (OperatingSystem.IsWindows())
                 {
-                    foreach (var item in searcher.Get())
+                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
                     {
-                        try
+                        foreach (var item in searcher.Get())
                         {
-                            ManagementBaseObject mObj = item as ManagementBaseObject;
-
-                            if (mObj != null)
+                            try
                             {
-                                Object caption = mObj["Caption"];
-                                if (caption != null)
+                                ManagementBaseObject mObj = item as ManagementBaseObject;
+
+                                if (mObj != null)
                                 {
-                                    portsInfo.Add(caption.ToString());
+                                    Object caption = mObj["Caption"];
+                                    if (caption != null)
+                                    {
+                                        portsInfo.Add(caption.ToString());
+                                    }
                                 }
                             }
+                            catch { }
                         }
-                        catch { }
                     }
                 }
-#endif
 
                 foreach (var port in portnames)
                 {

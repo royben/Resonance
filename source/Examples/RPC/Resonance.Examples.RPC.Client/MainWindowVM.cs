@@ -90,7 +90,7 @@ namespace Resonance.Examples.RPC.Client
                     Rectangles.Add(rect);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //TODO: Add log here that we could not fetch any server logs or something.
             }

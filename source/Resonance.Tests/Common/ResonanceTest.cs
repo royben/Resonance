@@ -40,7 +40,19 @@ namespace Resonance.Tests.Common
         {
             InMemoryAdapter.DisposeAll();
 
-            IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
+            // Azure Pipelines sets TF_BUILD on every agent, so detection does not depend on
+            // a TestRunParameters argument surviving cmd.exe quote stripping. The explicit
+            // IsFromAzure run setting is still honoured for local runs and other CI systems.
+            // Defaults to false, so a plain "dotnet test" behaves as a developer run.
+            IsRunningOnAzurePipelines =
+                bool.TryParse(Environment.GetEnvironmentVariable("TF_BUILD"), out bool isAzureAgent) && isAzureAgent;
+
+            if (!IsRunningOnAzurePipelines &&
+                TestContext.Properties.TryGetValue("IsFromAzure", out object isFromAzureValue) &&
+                bool.TryParse(isFromAzureValue?.ToString(), out bool isFromAzure))
+            {
+                IsRunningOnAzurePipelines = isFromAzure;
+            }
 
             var loggerFactory = new LoggerFactory();
             var loggerConfiguration = new LoggerConfiguration();
