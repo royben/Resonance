@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -41,10 +41,10 @@ namespace Resonance.Tests
         [TestMethod]
         public void Tcp_Adapter_Writing_Reading()
         {
-            ResonanceTransporter t1 = new ResonanceTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 9999));
+            ResonanceTransporter t1 = new ResonanceTransporter(new TcpAdapter(TcpAdapter.GetLocalIPAddress(), 15999));
             ResonanceTransporter t2 = new ResonanceTransporter();
 
-            ResonanceTcpServer server = new ResonanceTcpServer(9999);
+            ResonanceTcpServer server = new ResonanceTcpServer(15999);
             server.Start();
             server.ConnectionRequest += (x, e) => 
             {
@@ -71,8 +71,8 @@ namespace Resonance.Tests
 
             TestUtils.Read_Write_Test(
                 this, 
-                new UdpAdapter(new IPEndPoint(localIpAddress, 9991), new IPEndPoint(localIpAddress, 9992)), 
-                new UdpAdapter(new IPEndPoint(localIpAddress, 9992), new IPEndPoint(localIpAddress, 9991)), 
+                new UdpAdapter(new IPEndPoint(localIpAddress, 15991), new IPEndPoint(localIpAddress, 15992)), 
+                new UdpAdapter(new IPEndPoint(localIpAddress, 15992), new IPEndPoint(localIpAddress, 15991)), 
                 false, 
                 1000, 
                 5);

@@ -117,17 +117,47 @@ namespace Resonance.Servers.Tcp
 
         private void ConnectionHandler(IAsyncResult ar)
         {
-            if (IsStarted)
+            // This runs on a thread pool thread, so anything escaping it is an unhandled
+            // exception that terminates the process. Stop() can run between the IsStarted
+            // check and the listener calls below, in which case TcpListener throws
+            // InvalidOperationException ("Not listening") rather than ObjectDisposedException.
+            if (!IsStarted) return;
+
+            TcpClient client;
+
+            try
             {
-                try
-                {
-                    OnConnectionRequest(_listener.EndAcceptTcpClient(ar));
-                    WaitForConnection();
-                }
-                catch (ObjectDisposedException)
-                {
-                    //Ignore..
-                }
+                client = _listener.EndAcceptTcpClient(ar);
+            }
+            catch (ObjectDisposedException)
+            {
+                return; //The listener was disposed while accepting.
+            }
+            catch (InvalidOperationException)
+            {
+                return; //The listener was stopped while accepting.
+            }
+            catch (SocketException)
+            {
+                return; //The accept was aborted.
+            }
+
+            OnConnectionRequest(client);
+
+            //Re-check: the server may have been stopped while the event handler ran.
+            if (!IsStarted) return;
+
+            try
+            {
+                WaitForConnection();
+            }
+            catch (ObjectDisposedException)
+            {
+                //Ignore..
+            }
+            catch (InvalidOperationException)
+            {
+                //Ignore..
             }
         }
 

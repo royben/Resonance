@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.Tcp;
 using Resonance.Discovery;
 using Resonance.Tests.Common;
@@ -141,7 +141,7 @@ namespace Resonance.Tests
             ResonanceUdpDiscoveryService<DiscoveryInfoTransporter, JsonEncoder> service =
                 new ResonanceUdpDiscoveryService<DiscoveryInfoTransporter, JsonEncoder>(new DiscoveryInfoTransporter()
                 {
-                    TcpServerPort = 9999
+                    TcpServerPort = 15999
                 }, 1984);
 
             service.Start();
@@ -161,7 +161,7 @@ namespace Resonance.Tests
             ResonanceTransporter t1 = new ResonanceTransporter(new TcpAdapter(discoveredService.Address, discoveredService.DiscoveryInfo.TcpServerPort));
             ResonanceTransporter t2 = new ResonanceTransporter();
 
-            ResonanceTcpServer server = new ResonanceTcpServer(9999);
+            ResonanceTcpServer server = new ResonanceTcpServer(15999);
             server.Start();
             server.ConnectionRequest += (x, e) =>
             {

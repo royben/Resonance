@@ -3,6 +3,7 @@ using Resonance.Adapters.NamedPipes;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Versioning;
+using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
@@ -123,6 +124,10 @@ namespace Resonance.Servers.NamedPipes
 
         private void PipeConnected(IAsyncResult ar)
         {
+            // Runs on a thread pool thread, so anything escaping here is an unhandled
+            // exception that terminates the process. Stop() can run between the IsStarted
+            // check and the calls below, which surfaces as InvalidOperationException or
+            // IOException rather than ObjectDisposedException.
             if (!IsStarted) return;
 
             try
@@ -137,11 +142,21 @@ namespace Resonance.Servers.NamedPipes
                     OnConnectionRequest(server);
                 }
 
+                if (!IsStarted) return;
+
                 WaitForConnection();
             }
             catch (ObjectDisposedException)
             {
                 //Ignore..
+            }
+            catch (InvalidOperationException)
+            {
+                //The pipe was stopped while waiting for a connection.
+            }
+            catch (IOException)
+            {
+                //The pipe was broken while waiting for a connection.
             }
         }
 

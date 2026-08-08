@@ -1516,18 +1516,14 @@ namespace Resonance
 
                 if (pendingMessage.Config.CancellationToken != null && pendingMessage.Config.RequireACK)
                 {
-                    Task.Factory.StartNew(() =>
+                    //Register rather than poll - see the note in the request send path.
+                    pendingMessage.Config.CancellationToken.Value.Register(() =>
                     {
-                        while (!pendingMessage.IsCompleted)
+                        if (!pendingMessage.IsCompleted)
                         {
-                            Thread.Sleep(10);
-
-                            if (pendingMessage.Config.CancellationToken.Value.IsCancellationRequested)
-                            {
-                                Logger.LogDebugToken(pendingMessage.Message.Token, "'{Message}' aborted by cancellation token.", pendingMessage.Message.ObjectTypeName);
-                                _pendingMessages.Remove(pendingMessage);
-                                pendingMessage.SetException(new OperationCanceledException());
-                            }
+                            Logger.LogDebugToken(pendingMessage.Message.Token, "'{Message}' aborted by cancellation token.", pendingMessage.Message.ObjectTypeName);
+                            _pendingMessages.Remove(pendingMessage);
+                            pendingMessage.SetException(new OperationCanceledException());
                         }
                     });
                 }
@@ -1595,18 +1591,19 @@ namespace Resonance
 
                 if (pendingRequest.Config.CancellationToken != null)
                 {
-                    Task.Factory.StartNew(() =>
+                    // Register a callback rather than polling. The previous implementation
+                    // spun a task that slept in 10ms increments for the entire lifetime of
+                    // the request, occupying a thread pool thread per cancellable request.
+                    // Enough of those starve the pool, and because the request timeout is
+                    // itself a pool continuation, neither cancellation nor timeout can then
+                    // fire - leaving SendRequest blocked indefinitely.
+                    pendingRequest.Config.CancellationToken.Value.Register(() =>
                     {
-                        while (!pendingRequest.IsCompleted)
+                        if (!pendingRequest.IsCompleted)
                         {
-                            Thread.Sleep(10);
-
-                            if (pendingRequest.Config.CancellationToken.Value.IsCancellationRequested)
-                            {
-                                Logger.LogDebugToken(pendingRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingRequest.Message.ObjectTypeName);
-                                _pendingMessages.Remove(pendingRequest);
-                                pendingRequest.SetException(new OperationCanceledException());
-                            }
+                            Logger.LogDebugToken(pendingRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingRequest.Message.ObjectTypeName);
+                            _pendingMessages.Remove(pendingRequest);
+                            pendingRequest.SetException(new OperationCanceledException());
                         }
                     });
                 }
@@ -1658,18 +1655,14 @@ namespace Resonance
 
                 if (pendingContinuousRequest.Config.CancellationToken != null)
                 {
-                    Task.Factory.StartNew(() =>
+                    //Register rather than poll - see the note in the request send path.
+                    pendingContinuousRequest.Config.CancellationToken.Value.Register(() =>
                     {
-                        while (!pendingContinuousRequest.IsCompleted)
+                        if (!pendingContinuousRequest.IsCompleted)
                         {
-                            Thread.Sleep(10);
-
-                            if (pendingContinuousRequest.Config.CancellationToken.Value.IsCancellationRequested)
-                            {
-                                Logger.LogDebugToken(pendingContinuousRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingContinuousRequest.Message.ObjectTypeName);
-                                _pendingMessages.Remove(pendingContinuousRequest);
-                                pendingContinuousRequest.OnError(new OperationCanceledException());
-                            }
+                            Logger.LogDebugToken(pendingContinuousRequest.Message.Token, "'{Message}' aborted by cancellation token.", pendingContinuousRequest.Message.ObjectTypeName);
+                            _pendingMessages.Remove(pendingContinuousRequest);
+                            pendingContinuousRequest.OnError(new OperationCanceledException());
                         }
                     });
                 }

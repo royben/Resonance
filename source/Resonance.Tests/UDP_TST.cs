@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.Udp;
 using Resonance.Servers.Udp;
 using Resonance.Tests.Common;
@@ -21,11 +21,11 @@ namespace Resonance.Tests
         [TestMethod]
         public void UdpAdapter_Throws_Exception_After_Server_Shutdown()
         {
-            ResonanceUdpServer udp = new ResonanceUdpServer(9999);
+            ResonanceUdpServer udp = new ResonanceUdpServer(15999);
             udp.Start();
             udp.Dispose();
 
-            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
 
             try
             {
@@ -40,7 +40,7 @@ namespace Resonance.Tests
         [TestMethod]
         public void UdpAdapter_Throws_Exception_When_No_Server()
         {
-            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
 
             try
             {
@@ -55,14 +55,14 @@ namespace Resonance.Tests
         [TestMethod]
         public void UdpAdapter_Throws_Exception_On_Connection_Timeout()
         {
-            ResonanceUdpServer udp = new ResonanceUdpServer(9999);
+            ResonanceUdpServer udp = new ResonanceUdpServer(15999);
             udp.ConnectionRequest += (x, e) =>
             {
                 //e.Decline();
             };
             udp.Start();
 
-            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
 
             try
             {
@@ -78,14 +78,14 @@ namespace Resonance.Tests
         [TestMethod]
         public void UdpAdapter_Throws_Exception_On_Connection_Declined()
         {
-            ResonanceUdpServer udp = new ResonanceUdpServer(9999);
+            ResonanceUdpServer udp = new ResonanceUdpServer(15999);
             udp.ConnectionRequest += (x, e) =>
             {
                 e.Decline();
             };
             udp.Start();
 
-            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
 
             try
             {
@@ -101,14 +101,14 @@ namespace Resonance.Tests
         [TestMethod]
         public void UdpAdapter_Connection_Success()
         {
-            ResonanceUdpServer udp = new ResonanceUdpServer(9999);
+            ResonanceUdpServer udp = new ResonanceUdpServer(15999);
             udp.ConnectionRequest += (x, e) =>
             {
                 e.Accept();
             };
             udp.Start();
 
-            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+            UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
 
             adapter.Connect();
 
@@ -130,7 +130,7 @@ namespace Resonance.Tests
         {
             List<UdpAdapterEntry> entries = new List<UdpAdapterEntry>();
 
-            ResonanceUdpServer udp = new ResonanceUdpServer(9999);
+            ResonanceUdpServer udp = new ResonanceUdpServer(15999);
             udp.ConnectionRequest += (x, e) =>
             {
                 var serverAdapter = e.Accept();
@@ -151,7 +151,7 @@ namespace Resonance.Tests
 
             for (int i = 0; i < 10; i++)
             {
-                UdpAdapter adapter = new UdpAdapter("127.0.0.1", 9999);
+                UdpAdapter adapter = new UdpAdapter("127.0.0.1", 15999);
                 var entry = new UdpAdapterEntry() { ClientAdapter = adapter };
                 entries.Add(entry);
                 adapter.DataAvailable += (_, __) =>

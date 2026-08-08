@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resonance.Adapters.InMemory;
 using Resonance.Messages;
 using Resonance.Routing;
@@ -26,7 +26,7 @@ namespace Resonance.Tests
             IResonanceTransporter client2 = null;
             TransporterRouter router = null;
 
-            ResonanceTcpServer server = new ResonanceTcpServer(1333);
+            ResonanceTcpServer server = new ResonanceTcpServer(16333);
             server.ConnectionRequest += (x, e) =>
             {
                 if (receiver1 == null)
@@ -57,7 +57,7 @@ namespace Resonance.Tests
             client1 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -66,7 +66,7 @@ namespace Resonance.Tests
             client2 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -127,7 +127,7 @@ namespace Resonance.Tests
             IResonanceTransporter client2 = null;
             TransporterRouter router = null;
 
-            ResonanceTcpServer server = new ResonanceTcpServer(1333);
+            ResonanceTcpServer server = new ResonanceTcpServer(16333);
             server.ConnectionRequest += (x, e) =>
             {
                 if (receiver1 == null)
@@ -158,7 +158,7 @@ namespace Resonance.Tests
             client1 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -167,7 +167,7 @@ namespace Resonance.Tests
             client2 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -228,7 +228,7 @@ namespace Resonance.Tests
             IResonanceTransporter client2 = null;
             TransporterRouter router = null;
 
-            ResonanceTcpServer server = new ResonanceTcpServer(1333);
+            ResonanceTcpServer server = new ResonanceTcpServer(16333);
             server.ConnectionRequest += (x, e) =>
             {
                 if (receiver1 == null)
@@ -259,7 +259,7 @@ namespace Resonance.Tests
             client1 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -268,7 +268,7 @@ namespace Resonance.Tests
             client2 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -299,7 +299,7 @@ namespace Resonance.Tests
             finally
             {
                 // Must run even when an assertion fails, otherwise the server keeps port
-                // 1333 bound and the next routing test cannot accept its connections.
+                // 16333 bound and the next routing test cannot accept its connections.
                 client1?.Dispose();
                 client2?.Dispose();
                 receiver1?.Dispose();
@@ -318,7 +318,7 @@ namespace Resonance.Tests
             IResonanceTransporter client2 = null;
             TransporterRouter router = null;
 
-            ResonanceTcpServer server = new ResonanceTcpServer(1333);
+            ResonanceTcpServer server = new ResonanceTcpServer(16333);
             server.ConnectionRequest += (x, e) =>
             {
                 if (receiver1 == null)
@@ -351,7 +351,7 @@ namespace Resonance.Tests
             client1 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .Build();
 
@@ -363,7 +363,7 @@ namespace Resonance.Tests
             client2 = ResonanceTransporter.Builder.Create()
                 .WithTcpAdapter()
                 .WithAddress("127.0.0.1")
-                .WithPort(1333)
+                .WithPort(16333)
                 .WithJsonTranscoding()
                 .WithKeepAlive()
                 .Build();
