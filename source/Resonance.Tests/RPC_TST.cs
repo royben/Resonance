@@ -198,7 +198,11 @@ namespace Resonance.Tests
 
             public CalculateResponse CalculateWithAttributeTimeout(CalculateRequest request)
             {
-                Thread.Sleep(6000);
+                // Deliberately slower than the caller's default request timeout but well
+                // inside the 10 second ResonanceRpc attribute timeout. Kept short because
+                // this blocks an RPC handler thread; six seconds here was long enough to
+                // starve the thread pool on a two-core build agent.
+                Thread.Sleep(2000);
                 return new CalculateResponse();
             }
 
@@ -660,16 +664,16 @@ namespace Resonance.Tests
         [TestMethod]
         public void Service_Handles_Request_Method_With_Rpc_Attribute_Timeout()
         {
-            // Blocks an RPC handler thread with Thread.Sleep(6000). On two-core hosted
-            // agents that starves the thread pool and stalls the whole test host for
-            // minutes, so it is skipped on CI like the USB and named pipe tests.
-            // Still runs locally, where it completes in about six seconds.
-            if (IsRunningOnAzurePipelines) return;
-
             Reset();
 
             ResonanceTransporter t1 = new ResonanceTransporter(new InMemoryAdapter("TST"));
             ResonanceTransporter t2 = new ResonanceTransporter(new InMemoryAdapter("TST"));
+
+            // Pin the default explicitly rather than relying on the global default, so the
+            // relationship the test depends on is stated rather than assumed:
+            //   default (1s)  <  service delay (2s)  <  ResonanceRpc attribute timeout (10s)
+            // Without the attribute this call would time out; with it, it must succeed.
+            t1.DefaultRequestTimeout = TimeSpan.FromSeconds(1);
 
             t1.Connect();
             t2.Connect();
@@ -682,7 +686,9 @@ namespace Resonance.Tests
 
             var request = new CalculateRequest() { A = 10, B = 5 };
 
-            var response = proxy.CalculateWithAttributeTimeout(request); //The timeout is 10 seconds while the service method delay is 6 and default timeout is 5 or 2.
+            var response = proxy.CalculateWithAttributeTimeout(request);
+
+            Assert.IsNotNull(response);
 
             t1.Dispose(true);
             t2.Dispose(true);

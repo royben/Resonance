@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://github.com/royben/Resonance/blob/dev/visuals/Logo.png?raw=true" />    
+  <img src="https://github.com/royben/Resonance/blob/main/visuals/Logo.png?raw=true" />    
 </p>
 
-# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/dev/visuals/icon.png?raw=true" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release%202.0?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=6&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/6) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
+# Resonance <img width="20" height="20" src="https://github.com/royben/Resonance/blob/main/visuals/icon.png?raw=true" /> [![Build Status](https://dev.azure.com/Sirilix/Resonance/_apis/build/status/Resonance%20Release%202.0?branchName=main)](https://dev.azure.com/Sirilix/Resonance/_build/latest?definitionId=6&branchName=main) ![Issues](https://img.shields.io/github/issues/royben/Resonance.svg) ![Azure DevOps tests](https://img.shields.io/azure-devops/tests/Sirilix/Resonance/6) ![Nuget](https://img.shields.io/nuget/dt/Resonance) ![GitHub](https://img.shields.io/github/license/royben/Resonance)
 
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods.
 This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.
@@ -81,7 +81,7 @@ The following built-in adapters are currently supported by the library:
 
 The following diagram described a simple request-response scenario.
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Flow.png?raw=true)
+![alt tag](https://github.com/royben/Resonance/blob/main/visuals/Resonance_Flow.png?raw=true)
 
 <br/>
 
@@ -633,7 +633,7 @@ Once the password is acquired by both participants, they can start send and rece
 
 <br/>
 
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Resonance_Encryption.png?raw=true)
+![alt tag](https://github.com/royben/Resonance/blob/main/visuals/Resonance_Encryption.png?raw=true)
 
 
 <br/>
@@ -741,7 +741,7 @@ The recommended way of viewing the Resonance communication logs is using  [Seq](
 The Seq logs viewer supports structured logs that fits nicely with Resonance logging implementation.<br/>
 
 Here is a screenshot of a request being traced using its `Token` property through Seq.<br/>
-![alt tag](https://github.com/royben/Resonance/blob/dev/visuals/Seq.png?raw=true)
+![alt tag](https://github.com/royben/Resonance/blob/main/visuals/Seq.png?raw=true)
 
 <br/>
 

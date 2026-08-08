@@ -574,11 +574,29 @@ namespace Resonance.Tests
             t1.Connect();
             t2.Connect();
 
+            // Respond long after the request timeout, and do it without blocking the
+            // calling thread. Thread.Sleep here would hold the message pump and add to
+            // the thread pool pressure that delays the timeout continuation itself.
+            //
+            // The margin matters: the timeout is implemented as a Task.Delay continuation
+            // on the thread pool, so on a busy agent it can run late. If the response
+            // lands first the request is already complete and no timeout is raised, which
+            // is how a 500ms timeout against a 1000ms response used to fail here.
+            var responseMessage = default(ResonanceMessage);
+
             t2.RequestReceived += (s, e) =>
             {
-                Thread.Sleep(1000);
-                CalculateRequest receivedRequest = e.Message.Object as CalculateRequest;
-                t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, e.Message.Token);
+                responseMessage = e.Message;
+
+                Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+
+                    if (responseMessage.Object is CalculateRequest receivedRequest)
+                    {
+                        t2.SendResponse(new CalculateResponse() { Sum = receivedRequest.A + receivedRequest.B }, responseMessage.Token);
+                    }
+                });
             };
 
             var request = new CalculateRequest() { A = 10, B = 15 };
