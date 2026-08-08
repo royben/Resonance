@@ -77,12 +77,18 @@ stages:
           # Tests that need local hardware self-skip via IsRunningOnAzurePipelines, which
           # reads the TF_BUILD variable the agent sets automatically. Passing that as a
           # TestRunParameters argument instead would not survive cmd.exe quote stripping.
+          # console;verbosity=detailed prints each test name as it starts, so a hang is
+          # visible in the live log. --blame-hang aborts and names the offending test
+          # instead of running until the job timeout.
           - script: >
               dotnet test source/Resonance.Tests/Resonance.Tests.csproj
               --configuration $(buildConfiguration)
               --no-build
               --filter "TestCategory!=SignalR&TestCategory!=WebRTC&TestCategory!=Discovery&TestCategory!=UDP"
               --logger trx
+              --logger "console;verbosity=detailed"
+              --blame-hang
+              --blame-hang-timeout 3m
               --results-directory $(Agent.TempDirectory)/TestResults
             displayName: 'Test'
 
