@@ -73,6 +73,10 @@ stages:
 
           # Bluetooth, USB and WebRTC need real hardware or a peer; the SignalR tests
           # spin up a local web host. Those categories are excluded on hosted agents.
+          #
+          # Tests that need local hardware self-skip via IsRunningOnAzurePipelines, which
+          # reads the TF_BUILD variable the agent sets automatically. Passing that as a
+          # TestRunParameters argument instead would not survive cmd.exe quote stripping.
           - script: >
               dotnet test source/Resonance.Tests/Resonance.Tests.csproj
               --configuration $(buildConfiguration)
@@ -80,7 +84,6 @@ stages:
               --filter "TestCategory!=SignalR&TestCategory!=WebRTC&TestCategory!=Discovery&TestCategory!=UDP"
               --logger trx
               --results-directory $(Agent.TempDirectory)/TestResults
-              -- TestRunParameters.Parameter(name="IsFromAzure",value="true")
             displayName: 'Test'
 
           - task: PublishTestResults@2
