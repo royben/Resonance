@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Resonance.Examples.Bluetooth.MauiClient"
+             xmlns:log="clr-namespace:Resonance.Examples.Common.Logging;assembly=Resonance.Examples.Logging"
+             x:Class="Resonance.Examples.Bluetooth.MauiClient.ChatPage"
+             x:DataType="local:ViewModel"
+             BindingContext="{StaticResource ViewModel}"
+             NavigationPage.HasBackButton="False"
+             Title="Chat">
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <Border BackgroundColor="#3F51B5" Padding="10" StrokeThickness="0">
+            <VerticalStackLayout>
+                <Label Text="Resonance" TextColor="White" FontSize="Small" />
+                <Label Margin="0,-10,0,0" Text="Bluetooth Client" TextColor="White" FontSize="36" />
+            </VerticalStackLayout>
+        </Border>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Logs}" x:Name="list" BackgroundColor="#202020">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="log:LogEventVM">
+                    <Label Text="{Binding}" Padding="5" />
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Grid.Row="2" Padding="5">
+            <Label Text="Send Message:" />
+            <Entry Text="{Binding Message}" />
+        </VerticalStackLayout>
+
+        <Button Grid.Row="3"
+                Margin="0,10,0,0"
+                Text="Send"
+                Command="{Binding SendCommand}"
+                BackgroundColor="#3F51B5" />
+    </Grid>
+</ContentPage>

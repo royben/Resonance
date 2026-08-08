@@ -79,7 +79,7 @@ namespace Resonance.Tests
                 Assert.AreEqual(encodeInfo.Token, decodeInfo.Token);
                 Assert.AreEqual(encodeInfo.Transcoding, decodeInfo.Transcoding);
                 Assert.AreEqual(encodeInfo.Type, decodeInfo.Type);
-                Assert.AreEqual(encodeInfo.RPCSignature.ToString(), "Method:Service.MyMethod");
+                Assert.AreEqual("Method:Service.MyMethod", encodeInfo.RPCSignature.ToString());
             }
         }
 
@@ -232,12 +232,10 @@ namespace Resonance.Tests
         }
 
         [TestMethod]
+        [Ignore("Only passes on a second run - cause not yet diagnosed. Previously disabled by an " +
+                "unconditional return, which reported a false pass; Ignore makes the skip visible.")]
         public void Auto_Decoding__Needs_A_Second_Run()
         {
-            return;
-            //This test needs a second run. not sure why.
-
-
             if (IsRunningOnAzurePipelines) return; //Hangs when running in a sequence of tests for some reason.
 
             IResonanceTransporter t1 = ResonanceTransporter.Builder

@@ -375,7 +375,7 @@ namespace Resonance.Tests
 
             WebRTCAdapter adapter2 = new WebRTCAdapter(signal2, WebRTCAdapterRole.Connect);
 
-            Assert.ThrowsException<ResonanceWebRTCConnectionFailedException>(() =>
+            Assert.Throws<ResonanceWebRTCConnectionFailedException>(() =>
             {
                 adapter2.Connect();
             });

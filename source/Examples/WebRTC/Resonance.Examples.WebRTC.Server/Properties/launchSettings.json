@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Resonance.Examples.WebRTC.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:13651;http://localhost:13653"
+    }
+  }
+}

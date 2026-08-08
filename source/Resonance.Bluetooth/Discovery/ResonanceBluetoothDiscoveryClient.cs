@@ -12,7 +12,7 @@ namespace Resonance.Bluetooth.Discovery
     /// <summary>
     /// Represents a nearby Bluetooth device discovery client capable of notifying about new device detection.
     /// </summary>
-    /// <seealso cref="Resonance.Discovery.IResonanceDiscoveryClient{Resonance.Adapters.Bluetooth.BluetoothDevice, Resonance.Bluetooth.Discovery.ResonanceBluetoothDiscoveredDevice}" />
+    /// <seealso cref="Resonance.Discovery.IResonanceDiscoveryClient{BluetoothDevice, ResonanceBluetoothDiscoveredDevice}" />
     public class ResonanceBluetoothDiscoveryClient : IResonanceDiscoveryClient<BluetoothDevice, ResonanceBluetoothDiscoveredDevice>
     {
         private Thread _thread;

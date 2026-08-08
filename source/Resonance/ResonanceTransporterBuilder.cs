@@ -304,6 +304,7 @@ namespace Resonance
             return this;
         }
 
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
         ITranscodingBuilder ISharedMemoryAdapterBuilder.WithAddress(string address)
         {
             Transporter.Adapter = new SharedMemoryAdapter(address);

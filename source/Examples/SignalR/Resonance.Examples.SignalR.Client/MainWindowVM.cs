@@ -94,7 +94,7 @@ namespace Resonance.Examples.SignalR.Client
         public MainWindowVM()
         {
             ClientID = "C" + new Random().Next(0, 100);
-            HubUrl = "http://localhost:8080/DemoHub";
+            HubUrl = "http://localhost:8080/hubs/DemoHub";
 
             ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID) && SelectedService != null);
             DisconnectCommand = new RelayCommand(Disconnect, () => IsConnected);
@@ -114,7 +114,7 @@ namespace Resonance.Examples.SignalR.Client
         {
             _discoveryClient = new ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials>(
                 HubUrl,
-                SignalRMode.Legacy,
+                SignalRMode.Core,
                 new DemoCredentials() { Name = ClientID });
 
             _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
@@ -189,7 +189,7 @@ namespace Resonance.Examples.SignalR.Client
 
                     _transporter = ResonanceTransporter.Builder
                         .Create()
-                        .WithSignalRAdapter(SignalRMode.Legacy)
+                        .WithSignalRAdapter(SignalRMode.Core)
                         .WithCredentials(new DemoCredentials() { Name = ClientID })
                         .WithServiceId(SelectedService.ServiceId)
                         .WithUrl(HubUrl)

@@ -40,7 +40,12 @@ namespace Resonance.Tests.Common
         {
             InMemoryAdapter.DisposeAll();
 
-            IsRunningOnAzurePipelines = bool.Parse(TestContext.Properties["IsFromAzure"].ToString());
+            // Defaults to false when the run settings parameter is absent, so the suite
+            // is runnable via a plain "dotnet test" with no --settings argument.
+            IsRunningOnAzurePipelines =
+                TestContext.Properties.TryGetValue("IsFromAzure", out object isFromAzureValue) &&
+                bool.TryParse(isFromAzureValue?.ToString(), out bool isFromAzure) &&
+                isFromAzure;
 
             var loggerFactory = new LoggerFactory();
             var loggerConfiguration = new LoggerConfiguration();

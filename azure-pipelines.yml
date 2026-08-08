@@ -1,35 +1,141 @@
-# .NET Desktop
-# Build and run tests for .NET Desktop or Windows classic desktop solutions.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
+# Resonance build & NuGet release pipeline.
+#
+# Replaces two legacy definitions:
+#   - the classic "Resonance Release" build pipeline (NuGetToolInstaller / NuGetCommand /
+#     VSBuild / VSTest on the retired windows-2019 image)
+#   - the classic "Publish Resonance Release" release pipeline (a single NuGet push task)
+#
+# The Publish stage is off by default and gated on an environment approval, so it
+# reproduces the deliberate "create a release" step the old release pipeline required.
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
 
 trigger:
-- main
+  branches:
+    include:
+      - main
 
-pool:
-  vmImage: 'windows-latest'
+pr:
+  branches:
+    include:
+      - main
+
+parameters:
+  # The old "Set Assembly Manifest Data" task stamped the version into each .csproj.
+  # Version now lives in Directory.Build.props, so the pipeline passes it explicitly
+  # via -p:Version instead. Override this when queueing to cut a different version.
+  - name: packageVersion
+    displayName: 'Package version (e.g. 2.0.0 or 2.0.0-pre)'
+    type: string
+    default: '2.0.0'
+
+  - name: publishToNuGet
+    displayName: 'Push packages to NuGet.org'
+    type: boolean
+    default: false
 
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  # Resonance.CI.slnf is Resonance.sln minus the MAUI sample, which needs the
+  # maui-android workload that hosted agents do not carry by default.
+  solution: 'source/Resonance.CI.slnf'
 
-steps:
-- task: NuGetToolInstaller@1
+stages:
+  - stage: Build
+    displayName: 'Build, test & pack'
+    jobs:
+      - job: BuildTestPack
+        displayName: 'Build / Test / Pack'
+        pool:
+          vmImage: 'windows-latest' # WPF examples and the test suite are Windows-only.
+        steps:
+          - checkout: self
+            fetchDepth: 0 # Full history so SourceLink records the right commit.
 
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK (from global.json)'
+            inputs:
+              packageType: 'sdk'
+              useGlobalJson: true
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: 'AzureBuild'
+          - script: dotnet --info
+            displayName: 'Show SDK info'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: 'AzureBuild'
-    overrideTestrunParameters: -IsFromAzure true
-    runInParallel: false
+          - script: dotnet restore $(solution)
+            displayName: 'Restore'
+
+          - script: >
+              dotnet build $(solution)
+              --configuration $(buildConfiguration)
+              --no-restore
+              -p:Version=${{ parameters.packageVersion }}
+            displayName: 'Build'
+
+          # Bluetooth, USB and WebRTC need real hardware or a peer; the SignalR tests
+          # spin up a local web host. Those categories are excluded on hosted agents.
+          - script: >
+              dotnet test source/Resonance.Tests/Resonance.Tests.csproj
+              --configuration $(buildConfiguration)
+              --no-build
+              --filter "TestCategory!=SignalR&TestCategory!=WebRTC&TestCategory!=Discovery&TestCategory!=UDP"
+              --logger trx
+              --results-directory $(Agent.TempDirectory)/TestResults
+              -- TestRunParameters.Parameter(name="IsFromAzure",value="true")
+            displayName: 'Test'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Agent.TempDirectory)/TestResults'
+              failTaskOnFailedTests: true
+
+          # Only the eight published libraries set IsPackable=true; everything else is
+          # excluded by Directory.Build.props, so examples and tests cannot reach NuGet.
+          - script: >
+              dotnet pack $(solution)
+              --configuration $(buildConfiguration)
+              --no-build
+              --output $(Build.ArtifactStagingDirectory)/nuget
+              -p:Version=${{ parameters.packageVersion }}
+            displayName: 'Pack'
+
+          - publish: '$(Build.ArtifactStagingDirectory)/nuget'
+            artifact: nuget
+            displayName: 'Publish packages as pipeline artifact'
+
+  - stage: Publish
+    displayName: 'Publish to NuGet.org'
+    dependsOn: Build
+    condition: >
+      and(
+        succeeded(),
+        eq('${{ parameters.publishToNuGet }}', 'true'),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
+    jobs:
+      - deployment: PushNuGet
+        displayName: 'Push packages'
+        pool:
+          vmImage: 'windows-latest'
+        # Add an approval check on this environment in Azure DevOps to require a
+        # manual click before anything reaches nuget.org.
+        environment: 'nuget-org'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: nuget
+                  displayName: 'Download packages'
+
+                - task: NuGetCommand@2
+                  displayName: 'NuGet push'
+                  inputs:
+                    command: 'push'
+                    packagesToPush: '$(Pipeline.Workspace)/nuget/*.nupkg'
+                    nuGetFeedType: 'external'
+                    # Existing service connection carried over from the old release pipeline.
+                    publishFeedCredentials: 'NugetPublish'

@@ -100,7 +100,7 @@ namespace Resonance.Tests
                 B = 5
             });
 
-            Assert.AreEqual(response.Sum, 15);
+            Assert.AreEqual(15, response.Sum);
 
             response = client2.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
             {
@@ -108,7 +108,7 @@ namespace Resonance.Tests
                 B = 5
             });
 
-            Assert.AreEqual(response.Sum, 16);
+            Assert.AreEqual(16, response.Sum);
 
             client1.Dispose();
             client2.Dispose();
@@ -201,7 +201,7 @@ namespace Resonance.Tests
                 B = 5
             });
 
-            Assert.AreEqual(response.Sum, 15);
+            Assert.AreEqual(15, response.Sum);
 
             response = client2.SendRequest<CalculateRequest, CalculateResponse>(new CalculateRequest()
             {
@@ -209,7 +209,7 @@ namespace Resonance.Tests
                 B = 5
             });
 
-            Assert.AreEqual(response.Sum, 16);
+            Assert.AreEqual(16, response.Sum);
 
             client1.Dispose();
             client2.Dispose();

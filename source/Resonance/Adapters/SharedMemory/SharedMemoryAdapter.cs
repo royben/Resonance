@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace Resonance.Adapters.SharedMemory
     /// Represents a Resonance shared memory communication adapter.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceAdapter" />
+    [SupportedOSPlatform("windows")]
     public class SharedMemoryAdapter : ResonanceAdapter
     {
         private EventWaitHandle _thisSemaphore;

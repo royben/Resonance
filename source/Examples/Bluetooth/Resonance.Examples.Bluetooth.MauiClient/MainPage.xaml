@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Resonance.Examples.Bluetooth.MauiClient"
+             xmlns:bt="clr-namespace:Resonance.Adapters.Bluetooth;assembly=Resonance.Bluetooth"
+             x:Class="Resonance.Examples.Bluetooth.MauiClient.MainPage"
+             x:DataType="local:ViewModel"
+             BindingContext="{StaticResource ViewModel}"
+             Title="Resonance">
+    <Grid>
+        <Grid RowDefinitions="Auto,*,Auto">
+            <Border BackgroundColor="#3F51B5" Padding="10" StrokeThickness="0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout>
+                        <Label Text="Resonance" TextColor="White" FontSize="Small" />
+                        <Label Margin="0,-10,0,0" Text="Bluetooth Client" TextColor="White" FontSize="36" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Command="{Binding DiscoverCommand}"
+                            TextColor="White"
+                            BackgroundColor="#5D70D7"
+                            FontSize="Medium"
+                            CornerRadius="5"
+                            VerticalOptions="Center"
+                            Text="DISCOVER" />
+                </Grid>
+            </Border>
+
+            <CollectionView Grid.Row="1"
+                            ItemsSource="{Binding Devices}"
+                            SelectionMode="Single"
+                            SelectedItem="{Binding SelectedDevice}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="bt:BluetoothDevice">
+                        <Grid Padding="20" ColumnDefinitions="5*,*">
+                            <Label Text="{Binding Name}" FontSize="Medium" VerticalOptions="Center" />
+                            <Label Grid.Column="1" FontSize="Medium" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Authenticated}" Value="True">
+                                        <Setter Property="Text" Value="Paired" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Connected}" Value="True">
+                                        <Setter Property="Text" Value="Connected" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Grid.Row="2"
+                    Margin="0,10,0,0"
+                    Text="Connect"
+                    Command="{Binding ConnectCommand}"
+                    BackgroundColor="#3F51B5" />
+        </Grid>
+
+        <!-- Replaces Acr.UserDialogs, which has no MAUI successor. -->
+        <Grid IsVisible="{Binding IsBusy}" BackgroundColor="#99000000">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10">
+                <ActivityIndicator IsRunning="{Binding IsBusy}" Color="White" />
+                <Label Text="{Binding BusyMessage}" TextColor="White" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

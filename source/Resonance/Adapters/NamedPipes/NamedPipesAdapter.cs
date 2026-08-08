@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
+using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using System.Threading;
@@ -11,6 +13,7 @@ namespace Resonance.Adapters.NamedPipes
     /// Represents a Resonance named pipes adapter.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceAdapter" />
+    [SupportedOSPlatform("windows")]
     public class NamedPipesAdapter : ResonanceAdapter
     {
         private NamedPipeClientStream _client;
@@ -90,8 +93,23 @@ namespace Resonance.Adapters.NamedPipes
         {
             return Task.Factory.StartNew((Action)(() =>
             {
-                _pipeStream.WaitForPipeDrain();
-                _pipeStream.Close();
+                try
+                {
+                    // The remote end may already have closed the pipe - that is a normal
+                    // race when both sides disconnect, not a failure. Draining a pipe whose
+                    // peer is gone throws ObjectDisposedException/IOException, which would
+                    // otherwise surface out of Dispose().
+                    if (_pipeStream != null && _pipeStream.IsConnected)
+                    {
+                        _pipeStream.WaitForPipeDrain();
+                    }
+                }
+                catch (ObjectDisposedException) { }
+                catch (IOException) { }
+                finally
+                {
+                    _pipeStream?.Dispose();
+                }
             }));
         }
 

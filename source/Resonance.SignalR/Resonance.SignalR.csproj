@@ -1,53 +1,28 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Configurations>Debug;Release;AzureBuild</Configurations>
-    <Authors>Roy Ben Shabat</Authors>
-    <Company>Roy Ben Shabat</Company>
+    <TargetFramework>$(ResonanceTfm)</TargetFramework>
+    <IsPackable>true</IsPackable>
     <Description>SignalR Adapter &amp; Hubs for Resonance.
 
 Resonance is a high-performance real-time C# communication library with built-in support for several different transcoding and delivery methods. This library provides an intuitive API for asynchronous communication between machines and devices by exposing a set of easy to use, pluggable components.</Description>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/royben/Resonance</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/royben/Resonance</RepositoryUrl>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageTags>Communication;RealTime;Network;TCP;UDP;NamedPipes;USB;WebRTC;SignalR</PackageTags>
-    <Version>1.0.0</Version>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DocumentationFile>$(SolutionDir)Resonance.SignalR\bin\$(Configuration)\Resonance.SignalR.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
-    <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.1" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net5.0'">
-    <PackageReference Remove="Microsoft.AspNet.SignalR.Core" Version="2.4.1" />
-    <PackageReference Remove="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
+  <!--
+    Server-side hub types (Hub, IHubContext) ship in the ASP.NET Core shared framework.
+    The old Microsoft.AspNetCore.SignalR.Core 1.1.0 package is an obsolete stub.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Resonance\Resonance.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="..\..\visuals\icon.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
 
 </Project>

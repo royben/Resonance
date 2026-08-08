@@ -124,7 +124,7 @@ namespace Resonance.Tests
         {
             IResonanceTransporter signalRTransporter = ResonanceTransporter.Builder
                .Create()
-               .WithSignalRAdapter(SignalRMode.Legacy)
+               .WithSignalRAdapter(SignalRMode.Core)
                .WithCredentials<TestCredentials>(new TestCredentials() { Name = "TEST" })
                .WithServiceId("1234")
                .WithUrl("some url")
@@ -136,7 +136,7 @@ namespace Resonance.Tests
 
             Assert.IsNotNull(signalRTransporter);
             Assert.IsInstanceOfType(signalRTransporter.Adapter, typeof(SignalRAdapter<TestCredentials>));
-            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Mode == SignalRMode.Legacy);
+            Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Mode == SignalRMode.Core);
             Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Credentials.Name == "TEST");
             Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).ServiceId == "1234");
             Assert.IsTrue((signalRTransporter.Adapter as SignalRAdapter<TestCredentials>).Url == "some url");

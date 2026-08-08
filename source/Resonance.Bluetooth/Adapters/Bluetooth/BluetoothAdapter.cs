@@ -178,7 +178,7 @@ namespace Resonance.Adapters.Bluetooth
                     if (expectedSize > 0)
                     {
                         byte[] data = new byte[expectedSize];
-                        _stream.Read(data, 0, expectedSize);
+                        _stream.ReadExactly(data, 0, expectedSize);
 
                         if (State != ResonanceComponentState.Connected)
                         {

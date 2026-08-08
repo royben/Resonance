@@ -257,7 +257,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request,new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -290,7 +290,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -323,7 +323,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -358,7 +358,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -392,7 +392,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -428,7 +428,7 @@ namespace Resonance.Tests
 
             handler.Dispose();
 
-            Assert.ThrowsException<TimeoutException>(() =>
+            Assert.Throws<TimeoutException>(() =>
             {
                 t1.SendRequest<CalculateRequest, CalculateResponse>(request, new ResonanceRequestConfig() { Timeout = TimeSpan.FromSeconds(1) });
             });
@@ -509,7 +509,7 @@ namespace Resonance.Tests
                 throw new Exception("Test Error");
             });
 
-            Assert.ThrowsException<ResonanceResponseException>(() =>
+            Assert.Throws<ResonanceResponseException>(() =>
             {
                 t1.Send(new CalculateRequest() { A = 10, B = 15 }, new ResonanceMessageConfig() { RequireACK = true });
             });

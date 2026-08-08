@@ -14,7 +14,7 @@ namespace Resonance.Servers.Udp
     /// Represents a UDP server that mimics the behavior of a TCP server for UDP adapters.
     /// </summary>
     /// <seealso cref="Resonance.ResonanceObject" />
-    /// <seealso cref="Resonance.IResonanceListeningServer{Resonance.Adapters.Udp.UdpAdapter}" />
+    /// <seealso cref="Resonance.IResonanceListeningServer{UdpAdapter}" />
     public class ResonanceUdpServer : ResonanceObject, IResonanceListeningServer<UdpAdapter>
     {
         private UdpClient _server;

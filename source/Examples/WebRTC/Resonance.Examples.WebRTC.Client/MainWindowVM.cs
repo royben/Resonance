@@ -108,7 +108,7 @@ namespace Resonance.Examples.WebRTC.Client
         public MainWindowVM()
         {
             ClientID = "C" + new Random().Next(0, 100);
-            HubUrl = "http://localhost:8081/DemoHub";
+            HubUrl = "http://localhost:8081/hubs/DemoHub";
 
             ConnectCommand = new RelayCommand(Connect, () => !IsConnected && !String.IsNullOrWhiteSpace(ClientID));
             StartSessionCommand = new RelayCommand(StartSession, () => IsConnected && SelectedClient != null && !IsInSession);
@@ -149,7 +149,7 @@ namespace Resonance.Examples.WebRTC.Client
                                 new DemoCredentials() { Name = serviceName },
                                 new DemoServiceInformation() { ServiceId = ClientID },
                                 HubUrl,
-                                SignalRMode.Legacy);
+                                SignalRMode.Core);
 
                     _service.ConnectionRequest += OnServiceConnectionRequest;
 
@@ -157,7 +157,7 @@ namespace Resonance.Examples.WebRTC.Client
 
                     _discoveryClient = new ResonanceSignalRDiscoveryClient<DemoServiceInformation, DemoCredentials>(
                                 HubUrl,
-                                SignalRMode.Legacy,
+                                SignalRMode.Core,
                                 new DemoCredentials() { Name = ClientID + " Discovery" });
 
                     _discoveryClient.ServiceDiscovered += OnServiceDiscovered;
@@ -344,7 +344,7 @@ namespace Resonance.Examples.WebRTC.Client
 
                     _signalingTransporter = ResonanceTransporter.Builder
                         .Create()
-                        .WithSignalRAdapter(SignalRMode.Legacy)
+                        .WithSignalRAdapter(SignalRMode.Core)
                         .WithCredentials(new DemoCredentials() { Name = ClientID })
                         .WithServiceId(SelectedClient.ServiceId)
                         .WithUrl(HubUrl)

@@ -2,6 +2,7 @@
 using Resonance.Adapters.NamedPipes;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,7 @@ namespace Resonance.Servers.NamedPipes
     /// Represents a simple named pipes server.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
+    [SupportedOSPlatform("windows")]
     public class ResonanceNamedPipesServer : ResonanceObject, IResonanceListeningServer<NamedPipesAdapter>
     {
         private NamedPipeServerStream _pendingPipeStream;

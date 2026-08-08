@@ -9,7 +9,7 @@ namespace Resonance.Bluetooth.Discovery
     /// <summary>
     /// Represents a discovered nearby Bluetooth device.
     /// </summary>
-    /// <seealso cref="Resonance.Discovery.IResonanceDiscoveredService{Resonance.Adapters.Bluetooth.BluetoothDevice}" />
+    /// <seealso cref="Resonance.Discovery.IResonanceDiscoveredService{BluetoothDevice}" />
     public class ResonanceBluetoothDiscoveredDevice : IResonanceDiscoveredService<BluetoothDevice>
     {
         /// <summary>

@@ -73,7 +73,7 @@ namespace Resonance.Examples.SignalR.Service
         {
             Clients = new ObservableCollection<ResonanceSignalRClient>();
             ServiceId = "Service 1";
-            HubUrl = "http://localhost:8080/DemoHub";
+            HubUrl = "http://localhost:8080/hubs/DemoHub";
             StartCommand = new RelayCommand(Start, () => !IsStarted && !String.IsNullOrWhiteSpace(ServiceId));
             StopCommand = new RelayCommand(Stop, () => IsStarted);
             DisconnectClientCommand = new RelayCommand<ResonanceSignalRClient>(DisconnectClient);
@@ -96,7 +96,7 @@ namespace Resonance.Examples.SignalR.Service
                     new DemoCredentials() { Name = ServiceId },
                     new DemoServiceInformation() { ServiceId = ServiceId },
                     HubUrl,
-                    SignalRMode.Legacy);
+                    SignalRMode.Core);
 
                 Logger.LogInformation("Service started.");
 
@@ -114,7 +114,7 @@ namespace Resonance.Examples.SignalR.Service
 
         private void _service_Error(object sender, ResonanceExceptionEventArgs e)
         {
-            Logger.LogError("Service connection lost.", e.Exception);
+            Logger.LogError(e.Exception, "Service connection lost.");
         }
 
         private void _service_Reconnecting(object sender, EventArgs e)

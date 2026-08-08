@@ -324,7 +324,7 @@ namespace Resonance
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Adapter connection error occurred.");
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -364,7 +364,7 @@ namespace Resonance
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Adapter disconnection error occurred.");
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -407,7 +407,7 @@ namespace Resonance
             {
                 fail = true;
                 failException = ex;
-                throw ex;
+                throw;
             }
             finally
             {
